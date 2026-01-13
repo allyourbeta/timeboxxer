@@ -15,6 +15,7 @@ export default function Home() {
   const { scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask } = useScheduleStore()
   const { 
     currentView, setCurrentView,
+    panelMode, setPanelMode,
     draggedTaskId, setDraggedTaskId,
     colorPickerTaskId, openColorPicker, closeColorPicker,
     editingListId, setEditingListId,
@@ -63,46 +64,59 @@ export default function Home() {
   
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
-      <Header currentView={currentView} onViewChange={setCurrentView} />
+      <Header 
+        currentView={currentView} 
+        panelMode={panelMode}
+        onViewChange={setCurrentView} 
+        onPanelModeChange={setPanelMode}
+      />
       
       <div className="flex flex-1 overflow-hidden">
         {currentView === 'main' ? (
           <>
-            <ListPanel
-              lists={lists}
-              tasks={tasks}
-              paletteId={PALETTE_ID}
-              colorPickerTaskId={colorPickerTaskId}
-              editingListId={editingListId}
-              duplicatingListId={duplicatingListId}
-              showNewListInput={showNewListInput}
-              expandedListByColumn={expandedListByColumn}
-              onShowNewListInput={setShowNewListInput}
-              onCreateList={createList}
-              onEditList={updateList}
-              onDeleteList={deleteList}
-              onDuplicateList={duplicateList}
-              onSetEditingListId={setEditingListId}
-              onSetDuplicatingListId={setDuplicatingListId}
-              onToggleListExpanded={toggleListExpanded}
-              onTaskDragStart={setDraggedTaskId}
-              onTaskDurationChange={handleDurationChange}
-              onTaskColorClick={openColorPicker}
-              onTaskColorSelect={handleColorSelect}
-              onTaskDelete={deleteTask}
-              onTaskCreate={createTask}
-            />
+            {(panelMode === 'both' || panelMode === 'lists-only') && (
+              <div className={panelMode === 'lists-only' ? 'flex-1' : 'w-1/2'}>
+                <ListPanel
+                  lists={lists}
+                  tasks={tasks}
+                  paletteId={PALETTE_ID}
+                  colorPickerTaskId={colorPickerTaskId}
+                  editingListId={editingListId}
+                  duplicatingListId={duplicatingListId}
+                  showNewListInput={showNewListInput}
+                  expandedListByColumn={expandedListByColumn}
+                  onShowNewListInput={setShowNewListInput}
+                  onCreateList={createList}
+                  onEditList={updateList}
+                  onDeleteList={deleteList}
+                  onDuplicateList={duplicateList}
+                  onSetEditingListId={setEditingListId}
+                  onSetDuplicatingListId={setDuplicatingListId}
+                  onToggleListExpanded={toggleListExpanded}
+                  onTaskDragStart={setDraggedTaskId}
+                  onTaskDurationChange={handleDurationChange}
+                  onTaskColorClick={openColorPicker}
+                  onTaskColorSelect={handleColorSelect}
+                  onTaskDelete={deleteTask}
+                  onTaskCreate={createTask}
+                />
+              </div>
+            )}
             
-            <DayView
-              tasks={tasks}
-              scheduled={scheduled}
-              paletteId={PALETTE_ID}
-              onDrop={handleDrop}
-              onUnschedule={unscheduleTask}
-              onComplete={completeTask}
-              onDragStart={setDraggedTaskId}
-              onDurationChange={handleDurationChange}
-            />
+            {(panelMode === 'both' || panelMode === 'calendar-only') && (
+              <div className={panelMode === 'calendar-only' ? 'flex-1' : 'flex-1'}>
+                <DayView
+                  tasks={tasks}
+                  scheduled={scheduled}
+                  paletteId={PALETTE_ID}
+                  onDrop={handleDrop}
+                  onUnschedule={unscheduleTask}
+                  onComplete={completeTask}
+                  onDragStart={setDraggedTaskId}
+                  onDurationChange={handleDurationChange}
+                />
+              </div>
+            )}
           </>
         ) : (
           <CompletedView
