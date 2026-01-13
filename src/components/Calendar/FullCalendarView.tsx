@@ -23,10 +23,10 @@ interface FullCalendarViewProps {
   tasks: Task[]
   scheduled: ScheduledTask[]
   paletteId: string
-  onDrop: (time: string) => void
+  onExternalDrop: (taskId: string, time: string) => void  // CHANGED
+  onEventMove: (taskId: string, time: string) => void     // NEW - for moving existing events
   onUnschedule: (taskId: string) => void
   onComplete: (taskId: string) => void
-  onDragStart: (taskId: string) => void
   onDurationChange: (taskId: string, newDuration: number) => void
 }
 
@@ -42,10 +42,10 @@ export function FullCalendarView({
   tasks,
   scheduled,
   paletteId,
-  onDrop,
+  onExternalDrop,
+  onEventMove,
   onUnschedule,
   onComplete,
-  onDragStart,
   onDurationChange,
 }: FullCalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null)
@@ -82,14 +82,16 @@ export function FullCalendarView({
     }
   }).filter(Boolean) as EventInput[]
 
-  // Handle event drop (moving tasks)
+  // Handle event drop (moving existing scheduled tasks)
   const handleEventDrop = useCallback((dropInfo: EventDropArg) => {
     const newStart = dropInfo.event.start
     if (!newStart) return
     
+    const taskId = dropInfo.event.extendedProps.taskId
     const timeString = `${newStart.getHours().toString().padStart(2, '0')}:${newStart.getMinutes().toString().padStart(2, '0')}`
-    onDrop(timeString)
-  }, [onDrop])
+    
+    onEventMove(taskId, timeString)
+  }, [onEventMove])
 
   // Handle event resize (changing duration)
   const handleEventResize = useCallback((resizeInfo: any) => {
@@ -104,6 +106,25 @@ export function FullCalendarView({
     const snappedDuration = Math.round(newDuration / 15) * 15
     onDurationChange(taskId, Math.max(15, snappedDuration)) // Minimum 15 minutes
   }, [onDurationChange])
+
+  // Handle external drop (dragging from task list)
+  const handleEventReceive = useCallback((info: any) => {
+    const taskId = info.event.extendedProps.taskId
+    const start = info.event.start
+    
+    if (!taskId || !start) {
+      info.revert()
+      return
+    }
+    
+    const timeString = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`
+    
+    // Remove the temporary event - we'll add the real one via state
+    info.event.remove()
+    
+    // Trigger the actual scheduling
+    onExternalDrop(taskId, timeString)
+  }, [onExternalDrop])
 
   // Handle time slot selection (for dropping from task list)
   const handleDateSelect = useCallback((selectInfo: DateSelectArg) => {
@@ -154,34 +175,28 @@ export function FullCalendarView({
         <h2 className="text-lg font-semibold text-foreground">Today</h2>
       </div>
       
-      <div className="flex-1 p-4">
+      <div className="flex-1 overflow-auto p-4">
         <FullCalendar
           ref={calendarRef}
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridDay"
-          headerToolbar={false} // Hide default header since we have our own
+          headerToolbar={false}
           slotMinTime="06:00:00"
           slotMaxTime="22:00:00"
-          slotDuration="00:15:00" // 15-minute slots
-          slotLabelInterval="01:00:00" // Hour labels
+          slotDuration="00:15:00"
+          snapDuration="00:15:00"
+          slotLabelInterval="01:00:00"
           allDaySlot={false}
           editable={true}
           droppable={true}
-          selectable={true}
-          selectMirror={true}
           dayMaxEvents={true}
-          weekends={true}
           nowIndicator={true}
-          height="auto"
+          height="100%"
           events={events}
           eventDrop={handleEventDrop}
           eventResize={handleEventResize}
-          select={handleDateSelect}
+          eventReceive={handleEventReceive}
           eventClick={handleEventClick}
-          eventMouseEnter={(mouseEnterInfo) => {
-            // Show cursor pointer
-            mouseEnterInfo.el.style.cursor = 'pointer'
-          }}
           slotLabelFormat={{
             hour: 'numeric',
             minute: '2-digit',
