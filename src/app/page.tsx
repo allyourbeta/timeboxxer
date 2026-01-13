@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor } from '@/lib/palettes'
-import { completeTask, scheduleTask, updateScheduleTime } from '@/api'
+import { completeTask, scheduleTask, updateScheduleTime, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -117,6 +117,17 @@ export default function Home() {
     }
   }
 
+  const handleUnscheduleTask = async (taskId: string) => {
+    try {
+      await unscheduleTask(taskId)
+      
+      // Update local state: remove from schedule
+      setScheduled(scheduled.filter(s => s.task_id !== taskId))
+    } catch (error) {
+      console.error('Failed to unschedule task:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -214,13 +225,22 @@ export default function Home() {
                             <div className="font-medium text-white text-sm truncate">{scheduled.task.title}</div>
                             <div className="text-xs text-white/70">{scheduled.task.duration_minutes} min</div>
                           </div>
-                          <button
-                            onClick={() => handleCompleteTask(scheduled.task.id)}
-                            className="ml-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Mark complete"
-                          >
-                            ✓
-                          </button>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleUnscheduleTask(scheduled.task.id)}
+                              className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xs"
+                              title="Unschedule"
+                            >
+                              ×
+                            </button>
+                            <button
+                              onClick={() => handleCompleteTask(scheduled.task.id)}
+                              className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xs"
+                              title="Mark complete"
+                            >
+                              ✓
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
