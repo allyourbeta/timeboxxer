@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor, getPalette } from '@/lib/palettes'
-import { completeTask, createList, createTask, deleteTask, scheduleTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
+import { completeTask, createList, createTask, deleteList, deleteTask, scheduleTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -246,6 +246,24 @@ export default function Home() {
     }
   }
 
+  const handleDeleteList = async (listId: string) => {
+    try {
+      await deleteList(listId)
+      
+      // Update local state: remove list and reload tasks to show orphaned ones
+      setLists(lists.filter(l => l.id !== listId))
+      
+      // Re-fetch tasks to get updated list_id values for orphaned tasks
+      const supabase = getSupabase()
+      const { data: updatedTasks } = await supabase.from('tasks').select('*').order('position')
+      if (updatedTasks) {
+        setTasks(updatedTasks)
+      }
+    } catch (error) {
+      console.error('Failed to delete list:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -275,7 +293,7 @@ export default function Home() {
         {/* Left: Lists */}
         <div className="w-80 border-r border-gray-700 overflow-y-auto p-4 space-y-4">
           {lists.map(list => (
-            <div key={list.id} className="bg-gray-800 rounded-lg p-3">
+            <div key={list.id} className="bg-gray-800 rounded-lg p-3 group">
               {editingListId === list.id ? (
                 <input
                   type="text"
@@ -301,16 +319,25 @@ export default function Home() {
                   className="font-semibold text-gray-300 mb-2 w-full bg-gray-700 rounded px-2 py-1 border-none outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
-                <h2 
-                  className="font-semibold text-gray-300 mb-2 cursor-pointer hover:text-white transition-colors"
-                  onDoubleClick={() => {
-                    setEditingListId(list.id)
-                    setEditingListName(list.name)
-                  }}
-                  title="Double-click to rename"
-                >
-                  {list.name}
-                </h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 
+                    className="font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
+                    onDoubleClick={() => {
+                      setEditingListId(list.id)
+                      setEditingListName(list.name)
+                    }}
+                    title="Double-click to rename"
+                  >
+                    {list.name}
+                  </h2>
+                  <button
+                    onClick={() => handleDeleteList(list.id)}
+                    className="w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                    title="Delete list"
+                  >
+                    🗑
+                  </button>
+                </div>
               )}
               <div className="space-y-2">
                 {getTasksForList(list.id).map(task => (
