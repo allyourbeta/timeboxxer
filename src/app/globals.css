@@ -109,3 +109,86 @@
 .slide-in-from-top-2 {
   animation: slide-in-from-top 0.2s ease-out;
 }
+
+/* FullCalendar Styling */
+.fc {
+  font-family: inherit;
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border-color: hsl(var(--border));
+}
+
+.fc-theme-standard td, 
+.fc-theme-standard th {
+  border-color: hsl(var(--border));
+}
+
+.fc-theme-standard .fc-scrollgrid-section > * {
+  border-color: hsl(var(--border));
+}
+
+.fc-col-header-cell-cushion,
+.fc-timegrid-slot-label-cushion {
+  color: hsl(var(--muted-foreground));
+}
+
+.fc-timegrid-axis-cushion {
+  color: hsl(var(--muted-foreground));
+}
+
+.fc-timegrid-now-indicator-line {
+  border-color: hsl(var(--destructive));
+}
+
+.fc-timegrid-now-indicator-arrow {
+  border-top-color: hsl(var(--destructive));
+}
+
+.fc-event {
+  border-radius: 4px;
+  border-width: 1px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.fc-event:hover {
+  opacity: 0.9;
+}
+
+.fc-event-title {
+  font-weight: 500;
+}
+
+.fc-daygrid-event-harness {
+  margin: 1px 0;
+}
+
+.fc-timegrid-event-harness {
+  margin: 0 1px;
+}
+
+.fc-v-event {
+  background: none !important;
+  border: none !important;
+}
+
+.fc-v-event .fc-event-main {
+  background: var(--fc-event-bg-color, hsl(var(--primary)));
+  border: 1px solid var(--fc-event-border-color, hsl(var(--primary)));
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: white;
+}
+
+/* Selection highlighting */
+.fc-highlight {
+  background: hsl(var(--accent)) !important;
+  opacity: 0.3;
+}
+
+/* Time slot hover */
+.fc-timegrid-slot:hover {
+  background: hsl(var(--accent));
+  opacity: 0.1;
+}
