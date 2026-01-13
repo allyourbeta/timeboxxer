@@ -46,6 +46,9 @@ export default function Home() {
     root.style.setProperty('--bg-primary', selectedTheme.bgPrimary)
     root.style.setProperty('--bg-secondary', selectedTheme.bgSecondary)
     root.style.setProperty('--bg-tertiary', selectedTheme.bgTertiary)
+    root.style.setProperty('--text-primary', selectedTheme.textPrimary)
+    root.style.setProperty('--text-secondary', selectedTheme.textSecondary)
+    root.style.setProperty('--border-color', selectedTheme.borderColor)
   }, [backgroundTheme])
 
   // Close color picker on outside click
@@ -80,7 +83,7 @@ export default function Home() {
   }
   
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-white">
+    <div className="h-screen flex flex-col bg-theme-primary text-theme-primary">
       <Header 
         currentView={currentView} 
         panelMode={panelMode}

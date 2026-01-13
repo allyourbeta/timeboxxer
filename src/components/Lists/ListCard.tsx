@@ -66,7 +66,7 @@ export function ListCard({
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
   
   return (
-    <div className="bg-gray-800 rounded-lg p-3">
+    <div className="bg-theme-secondary rounded-lg p-3">
       {/* Header */}
       <div className={`flex items-center justify-between group ${!isExpanded ? 'mb-0' : 'mb-2'}`}>
         <div className="flex items-center gap-2 flex-1">
@@ -81,20 +81,20 @@ export function ListCard({
               }}
               onBlur={() => onFinishEdit(editName)}
               autoFocus
-              className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm"
+              className="flex-1 bg-theme-tertiary text-theme-primary px-2 py-1 rounded text-sm"
             />
           ) : (
             <>
               <h2
-                className="font-semibold text-gray-300 cursor-pointer hover:text-white"
+                className="font-semibold text-theme-primary cursor-pointer hover:text-theme-primary"
                 onDoubleClick={onStartEdit}
               >
                 {name}
               </h2>
-              <span className="text-gray-400 text-sm">({tasks.length})</span>
+              <span className="text-theme-secondary text-sm">({tasks.length})</span>
               <button
                 onClick={onToggleExpand}
-                className="text-gray-400 hover:text-white text-sm ml-auto"
+                className="text-theme-secondary hover:text-theme-primary text-sm ml-auto"
                 title={isExpanded ? "Collapse" : "Expand"}
               >
                 {isExpanded ? '▲' : '▼'}
@@ -107,7 +107,7 @@ export function ListCard({
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
             <button
               onClick={onStartDuplicate}
-              className="text-gray-400 hover:text-white text-sm"
+              className="text-theme-secondary hover:text-theme-primary text-sm"
               title="Duplicate list"
             >
               📋
@@ -115,7 +115,7 @@ export function ListCard({
             {!isInbox && (
               <button
                 onClick={onDelete}
-                className="text-gray-400 hover:text-white text-sm"
+                className="text-theme-secondary hover:text-theme-primary text-sm"
                 title="Delete list"
               >
                 🗑
@@ -170,7 +170,7 @@ export function ListCard({
               }
             }}
             autoFocus
-            className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded"
+            className="w-full p-2 text-sm bg-theme-tertiary text-theme-primary placeholder-theme-secondary rounded"
           />
         </div>
       )}

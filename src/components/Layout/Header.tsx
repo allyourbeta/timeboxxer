@@ -15,17 +15,17 @@ interface HeaderProps {
 
 export function Header({ currentView, panelMode, theme, backgroundTheme, onViewChange, onPanelModeChange, onThemeChange, onBackgroundThemeChange }: HeaderProps) {
   return (
-    <header className="p-4 border-b border-gray-700 flex items-center justify-between">
-      <h1 className="text-xl font-bold">Timeboxxer</h1>
+    <header className="p-4 border-b border-theme flex items-center justify-between">
+      <h1 className="text-xl font-bold text-theme-primary">Timeboxxer</h1>
       
       <div className="flex gap-4 items-center">
         {/* Panel Mode Controls - only show on main view */}
         {currentView === 'main' && (
-          <div className="flex gap-1 bg-gray-800 rounded-lg p-1">
+          <div className="flex gap-1 bg-theme-secondary rounded-lg p-1">
             <button
               onClick={() => onPanelModeChange('lists-only')}
               className={`px-3 py-1 rounded text-sm ${
-                panelMode === 'lists-only' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'
+                panelMode === 'lists-only' ? 'bg-theme-tertiary text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'
               }`}
             >
               Lists
@@ -33,7 +33,7 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
             <button
               onClick={() => onPanelModeChange('both')}
               className={`px-3 py-1 rounded text-sm ${
-                panelMode === 'both' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'
+                panelMode === 'both' ? 'bg-theme-tertiary text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'
               }`}
             >
               Both
@@ -41,7 +41,7 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
             <button
               onClick={() => onPanelModeChange('calendar-only')}
               className={`px-3 py-1 rounded text-sm ${
-                panelMode === 'calendar-only' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'
+                panelMode === 'calendar-only' ? 'bg-theme-tertiary text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'
               }`}
             >
               Calendar
@@ -53,7 +53,7 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
         <select
           value={backgroundTheme}
           onChange={(e) => onBackgroundThemeChange(e.target.value as BackgroundTheme)}
-          className="bg-gray-700 text-white rounded px-2 py-1 text-sm"
+          className="bg-theme-tertiary text-theme-primary rounded px-2 py-1 text-sm"
         >
           {Object.entries(backgroundThemes).map(([key, { name }]) => (
             <option key={key} value={key}>{name}</option>
@@ -67,7 +67,7 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
             className={`px-3 py-1 rounded text-sm transition-colors ${
               currentView === 'main'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                : 'text-theme-secondary hover:text-theme-primary'
             }`}
           >
             Today
@@ -77,7 +77,7 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
             className={`px-3 py-1 rounded text-sm transition-colors ${
               currentView === 'completed'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                : 'text-theme-secondary hover:text-theme-primary'
             }`}
           >
             Completed
@@ -87,7 +87,7 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
         {/* Theme Toggle */}
         <button
           onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
-          className="p-2 rounded hover:bg-gray-700"
+          className="p-2 rounded hover:bg-theme-tertiary"
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
           {theme === 'dark' ? '☀️' : '🌙'}

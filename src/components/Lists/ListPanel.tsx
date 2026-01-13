@@ -80,7 +80,7 @@ export function ListPanel({
   }
   
   return (
-    <div className="border-r border-gray-700 overflow-y-auto">
+    <div className="border-r border-theme overflow-y-auto">
       <div className="grid grid-cols-3 gap-4 p-4">
         {lists.map((list, index) => {
           const column = index % 3
@@ -125,7 +125,7 @@ export function ListPanel({
         
         {/* Add new list */}
         {showNewListInput ? (
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-theme-secondary rounded-lg p-3">
             <input
               type="text"
               placeholder="List name..."
@@ -148,13 +148,13 @@ export function ListPanel({
                 }
               }}
               autoFocus
-              className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded"
+              className="w-full p-2 text-sm bg-theme-tertiary text-theme-primary placeholder-theme-secondary rounded"
             />
           </div>
         ) : (
           <button
             onClick={() => onShowNewListInput(true)}
-            className="w-full p-3 text-left text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors border border-dashed border-gray-600"
+            className="w-full p-3 text-left text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary rounded-lg transition-colors border border-dashed border-theme"
           >
             + Add List
           </button>

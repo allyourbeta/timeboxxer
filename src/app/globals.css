@@ -1,19 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #111827;      /* gray-900 */
-  --bg-secondary: #1f2937;    /* gray-800 */
-  --bg-tertiary: #374151;     /* gray-700 */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
   --text-primary: #ffffff;
-  --text-secondary: #9ca3af;  /* gray-400 */
-  --border-color: #374151;    /* gray-700 */
+  --text-secondary: #9ca3af;
+  --border-color: #374151;
 }
 
-[data-theme='light'] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f3f4f6;    /* gray-100 */
-  --bg-tertiary: #e5e7eb;     /* gray-200 */
-  --text-primary: #111827;    /* gray-900 */
-  --text-secondary: #6b7280;  /* gray-500 */
-  --border-color: #e5e7eb;    /* gray-200 */
-}
+/* Utility classes that use CSS variables */
+.bg-theme-primary { background-color: var(--bg-primary); }
+.bg-theme-secondary { background-color: var(--bg-secondary); }
+.bg-theme-tertiary { background-color: var(--bg-tertiary); }
+.text-theme-primary { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+.border-theme { border-color: var(--border-color); }
