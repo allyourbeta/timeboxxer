@@ -49,13 +49,13 @@ export function TaskCard({
             e.stopPropagation()
             onColorClick()
           }}
-          className="w-4 h-4 rounded-full border-2 border-white/30 hover:border-white/60 flex-shrink-0 mt-1"
+          className="w-4 h-4 rounded-full border-2 border-[var(--text-primary)]/30 hover:border-[var(--text-primary)]/60 flex-shrink-0 mt-1"
           style={{ backgroundColor: bgColor }}
           title="Change color"
         />
         
         <div className="flex-1 min-w-0">
-          <div className={`font-medium text-white ${isCompleted ? 'line-through' : ''}`}>
+          <div className={`font-medium text-[var(--text-primary)] ${isCompleted ? 'line-through' : ''}`}>
             {title}
           </div>
           <button
@@ -63,7 +63,7 @@ export function TaskCard({
               e.stopPropagation()
               onDurationClick()
             }}
-            className="text-sm text-white/70 hover:text-white cursor-pointer"
+            className="text-sm text-[var(--text-primary)]/70 hover:text-[var(--text-primary)] cursor-pointer"
           >
             {durationMinutes} min
           </button>
@@ -75,7 +75,7 @@ export function TaskCard({
             e.stopPropagation()
             onDelete()
           }}
-          className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white transition-opacity"
+          className="opacity-0 group-hover:opacity-100 text-[var(--text-primary)]/70 hover:text-[var(--text-primary)] transition-opacity"
           title="Delete task"
         >
           🗑
@@ -85,7 +85,7 @@ export function TaskCard({
       {/* Color picker popover */}
       {isColorPickerOpen && (
         <div
-          className="absolute top-full left-0 mt-1 p-2 bg-gray-800 rounded-lg shadow-lg z-20 grid grid-cols-6 gap-1"
+          className="absolute top-full left-0 mt-1 p-2 bg-[var(--bg-secondary)] rounded-lg shadow-lg z-20 grid grid-cols-6 gap-1"
           onClick={(e) => e.stopPropagation()}
         >
           {Array.from({ length: 12 }).map((_, i) => (

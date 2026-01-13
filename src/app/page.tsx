@@ -5,7 +5,7 @@ import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/stat
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { DayView } from '@/components/Calendar'
-import { backgroundThemes } from '@/lib/backgroundThemes'
+import { themes } from '@/lib/backgroundThemes'
 
 const PALETTE_ID = 'ocean-bold'
 
@@ -18,7 +18,6 @@ export default function Home() {
     currentView, setCurrentView,
     panelMode, setPanelMode,
     theme, setTheme,
-    backgroundTheme, setBackgroundTheme,
     draggedTaskId, setDraggedTaskId,
     colorPickerTaskId, openColorPicker, closeColorPicker,
     editingListId, setEditingListId,
@@ -34,22 +33,16 @@ export default function Home() {
     loadSchedule()
   }, [loadTasks, loadLists, loadSchedule])
   
-  // Apply theme to document
+  // Single useEffect for theme:
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
+    const colors = themes[theme]
+    document.documentElement.style.setProperty('--bg-primary', colors.bgPrimary)
+    document.documentElement.style.setProperty('--bg-secondary', colors.bgSecondary)
+    document.documentElement.style.setProperty('--bg-tertiary', colors.bgTertiary)
+    document.documentElement.style.setProperty('--text-primary', colors.textPrimary)
+    document.documentElement.style.setProperty('--text-secondary', colors.textSecondary)
+    document.documentElement.style.setProperty('--border-color', colors.borderColor)
   }, [theme])
-
-  // Apply background theme to CSS variables
-  useEffect(() => {
-    const selectedTheme = backgroundThemes[backgroundTheme]
-    const root = document.documentElement
-    root.style.setProperty('--bg-primary', selectedTheme.bgPrimary)
-    root.style.setProperty('--bg-secondary', selectedTheme.bgSecondary)
-    root.style.setProperty('--bg-tertiary', selectedTheme.bgTertiary)
-    root.style.setProperty('--text-primary', selectedTheme.textPrimary)
-    root.style.setProperty('--text-secondary', selectedTheme.textSecondary)
-    root.style.setProperty('--border-color', selectedTheme.borderColor)
-  }, [backgroundTheme])
 
   // Close color picker on outside click
   useEffect(() => {
@@ -63,7 +56,7 @@ export default function Home() {
   const loading = tasksLoading || listsLoading || scheduleLoading
   
   if (loading) {
-    return <div className="h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>
+    return <div className="h-screen flex items-center justify-center bg-[var(--bg-primary)] text-[var(--text-primary)]">Loading...</div>
   }
   
   const handleDrop = async (time: string) => {
@@ -88,11 +81,9 @@ export default function Home() {
         currentView={currentView} 
         panelMode={panelMode}
         theme={theme}
-        backgroundTheme={backgroundTheme}
         onViewChange={setCurrentView} 
         onPanelModeChange={setPanelMode}
         onThemeChange={setTheme}
-        onBackgroundThemeChange={setBackgroundTheme}
       />
       
       <div className="flex flex-1 overflow-hidden">

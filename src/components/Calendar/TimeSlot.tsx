@@ -1,102 +1,123 @@
 'use client'
 
-import { useState } from 'react'
 import { ScheduledTaskBlock } from './ScheduledTaskBlock'
 
-interface ScheduledTask {
+interface ScheduledTaskInfo {
   taskId: string
   title: string
   durationMinutes: number
   colorIndex: number
+  isStart: boolean
 }
 
 interface TimeSlotProps {
   time: string
   isHour: boolean
   isHalfHour: boolean
-  scheduledTask: ScheduledTask | null
-  taskHeight: number
+  scheduledTasks: ScheduledTaskInfo[]
   paletteId: string
-  onDrop: () => void
-  onUnschedule: () => void
-  onComplete: () => void
-  onDragStart: () => void
-  onDurationChange: (newDuration: number) => void
+  isDropTarget: boolean  // NEW: highlight when this is the drop target
+  onUnschedule: (taskId: string) => void
+  onComplete: (taskId: string) => void
+  onDragStart: (taskId: string) => void
+  onDurationChange: (taskId: string, newDuration: number) => void
 }
 
 export function TimeSlot({
   time,
   isHour,
   isHalfHour,
-  scheduledTask,
-  taskHeight,
+  scheduledTasks,
   paletteId,
-  onDrop,
+  isDropTarget,
   onUnschedule,
   onComplete,
   onDragStart,
   onDurationChange,
 }: TimeSlotProps) {
-  const [isHovered, setIsHovered] = useState(false)
   
-  // Format time for display: "9:00 AM" format
+  // Format time: "7:00 AM", "7:15", "7:30", "7:45"
   const formatTime = (t: string) => {
     const [hour, minute] = t.split(':').map(Number)
     const period = hour >= 12 ? 'PM' : 'AM'
     const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
-    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`
+    
+    if (isHour) {
+      // Full format for hours: "7:00 AM"
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`
+    } else {
+      // Short format for 15/30/45: just ":15", ":30", ":45"
+      return `:${minute.toString().padStart(2, '0')}`
+    }
+  }
+  
+  const getTaskHeight = (duration: number) => {
+    const slots = duration / 15
+    return slots * 48 - 4
+  }
+
+  // Border style based on time
+  const getBorderStyle = () => {
+    if (isHour) {
+      return 'border-t-2 border-[var(--border-color)]'
+    } else if (isHalfHour) {
+      return 'border-t border-[var(--border-color)]'
+    } else {
+      return 'border-t border-[var(--border-color)] border-dashed'
+    }
   }
   return (
     <div
-      className={`h-12 flex items-stretch ${
-        isHour ? 'border-t-2 border-theme' : isHalfHour ? 'border-t border-theme/50' : 'border-t border-theme/20'
+      className={`h-12 flex items-stretch ${getBorderStyle()} ${
+        isDropTarget ? 'bg-blue-500/30 ring-2 ring-blue-500 ring-inset' : ''
       }`}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Time label column */}
-      <div className="w-20 flex items-start justify-end pr-3 pt-1 relative">
-        {isHour && (
-          <span className="text-sm font-semibold text-theme-primary">
-            {formatTime(time)}
-          </span>
-        )}
-        {isHalfHour && !isHour && (
-          <span className="text-xs text-theme-secondary">
-            {formatTime(time)}
-          </span>
-        )}
-        
-        {/* Hover tooltip showing exact time */}
-        {isHovered && !isHour && !isHalfHour && (
-          <span className="absolute right-3 top-1 text-xs bg-blue-500 text-white px-2 py-0.5 rounded shadow-lg z-20">
-            {formatTime(time)}
-          </span>
-        )}
+      {/* Time label column - ALWAYS visible */}
+      <div className="w-20 flex-shrink-0 flex items-start justify-end pr-3 pt-1">
+        <span className={`
+          ${isHour 
+            ? 'text-sm font-bold text-[var(--text-primary)]' 
+            : 'text-xs text-[var(--text-secondary)]'
+          }
+        `}>
+          {formatTime(time)}
+        </span>
       </div>
       
       {/* Slot area */}
       <div className="flex-1 relative">
-        {scheduledTask ? (
-          <ScheduledTaskBlock
-            title={scheduledTask.title}
-            durationMinutes={scheduledTask.durationMinutes}
-            colorIndex={scheduledTask.colorIndex}
-            paletteId={paletteId}
-            height={taskHeight}
-            onUnschedule={onUnschedule}
-            onComplete={onComplete}
-            onDragStart={onDragStart}
-            onDurationChange={onDurationChange}
-          />
+        {scheduledTasks.length > 0 ? (
+          <div className="flex gap-1 h-full">
+            {scheduledTasks.map((task, index) => {
+              // Only render full task blocks for tasks that start at this time
+              if (!task.isStart) return null
+              
+              // Calculate width based on number of tasks
+              const widthClass = scheduledTasks.filter(t => t.isStart).length === 1 
+                ? 'w-full' 
+                : scheduledTasks.filter(t => t.isStart).length === 2 
+                ? 'w-1/2' 
+                : 'w-1/3'
+              
+              return (
+                <div key={task.taskId} className={`${widthClass} relative`}>
+                  <ScheduledTaskBlock
+                    title={task.title}
+                    durationMinutes={task.durationMinutes}
+                    colorIndex={task.colorIndex}
+                    paletteId={paletteId}
+                    height={getTaskHeight(task.durationMinutes)}
+                    onUnschedule={() => onUnschedule(task.taskId)}
+                    onComplete={() => onComplete(task.taskId)}
+                    onDragStart={() => onDragStart(task.taskId)}
+                    onDurationChange={(newDuration) => onDurationChange(task.taskId, newDuration)}
+                  />
+                </div>
+              )
+            })}
+          </div>
         ) : (
-          <div 
-            className={`h-full w-full transition-colors ${
-              isHovered ? 'bg-blue-500/20' : 'hover:bg-theme-tertiary/30'
-            }`}
-          />
+          <div className="h-full w-full hover:bg-[var(--bg-tertiary)]/30 transition-colors" />
         )}
       </div>
     </div>

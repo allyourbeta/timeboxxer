@@ -1,54 +1,22 @@
-export const backgroundThemes = {
-  midnight: {
-    name: 'Midnight',
-    bgPrimary: '#111827',
-    bgSecondary: '#1f2937',
-    bgTertiary: '#374151',
+export const themes = {
+  dark: {
+    name: 'Dark',
+    bgPrimary: '#111827',      // gray-900
+    bgSecondary: '#1f2937',    // gray-800
+    bgTertiary: '#374151',     // gray-700
     textPrimary: '#ffffff',
-    textSecondary: '#9ca3af',
-    borderColor: '#374151',
-    isLight: false,
+    textSecondary: '#9ca3af',  // gray-400
+    borderColor: '#374151',    // gray-700
   },
-  slate: {
-    name: 'Slate',
-    bgPrimary: '#0f172a',
-    bgSecondary: '#1e293b',
-    bgTertiary: '#334155',
-    textPrimary: '#ffffff',
-    textSecondary: '#94a3b8',
-    borderColor: '#334155',
-    isLight: false,
-  },
-  ocean: {
-    name: 'Ocean',
-    bgPrimary: '#0c1929',
-    bgSecondary: '#152238',
-    bgTertiary: '#1e3a5f',
-    textPrimary: '#ffffff',
-    textSecondary: '#7dd3fc',
-    borderColor: '#1e3a5f',
-    isLight: false,
-  },
-  paper: {
-    name: 'Paper',
-    bgPrimary: '#faf7f2',
-    bgSecondary: '#f0ebe3',
-    bgTertiary: '#e6e0d4',
-    textPrimary: '#1f2937',
-    textSecondary: '#6b7280',
-    borderColor: '#d1d5db',
-    isLight: true,
-  },
-  snow: {
-    name: 'Snow',
+  light: {
+    name: 'Light',
     bgPrimary: '#ffffff',
-    bgSecondary: '#f8fafc',
-    bgTertiary: '#f1f5f9',
-    textPrimary: '#111827',
-    textSecondary: '#6b7280',
-    borderColor: '#e5e7eb',
-    isLight: true,
+    bgSecondary: '#f3f4f6',    // gray-100
+    bgTertiary: '#e5e7eb',     // gray-200
+    textPrimary: '#111827',    // gray-900
+    textSecondary: '#6b7280',  // gray-500
+    borderColor: '#d1d5db',    // gray-300
   },
 } as const
 
-export type BackgroundTheme = keyof typeof backgroundThemes
+export type Theme = keyof typeof themes

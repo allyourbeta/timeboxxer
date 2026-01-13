@@ -25,7 +25,7 @@ export function AddTaskInput({ onAdd }: AddTaskInputProps) {
       onKeyPress={(e) => {
         if (e.key === 'Enter') handleSubmit()
       }}
-      className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
+      className="w-full p-2 text-sm bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] rounded border-none outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
     />
   )
 }

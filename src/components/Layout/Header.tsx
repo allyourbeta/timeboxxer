@@ -1,47 +1,58 @@
 'use client'
 
-import { backgroundThemes, BackgroundTheme } from '@/lib/backgroundThemes'
+import { Theme } from '@/lib/backgroundThemes'
 
 interface HeaderProps {
   currentView: 'main' | 'completed'
   panelMode: 'both' | 'lists-only' | 'calendar-only'
-  theme: 'light' | 'dark'
-  backgroundTheme: BackgroundTheme
+  theme: Theme
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
-  onThemeChange: (theme: 'light' | 'dark') => void
-  onBackgroundThemeChange: (theme: BackgroundTheme) => void
+  onThemeChange: (theme: Theme) => void
 }
 
-export function Header({ currentView, panelMode, theme, backgroundTheme, onViewChange, onPanelModeChange, onThemeChange, onBackgroundThemeChange }: HeaderProps) {
+export function Header({ 
+  currentView, 
+  panelMode, 
+  theme, 
+  onViewChange, 
+  onPanelModeChange, 
+  onThemeChange 
+}: HeaderProps) {
   return (
-    <header className="p-4 border-b border-theme flex items-center justify-between">
-      <h1 className="text-xl font-bold text-theme-primary">Timeboxxer</h1>
+    <header className="h-14 px-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-primary)]">
+      <h1 className="text-xl font-bold text-[var(--text-primary)]">Timeboxxer</h1>
       
-      <div className="flex gap-4 items-center">
+      <div className="flex items-center gap-3">
         {/* Panel Mode Controls - only show on main view */}
         {currentView === 'main' && (
-          <div className="flex gap-1 bg-theme-secondary rounded-lg p-1">
+          <div className="flex h-9 items-center bg-[var(--bg-secondary)] rounded-lg p-1">
             <button
               onClick={() => onPanelModeChange('lists-only')}
-              className={`px-3 py-1 rounded text-sm ${
-                panelMode === 'lists-only' ? 'bg-theme-tertiary text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'
+              className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
+                panelMode === 'lists-only' 
+                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' 
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               Lists
             </button>
             <button
               onClick={() => onPanelModeChange('both')}
-              className={`px-3 py-1 rounded text-sm ${
-                panelMode === 'both' ? 'bg-theme-tertiary text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'
+              className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
+                panelMode === 'both' 
+                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' 
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               Both
             </button>
             <button
               onClick={() => onPanelModeChange('calendar-only')}
-              className={`px-3 py-1 rounded text-sm ${
-                panelMode === 'calendar-only' ? 'bg-theme-tertiary text-theme-primary' : 'text-theme-secondary hover:text-theme-primary'
+              className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
+                panelMode === 'calendar-only' 
+                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' 
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               Calendar
@@ -49,49 +60,38 @@ export function Header({ currentView, panelMode, theme, backgroundTheme, onViewC
           </div>
         )}
         
-        {/* Background Theme Dropdown */}
-        <select
-          value={backgroundTheme}
-          onChange={(e) => onBackgroundThemeChange(e.target.value as BackgroundTheme)}
-          className="bg-theme-tertiary text-theme-primary rounded px-2 py-1 text-sm"
+        {/* Theme Toggle - same height as other controls */}
+        <button
+          onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+          className="h-9 w-9 flex items-center justify-center rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
-          {Object.entries(backgroundThemes).map(([key, { name }]) => (
-            <option key={key} value={key}>{name}</option>
-          ))}
-        </select>
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
         
-        {/* View Controls */}
-        <div className="flex gap-2">
+        {/* View Controls - same height */}
+        <div className="flex h-9 items-center bg-[var(--bg-secondary)] rounded-lg p-1">
           <button
             onClick={() => onViewChange('main')}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
+            className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
               currentView === 'main'
                 ? 'bg-blue-500 text-white'
-                : 'text-theme-secondary hover:text-theme-primary'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             Today
           </button>
           <button
             onClick={() => onViewChange('completed')}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
+            className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
               currentView === 'completed'
                 ? 'bg-blue-500 text-white'
-                : 'text-theme-secondary hover:text-theme-primary'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             Completed
           </button>
         </div>
-        
-        {/* Theme Toggle */}
-        <button
-          onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
-          className="p-2 rounded hover:bg-theme-tertiary"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
       </div>
     </header>
   )

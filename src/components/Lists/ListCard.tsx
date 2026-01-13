@@ -65,49 +65,84 @@ export function ListCard({
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
   
+  // Get the first task's color for accent bar
+  const getFirstTaskColor = () => {
+    if (tasks.length === 0) return '#6366f1' // Default indigo
+    const firstTask = tasks[0]
+    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']
+    return colors[firstTask.color_index] || '#6366f1'
+  }
+  
   return (
-    <div className="bg-theme-secondary rounded-lg p-3">
-      {/* Header */}
-      <div className={`flex items-center justify-between group ${!isExpanded ? 'mb-0' : 'mb-2'}`}>
-        <div className="flex items-center gap-2 flex-1">
-          {isEditing ? (
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') onFinishEdit(editName)
-                if (e.key === 'Escape') onCancelEdit()
-              }}
-              onBlur={() => onFinishEdit(editName)}
-              autoFocus
-              className="flex-1 bg-theme-tertiary text-theme-primary px-2 py-1 rounded text-sm"
+    <div className={`
+      rounded-xl overflow-hidden transition-all duration-200
+      ${isExpanded 
+        ? 'bg-theme-secondary shadow-lg ring-1 ring-white/10' 
+        : 'bg-theme-secondary/50 hover:bg-theme-secondary hover:shadow-md'
+      }
+    `}>
+      {/* Header - always visible */}
+      {isEditing ? (
+        <div className="p-4">
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') onFinishEdit(editName)
+              if (e.key === 'Escape') onCancelEdit()
+            }}
+            onBlur={() => onFinishEdit(editName)}
+            autoFocus
+            className="w-full bg-theme-tertiary text-theme-primary px-3 py-2 rounded-lg text-sm"
+          />
+        </div>
+      ) : (
+        <button
+          onClick={onToggleExpand}
+          className="w-full p-4 flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            {/* Colored accent bar */}
+            <div 
+              className="w-1 h-8 rounded-full"
+              style={{ backgroundColor: getFirstTaskColor() }}
             />
-          ) : (
-            <>
-              <h2
-                className="font-semibold text-theme-primary cursor-pointer hover:text-theme-primary"
-                onDoubleClick={onStartEdit}
+            <div className="text-left">
+              <h3 
+                className="font-semibold text-theme-primary"
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  onStartEdit()
+                }}
               >
                 {name}
-              </h2>
-              <span className="text-theme-secondary text-sm">({tasks.length})</span>
-              <button
-                onClick={onToggleExpand}
-                className="text-theme-secondary hover:text-theme-primary text-sm ml-auto"
-                title={isExpanded ? "Collapse" : "Expand"}
-              >
-                {isExpanded ? '▲' : '▼'}
-              </button>
-            </>
-          )}
-        </div>
-        
-        {!isEditing && isExpanded && (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+              </h3>
+              <p className="text-sm text-theme-secondary">{tasks.length} tasks</p>
+            </div>
+          </div>
+          
+          {/* Expand/collapse icon - animated */}
+          <div className={`
+            w-8 h-8 rounded-full bg-theme-tertiary/50 
+            flex items-center justify-center
+            transition-transform duration-200
+            ${isExpanded ? 'rotate-180' : ''}
+          `}>
+            <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+      )}
+      
+      {/* Action buttons - only when expanded and not editing */}
+      {!isEditing && isExpanded && (
+        <div className="px-4 pb-2">
+          <div className="flex justify-end gap-2">
             <button
               onClick={onStartDuplicate}
-              className="text-theme-secondary hover:text-theme-primary text-sm"
+              className="p-2 rounded-lg bg-theme-tertiary/50 hover:bg-theme-tertiary text-theme-secondary hover:text-theme-primary transition-colors"
               title="Duplicate list"
             >
               📋
@@ -115,19 +150,19 @@ export function ListCard({
             {!isInbox && (
               <button
                 onClick={onDelete}
-                className="text-theme-secondary hover:text-theme-primary text-sm"
+                className="p-2 rounded-lg bg-theme-tertiary/50 hover:bg-theme-tertiary text-theme-secondary hover:text-theme-primary transition-colors"
                 title="Delete list"
               >
                 🗑
               </button>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
-      {/* Tasks - Only show when expanded */}
+      {/* Expanded content with animation */}
       {isExpanded && (
-        <div className="space-y-2">
+        <div className="px-4 pb-4 space-y-2 animate-in slide-in-from-top-2">
           {tasks.map(task => (
             <TaskCard
               key={task.id}
@@ -152,7 +187,7 @@ export function ListCard({
       
       {/* Duplicate input */}
       {isDuplicating && (
-        <div className="mt-2">
+        <div className="px-4 pb-4">
           <input
             type="text"
             placeholder="New list name..."
@@ -170,7 +205,7 @@ export function ListCard({
               }
             }}
             autoFocus
-            className="w-full p-2 text-sm bg-theme-tertiary text-theme-primary placeholder-theme-secondary rounded"
+            className="w-full p-3 text-sm bg-theme-tertiary text-theme-primary placeholder-theme-secondary rounded-lg"
           />
         </div>
       )}

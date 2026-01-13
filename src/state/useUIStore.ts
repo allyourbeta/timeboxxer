@@ -1,5 +1,15 @@
 import { create } from 'zustand'
-import { BackgroundTheme } from '@/lib/backgroundThemes'
+import { Theme, themes } from '@/lib/backgroundThemes'
+
+// Helper to validate stored theme
+const getValidTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'dark'
+  const stored = localStorage.getItem('theme')
+  if (stored && stored in themes) {
+    return stored as Theme
+  }
+  return 'dark'
+}
 
 interface UIStore {
   // View state
@@ -35,13 +45,9 @@ interface UIStore {
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   setPanelMode: (mode: 'both' | 'lists-only' | 'calendar-only') => void
   
-  // Theme
-  theme: 'light' | 'dark'
-  setTheme: (theme: 'light' | 'dark') => void
-  
-  // Background theme
-  backgroundTheme: BackgroundTheme
-  setBackgroundTheme: (theme: BackgroundTheme) => void
+  // Theme (just light/dark now)
+  theme: Theme
+  setTheme: (theme: Theme) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -75,19 +81,11 @@ export const useUIStore = create<UIStore>((set) => ({
   panelMode: 'both',
   setPanelMode: (mode) => set({ panelMode: mode }),
   
-  theme: (typeof window !== 'undefined' && localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
+  theme: getValidTheme(),
   setTheme: (theme) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('theme', theme)
     }
     set({ theme })
-  },
-  
-  backgroundTheme: (typeof window !== 'undefined' && localStorage.getItem('backgroundTheme') as BackgroundTheme) || 'midnight',
-  setBackgroundTheme: (backgroundTheme) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('backgroundTheme', backgroundTheme)
-    }
-    set({ backgroundTheme })
   },
 }))
