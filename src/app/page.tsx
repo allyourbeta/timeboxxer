@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor } from '@/lib/palettes'
-import { completeTask, scheduleTask, updateScheduleTime, unscheduleTask } from '@/api'
+import { completeTask, createTask, scheduleTask, updateScheduleTime, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -51,6 +51,7 @@ export default function Home() {
   const [scheduled, setScheduled] = useState<ScheduledTask[]>([])
   const [loading, setLoading] = useState(true)
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
+  const [newTaskInputs, setNewTaskInputs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     async function loadData() {
@@ -128,6 +129,22 @@ export default function Home() {
     }
   }
 
+  const handleCreateTask = async (listId: string, title: string) => {
+    if (!title.trim()) return
+    
+    try {
+      const newTask = await createTask(listId, title.trim())
+      
+      // Update local state: add new task
+      setTasks([...tasks, newTask])
+      
+      // Clear input
+      setNewTaskInputs({ ...newTaskInputs, [listId]: '' })
+    } catch (error) {
+      console.error('Failed to create task:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -180,6 +197,18 @@ export default function Home() {
                     }`}>{task.duration_minutes} min</div>
                   </div>
                 ))}
+                <input
+                  type="text"
+                  placeholder="Add task..."
+                  value={newTaskInputs[list.id] || ''}
+                  onChange={(e) => setNewTaskInputs({ ...newTaskInputs, [list.id]: e.target.value })}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateTask(list.id, newTaskInputs[list.id] || '')
+                    }
+                  }}
+                  className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
           ))}
