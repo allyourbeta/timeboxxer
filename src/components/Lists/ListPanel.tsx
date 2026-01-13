@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Draggable } from '@fullcalendar/interaction'
+import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
 
 interface Task {
@@ -69,6 +71,36 @@ export function ListPanel({
   onTaskCreate,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Initialize FullCalendar Draggable for external drag
+  useEffect(() => {
+    if (!containerRef.current) return
+    
+    const draggable = new Draggable(containerRef.current, {
+      itemSelector: '[data-task-id]',
+      eventData: (eventEl) => {
+        const taskId = eventEl.getAttribute('data-task-id')
+        const title = eventEl.getAttribute('data-title')
+        const duration = parseInt(eventEl.getAttribute('data-duration') || '30', 10)
+        const color = eventEl.getAttribute('data-color')
+        
+        return {
+          id: `temp-${taskId}`,
+          title: title || 'Task',
+          duration: { minutes: duration },
+          backgroundColor: color,
+          borderColor: color,
+          extendedProps: {
+            taskId,
+            isExternal: true
+          }
+        }
+      }
+    })
+    
+    return () => draggable.destroy()
+  }, [])
   
   const getTasksForList = (listId: string) =>
     tasks.filter(t => t.list_id === listId && !t.is_completed)
@@ -80,7 +112,7 @@ export function ListPanel({
   }
   
   return (
-    <div className="border-r border-theme overflow-y-auto">
+    <div ref={containerRef} className="border-r border-theme overflow-y-auto">
       <div className="grid grid-cols-3 gap-4 p-4">
         {lists.map((list, index) => {
           const column = index % 3
