@@ -37,13 +37,15 @@ export function TaskCard({
   
   return (
     <div
-      draggable={!isCompleted}
-      onDragStart={onDragStart}
-      className={`p-3 rounded-lg cursor-grab active:cursor-grabbing transition-transform hover:scale-[1.02] group relative ${
-        isCompleted ? 'opacity-50' : ''
+      className={`fc-event p-3 rounded-lg cursor-grab active:cursor-grabbing transition-transform hover:scale-[1.02] group relative ${
+        isCompleted ? 'opacity-50 pointer-events-none' : ''
       }`}
       style={{ backgroundColor: bgColor }}
       data-task-id={id}
+      data-title={title}
+      data-duration={durationMinutes}
+      data-color-index={colorIndex}
+      data-color={bgColor}
     >
       <div className="flex items-start gap-2">
         {/* Color dot */}
