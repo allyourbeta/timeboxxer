@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor } from '@/lib/palettes'
-import { completeTask, createTask, scheduleTask, updateScheduleTime, unscheduleTask } from '@/api'
+import { completeTask, createTask, deleteTask, scheduleTask, updateScheduleTime, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -145,6 +145,18 @@ export default function Home() {
     }
   }
 
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTask(taskId)
+      
+      // Update local state: remove task and any schedule
+      setTasks(tasks.filter(t => t.id !== taskId))
+      setScheduled(scheduled.filter(s => s.task_id !== taskId))
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -182,7 +194,7 @@ export default function Home() {
                     key={task.id}
                     draggable={!task.is_completed}
                     onDragStart={() => !task.is_completed && handleDragStart(task)}
-                    className={`p-3 rounded transition-transform hover:scale-[1.02] ${
+                    className={`p-3 rounded transition-transform hover:scale-[1.02] group relative ${
                       task.is_completed 
                         ? 'opacity-50 cursor-default' 
                         : 'cursor-grab active:cursor-grabbing'
@@ -195,6 +207,13 @@ export default function Home() {
                     <div className={`text-sm text-white/70 ${
                       task.is_completed ? 'line-through' : ''
                     }`}>{task.duration_minutes} min</div>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete task"
+                    >
+                      🗑
+                    </button>
                   </div>
                 ))}
                 <input
