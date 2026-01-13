@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor, getPalette } from '@/lib/palettes'
-import { completeTask, createList, createTask, deleteTask, scheduleTask, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
+import { completeTask, createList, createTask, deleteTask, scheduleTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -55,6 +55,8 @@ export default function Home() {
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null)
   const [showNewListInput, setShowNewListInput] = useState(false)
   const [newListName, setNewListName] = useState('')
+  const [editingListId, setEditingListId] = useState<string | null>(null)
+  const [editingListName, setEditingListName] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -225,6 +227,25 @@ export default function Home() {
     }
   }
 
+  const handleRenameList = async (listId: string, newName: string) => {
+    if (!newName.trim()) return
+    
+    try {
+      await updateList(listId, newName.trim())
+      
+      // Update local state: change list name
+      setLists(lists.map(l => 
+        l.id === listId ? { ...l, name: newName.trim() } : l
+      ))
+      
+      // Reset editing state
+      setEditingListId(null)
+      setEditingListName('')
+    } catch (error) {
+      console.error('Failed to update list:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -255,7 +276,42 @@ export default function Home() {
         <div className="w-80 border-r border-gray-700 overflow-y-auto p-4 space-y-4">
           {lists.map(list => (
             <div key={list.id} className="bg-gray-800 rounded-lg p-3">
-              <h2 className="font-semibold text-gray-300 mb-2">{list.name}</h2>
+              {editingListId === list.id ? (
+                <input
+                  type="text"
+                  value={editingListName}
+                  onChange={(e) => setEditingListName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleRenameList(list.id, editingListName)
+                    } else if (e.key === 'Escape') {
+                      setEditingListId(null)
+                      setEditingListName('')
+                    }
+                  }}
+                  onBlur={() => {
+                    if (editingListName.trim()) {
+                      handleRenameList(list.id, editingListName)
+                    } else {
+                      setEditingListId(null)
+                      setEditingListName('')
+                    }
+                  }}
+                  autoFocus
+                  className="font-semibold text-gray-300 mb-2 w-full bg-gray-700 rounded px-2 py-1 border-none outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              ) : (
+                <h2 
+                  className="font-semibold text-gray-300 mb-2 cursor-pointer hover:text-white transition-colors"
+                  onDoubleClick={() => {
+                    setEditingListId(list.id)
+                    setEditingListName(list.name)
+                  }}
+                  title="Double-click to rename"
+                >
+                  {list.name}
+                </h2>
+              )}
               <div className="space-y-2">
                 {getTasksForList(list.id).map(task => (
                   <div
