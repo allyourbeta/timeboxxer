@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Input } from '@/components/ui/input'
 
 interface AddTaskInputProps {
   onAdd: (title: string) => void
@@ -17,7 +18,7 @@ export function AddTaskInput({ onAdd }: AddTaskInputProps) {
   }
   
   return (
-    <input
+    <Input
       type="text"
       placeholder="Add task..."
       value={value}
@@ -25,7 +26,6 @@ export function AddTaskInput({ onAdd }: AddTaskInputProps) {
       onKeyPress={(e) => {
         if (e.key === 'Enter') handleSubmit()
       }}
-      className="w-full p-2 text-sm bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] rounded border-none outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
     />
   )
 }

@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronDown, Copy, Trash2 } from 'lucide-react'
 import { TaskCard, AddTaskInput } from '@/components/Tasks'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface Task {
   id: string
@@ -67,24 +70,24 @@ export function ListCard({
   
   // Get the first task's color for accent bar
   const getFirstTaskColor = () => {
-    if (tasks.length === 0) return '#6366f1' // Default indigo
+    if (tasks.length === 0) return 'hsl(var(--primary))' // Default primary color
     const firstTask = tasks[0]
     const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']
-    return colors[firstTask.color_index] || '#6366f1'
+    return colors[firstTask.color_index] || 'hsl(var(--primary))'
   }
   
   return (
     <div className={`
       rounded-xl overflow-hidden transition-all duration-200
       ${isExpanded 
-        ? 'bg-theme-secondary shadow-lg ring-1 ring-white/10' 
-        : 'bg-theme-secondary/50 hover:bg-theme-secondary hover:shadow-md'
+        ? 'bg-card shadow-lg ring-1 ring-border' 
+        : 'bg-card/50 hover:bg-card hover:shadow-md'
       }
     `}>
       {/* Header - always visible */}
       {isEditing ? (
         <div className="p-4">
-          <input
+          <Input
             type="text"
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
@@ -94,13 +97,12 @@ export function ListCard({
             }}
             onBlur={() => onFinishEdit(editName)}
             autoFocus
-            className="w-full bg-theme-tertiary text-theme-primary px-3 py-2 rounded-lg text-sm"
           />
         </div>
       ) : (
         <button
           onClick={onToggleExpand}
-          className="w-full p-4 flex items-center justify-between group"
+          className="w-full p-4 flex items-center justify-between group hover:bg-accent/50 transition-colors"
         >
           <div className="flex items-center gap-3">
             {/* Colored accent bar */}
@@ -110,7 +112,7 @@ export function ListCard({
             />
             <div className="text-left">
               <h3 
-                className="font-semibold text-theme-primary"
+                className="font-semibold text-foreground"
                 onDoubleClick={(e) => {
                   e.stopPropagation()
                   onStartEdit()
@@ -118,20 +120,18 @@ export function ListCard({
               >
                 {name}
               </h3>
-              <p className="text-sm text-theme-secondary">{tasks.length} tasks</p>
+              <p className="text-sm text-muted-foreground">{tasks.length} tasks</p>
             </div>
           </div>
           
           {/* Expand/collapse icon - animated */}
           <div className={`
-            w-8 h-8 rounded-full bg-theme-tertiary/50 
+            w-8 h-8 rounded-full bg-muted/50 
             flex items-center justify-center
             transition-transform duration-200
             ${isExpanded ? 'rotate-180' : ''}
           `}>
-            <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
           </div>
         </button>
       )}
@@ -140,21 +140,25 @@ export function ListCard({
       {!isEditing && isExpanded && (
         <div className="px-4 pb-2">
           <div className="flex justify-end gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={onStartDuplicate}
-              className="p-2 rounded-lg bg-theme-tertiary/50 hover:bg-theme-tertiary text-theme-secondary hover:text-theme-primary transition-colors"
+              className="h-8 w-8"
               title="Duplicate list"
             >
-              📋
-            </button>
+              <Copy className="h-3 w-3" />
+            </Button>
             {!isInbox && (
-              <button
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={onDelete}
-                className="p-2 rounded-lg bg-theme-tertiary/50 hover:bg-theme-tertiary text-theme-secondary hover:text-theme-primary transition-colors"
+                className="h-8 w-8 hover:bg-destructive hover:text-destructive-foreground"
                 title="Delete list"
               >
-                🗑
-              </button>
+                <Trash2 className="h-3 w-3" />
+              </Button>
             )}
           </div>
         </div>
@@ -188,7 +192,7 @@ export function ListCard({
       {/* Duplicate input */}
       {isDuplicating && (
         <div className="px-4 pb-4">
-          <input
+          <Input
             type="text"
             placeholder="New list name..."
             value={duplicateName}
@@ -205,7 +209,6 @@ export function ListCard({
               }
             }}
             autoFocus
-            className="w-full p-3 text-sm bg-theme-tertiary text-theme-primary placeholder-theme-secondary rounded-lg"
           />
         </div>
       )}
