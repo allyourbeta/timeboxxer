@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { BackgroundTheme } from '@/lib/backgroundThemes'
 
 interface UIStore {
   // View state
@@ -37,6 +38,10 @@ interface UIStore {
   // Theme
   theme: 'light' | 'dark'
   setTheme: (theme: 'light' | 'dark') => void
+  
+  // Background theme
+  backgroundTheme: BackgroundTheme
+  setBackgroundTheme: (theme: BackgroundTheme) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -76,5 +81,13 @@ export const useUIStore = create<UIStore>((set) => ({
       localStorage.setItem('theme', theme)
     }
     set({ theme })
+  },
+  
+  backgroundTheme: (typeof window !== 'undefined' && localStorage.getItem('backgroundTheme') as BackgroundTheme) || 'midnight',
+  setBackgroundTheme: (backgroundTheme) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('backgroundTheme', backgroundTheme)
+    }
+    set({ backgroundTheme })
   },
 }))

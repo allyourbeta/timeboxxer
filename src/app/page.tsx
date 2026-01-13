@@ -5,6 +5,7 @@ import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/stat
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { DayView } from '@/components/Calendar'
+import { backgroundThemes } from '@/lib/backgroundThemes'
 
 const PALETTE_ID = 'ocean-bold'
 
@@ -17,6 +18,7 @@ export default function Home() {
     currentView, setCurrentView,
     panelMode, setPanelMode,
     theme, setTheme,
+    backgroundTheme, setBackgroundTheme,
     draggedTaskId, setDraggedTaskId,
     colorPickerTaskId, openColorPicker, closeColorPicker,
     editingListId, setEditingListId,
@@ -36,6 +38,15 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
+
+  // Apply background theme to CSS variables
+  useEffect(() => {
+    const selectedTheme = backgroundThemes[backgroundTheme]
+    const root = document.documentElement
+    root.style.setProperty('--bg-primary', selectedTheme.bgPrimary)
+    root.style.setProperty('--bg-secondary', selectedTheme.bgSecondary)
+    root.style.setProperty('--bg-tertiary', selectedTheme.bgTertiary)
+  }, [backgroundTheme])
 
   // Close color picker on outside click
   useEffect(() => {
@@ -74,9 +85,11 @@ export default function Home() {
         currentView={currentView} 
         panelMode={panelMode}
         theme={theme}
+        backgroundTheme={backgroundTheme}
         onViewChange={setCurrentView} 
         onPanelModeChange={setPanelMode}
         onThemeChange={setTheme}
+        onBackgroundThemeChange={setBackgroundTheme}
       />
       
       <div className="flex flex-1 overflow-hidden">

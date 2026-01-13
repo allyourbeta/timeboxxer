@@ -1,15 +1,19 @@
 'use client'
 
+import { backgroundThemes, BackgroundTheme } from '@/lib/backgroundThemes'
+
 interface HeaderProps {
   currentView: 'main' | 'completed'
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   theme: 'light' | 'dark'
+  backgroundTheme: BackgroundTheme
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
   onThemeChange: (theme: 'light' | 'dark') => void
+  onBackgroundThemeChange: (theme: BackgroundTheme) => void
 }
 
-export function Header({ currentView, panelMode, theme, onViewChange, onPanelModeChange, onThemeChange }: HeaderProps) {
+export function Header({ currentView, panelMode, theme, backgroundTheme, onViewChange, onPanelModeChange, onThemeChange, onBackgroundThemeChange }: HeaderProps) {
   return (
     <header className="p-4 border-b border-gray-700 flex items-center justify-between">
       <h1 className="text-xl font-bold">Timeboxxer</h1>
@@ -44,6 +48,17 @@ export function Header({ currentView, panelMode, theme, onViewChange, onPanelMod
             </button>
           </div>
         )}
+        
+        {/* Background Theme Dropdown */}
+        <select
+          value={backgroundTheme}
+          onChange={(e) => onBackgroundThemeChange(e.target.value as BackgroundTheme)}
+          className="bg-gray-700 text-white rounded px-2 py-1 text-sm"
+        >
+          {Object.entries(backgroundThemes).map(([key, { name }]) => (
+            <option key={key} value={key}>{name}</option>
+          ))}
+        </select>
         
         {/* View Controls */}
         <div className="flex gap-2">
