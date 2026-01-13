@@ -32,7 +32,6 @@ interface ListCardProps {
   onFinishDuplicate: (newName: string) => void
   onCancelDuplicate: () => void
   onDelete: () => void
-  onTaskDragStart: (taskId: string) => void
   onTaskDurationClick: (taskId: string, currentDuration: number) => void
   onTaskColorClick: (taskId: string) => void
   onTaskColorSelect: (taskId: string, colorIndex: number) => void
@@ -58,7 +57,6 @@ export function ListCard({
   onFinishDuplicate,
   onCancelDuplicate,
   onDelete,
-  onTaskDragStart,
   onTaskDurationClick,
   onTaskColorClick,
   onTaskColorSelect,
@@ -177,7 +175,6 @@ export function ListCard({
               isCompleted={task.is_completed}
               paletteId={paletteId}
               isColorPickerOpen={colorPickerTaskId === task.id}
-              onDragStart={() => onTaskDragStart(task.id)}
               onDurationClick={() => onTaskDurationClick(task.id, task.duration_minutes)}
               onColorClick={() => onTaskColorClick(task.id)}
               onColorSelect={(colorIndex) => onTaskColorSelect(task.id, colorIndex)}

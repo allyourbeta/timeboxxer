@@ -12,7 +12,6 @@ interface TaskCardProps {
   isCompleted: boolean
   paletteId: string
   isColorPickerOpen: boolean
-  onDragStart: () => void
   onDurationClick: () => void
   onColorClick: () => void
   onColorSelect: (colorIndex: number) => void
@@ -27,7 +26,6 @@ export function TaskCard({
   isCompleted,
   paletteId,
   isColorPickerOpen,
-  onDragStart,
   onDurationClick,
   onColorClick,
   onColorSelect,

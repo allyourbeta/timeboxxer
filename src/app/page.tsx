@@ -102,7 +102,6 @@ export default function Home() {
                   onSetEditingListId={setEditingListId}
                   onSetDuplicatingListId={setDuplicatingListId}
                   onToggleListExpanded={toggleListExpanded}
-                  onTaskDragStart={setDraggedTaskId}
                   onTaskDurationChange={handleDurationChange}
                   onTaskColorClick={openColorPicker}
                   onTaskColorSelect={handleColorSelect}

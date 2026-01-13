@@ -38,7 +38,6 @@ interface ListPanelProps {
   onSetEditingListId: (listId: string | null) => void
   onSetDuplicatingListId: (listId: string | null) => void
   onToggleListExpanded: (listId: string, column: number) => void
-  onTaskDragStart: (taskId: string) => void
   onTaskDurationChange: (taskId: string, duration: number) => void
   onTaskColorClick: (taskId: string) => void
   onTaskColorSelect: (taskId: string, colorIndex: number) => void
@@ -63,7 +62,6 @@ export function ListPanel({
   onSetEditingListId,
   onSetDuplicatingListId,
   onToggleListExpanded,
-  onTaskDragStart,
   onTaskDurationChange,
   onTaskColorClick,
   onTaskColorSelect,
@@ -143,7 +141,6 @@ export function ListPanel({
               }}
               onCancelDuplicate={() => onSetDuplicatingListId(null)}
               onDelete={() => onDeleteList(list.id)}
-              onTaskDragStart={onTaskDragStart}
               onTaskDurationClick={(taskId, duration) => 
                 onTaskDurationChange(taskId, cycleDuration(duration))
               }
