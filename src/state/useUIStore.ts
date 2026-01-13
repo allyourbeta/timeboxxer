@@ -1,15 +1,4 @@
 import { create } from 'zustand'
-import { Theme, themes } from '@/lib/backgroundThemes'
-
-// Helper to validate stored theme
-const getValidTheme = (): Theme => {
-  if (typeof window === 'undefined') return 'dark'
-  const stored = localStorage.getItem('theme')
-  if (stored && stored in themes) {
-    return stored as Theme
-  }
-  return 'dark'
-}
 
 interface UIStore {
   // View state
@@ -44,10 +33,6 @@ interface UIStore {
   // Panel focus modes
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   setPanelMode: (mode: 'both' | 'lists-only' | 'calendar-only') => void
-  
-  // Theme (just light/dark now)
-  theme: Theme
-  setTheme: (theme: Theme) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -80,12 +65,4 @@ export const useUIStore = create<UIStore>((set) => ({
   
   panelMode: 'both',
   setPanelMode: (mode) => set({ panelMode: mode }),
-  
-  theme: getValidTheme(),
-  setTheme: (theme) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('theme', theme)
-    }
-    set({ theme })
-  },
 }))
