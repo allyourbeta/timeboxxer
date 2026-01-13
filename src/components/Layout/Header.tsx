@@ -3,11 +3,13 @@
 interface HeaderProps {
   currentView: 'main' | 'completed'
   panelMode: 'both' | 'lists-only' | 'calendar-only'
+  theme: 'light' | 'dark'
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
+  onThemeChange: (theme: 'light' | 'dark') => void
 }
 
-export function Header({ currentView, panelMode, onViewChange, onPanelModeChange }: HeaderProps) {
+export function Header({ currentView, panelMode, theme, onViewChange, onPanelModeChange, onThemeChange }: HeaderProps) {
   return (
     <header className="p-4 border-b border-gray-700 flex items-center justify-between">
       <h1 className="text-xl font-bold">Timeboxxer</h1>
@@ -66,6 +68,15 @@ export function Header({ currentView, panelMode, onViewChange, onPanelModeChange
             Completed
           </button>
         </div>
+        
+        {/* Theme Toggle */}
+        <button
+          onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+          className="p-2 rounded hover:bg-gray-700"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
     </header>
   )

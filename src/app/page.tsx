@@ -16,6 +16,7 @@ export default function Home() {
   const { 
     currentView, setCurrentView,
     panelMode, setPanelMode,
+    theme, setTheme,
     draggedTaskId, setDraggedTaskId,
     colorPickerTaskId, openColorPicker, closeColorPicker,
     editingListId, setEditingListId,
@@ -31,6 +32,11 @@ export default function Home() {
     loadSchedule()
   }, [loadTasks, loadLists, loadSchedule])
   
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
   // Close color picker on outside click
   useEffect(() => {
     if (colorPickerTaskId) {
@@ -67,8 +73,10 @@ export default function Home() {
       <Header 
         currentView={currentView} 
         panelMode={panelMode}
+        theme={theme}
         onViewChange={setCurrentView} 
         onPanelModeChange={setPanelMode}
+        onThemeChange={setTheme}
       />
       
       <div className="flex flex-1 overflow-hidden">

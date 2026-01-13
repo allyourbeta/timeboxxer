@@ -33,6 +33,10 @@ interface UIStore {
   // Panel focus modes
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   setPanelMode: (mode: 'both' | 'lists-only' | 'calendar-only') => void
+  
+  // Theme
+  theme: 'light' | 'dark'
+  setTheme: (theme: 'light' | 'dark') => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -65,4 +69,12 @@ export const useUIStore = create<UIStore>((set) => ({
   
   panelMode: 'both',
   setPanelMode: (mode) => set({ panelMode: mode }),
+  
+  theme: (typeof window !== 'undefined' && localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
+  setTheme: (theme) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', theme)
+    }
+    set({ theme })
+  },
 }))
