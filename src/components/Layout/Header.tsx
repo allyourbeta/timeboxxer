@@ -1,96 +1,102 @@
 'use client'
 
-import { Theme } from '@/lib/backgroundThemes'
+import { useTheme } from 'next-themes'
+import { Sun, Moon, List, Calendar, LayoutGrid } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Toggle } from '@/components/ui/toggle'
 
 interface HeaderProps {
   currentView: 'main' | 'completed'
   panelMode: 'both' | 'lists-only' | 'calendar-only'
-  theme: Theme
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
-  onThemeChange: (theme: Theme) => void
 }
 
 export function Header({ 
   currentView, 
   panelMode, 
-  theme, 
   onViewChange, 
-  onPanelModeChange, 
-  onThemeChange 
+  onPanelModeChange 
 }: HeaderProps) {
+  const { theme, setTheme } = useTheme()
+  
+  const handleThemeToggle = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
   return (
-    <header className="h-14 px-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-primary)]">
-      <h1 className="text-xl font-bold text-[var(--text-primary)]">Timeboxxer</h1>
+    <header className="h-14 px-4 border-b border-border flex items-center justify-between bg-background">
+      <h1 className="text-xl font-bold text-foreground">Timeboxxer</h1>
       
       <div className="flex items-center gap-3">
         {/* Panel Mode Controls - only show on main view */}
         {currentView === 'main' && (
-          <div className="flex h-9 items-center bg-[var(--bg-secondary)] rounded-lg p-1">
-            <button
-              onClick={() => onPanelModeChange('lists-only')}
-              className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
-                panelMode === 'lists-only' 
-                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' 
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
+          <div className="flex h-9 items-center bg-muted rounded-lg p-1 gap-1">
+            <Toggle
+              pressed={panelMode === 'lists-only'}
+              onPressedChange={() => onPanelModeChange('lists-only')}
+              size="sm"
+              variant="outline"
+              className="h-7 px-2"
             >
+              <List className="h-4 w-4 mr-1" />
               Lists
-            </button>
-            <button
-              onClick={() => onPanelModeChange('both')}
-              className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
-                panelMode === 'both' 
-                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' 
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
+            </Toggle>
+            <Toggle
+              pressed={panelMode === 'both'}
+              onPressedChange={() => onPanelModeChange('both')}
+              size="sm"
+              variant="outline"
+              className="h-7 px-2"
             >
+              <LayoutGrid className="h-4 w-4 mr-1" />
               Both
-            </button>
-            <button
-              onClick={() => onPanelModeChange('calendar-only')}
-              className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
-                panelMode === 'calendar-only' 
-                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' 
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
+            </Toggle>
+            <Toggle
+              pressed={panelMode === 'calendar-only'}
+              onPressedChange={() => onPanelModeChange('calendar-only')}
+              size="sm"
+              variant="outline"
+              className="h-7 px-2"
             >
+              <Calendar className="h-4 w-4 mr-1" />
               Calendar
-            </button>
+            </Toggle>
           </div>
         )}
         
-        {/* Theme Toggle - same height as other controls */}
-        <button
-          onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
-          className="h-9 w-9 flex items-center justify-center rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        {/* Theme Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleThemeToggle}
+          className="h-9 w-9"
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
+          {theme === 'dark' ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </Button>
         
-        {/* View Controls - same height */}
-        <div className="flex h-9 items-center bg-[var(--bg-secondary)] rounded-lg p-1">
-          <button
+        {/* View Controls */}
+        <div className="flex h-9 items-center bg-muted rounded-lg p-1 gap-1">
+          <Button
+            variant={currentView === 'main' ? 'default' : 'ghost'}
+            size="sm"
             onClick={() => onViewChange('main')}
-            className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
-              currentView === 'main'
-                ? 'bg-blue-500 text-white'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
+            className="h-7 px-3"
           >
             Today
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={currentView === 'completed' ? 'default' : 'ghost'}
+            size="sm"
             onClick={() => onViewChange('completed')}
-            className={`h-7 px-3 rounded text-sm font-medium transition-colors ${
-              currentView === 'completed'
-                ? 'bg-blue-500 text-white'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
+            className="h-7 px-3"
           >
             Completed
-          </button>
+          </Button>
         </div>
       </div>
     </header>
