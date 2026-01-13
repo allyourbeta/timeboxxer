@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
-import { getColor } from '@/lib/palettes'
+import { getColor, getPalette } from '@/lib/palettes'
 import { completeTask, createTask, deleteTask, scheduleTask, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
@@ -52,6 +52,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [newTaskInputs, setNewTaskInputs] = useState<Record<string, string>>({})
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -70,6 +71,20 @@ export default function Home() {
     }
     loadData()
   }, [])
+
+  // Close color picker when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (colorPickerOpen) {
+        setColorPickerOpen(null)
+      }
+    }
+    
+    if (colorPickerOpen) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [colorPickerOpen])
 
   const handleDragStart = (task: Task) => {
     setDraggedTask(task)
@@ -175,6 +190,22 @@ export default function Home() {
     }
   }
 
+  const handleChangeColor = async (taskId: string, colorIndex: number) => {
+    try {
+      await updateTask(taskId, { color_index: colorIndex })
+      
+      // Update local state: change task color
+      setTasks(tasks.map(t => 
+        t.id === taskId ? { ...t, color_index: colorIndex } : t
+      ))
+      
+      // Close color picker
+      setColorPickerOpen(null)
+    } catch (error) {
+      console.error('Failed to update task color:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -219,9 +250,38 @@ export default function Home() {
                     }`}
                     style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
                   >
-                    <div className={`font-medium text-white ${
-                      task.is_completed ? 'line-through' : ''
-                    }`}>{task.title}</div>
+                    <div className="flex items-start gap-2">
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setColorPickerOpen(colorPickerOpen === task.id ? null : task.id)
+                          }}
+                          className="w-4 h-4 rounded-full border border-white/30 hover:border-white/60 transition-colors cursor-pointer"
+                          style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
+                          title="Click to change color"
+                          disabled={task.is_completed}
+                        />
+                        {colorPickerOpen === task.id && (
+                          <div className="absolute top-6 left-0 z-20 bg-gray-800 border border-gray-600 rounded-lg p-2 shadow-xl">
+                            <div className="grid grid-cols-3 gap-2">
+                              {getPalette(PALETTE_ID).colors.map((color, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => handleChangeColor(task.id, index)}
+                                  className="w-6 h-6 rounded-full border border-gray-500 hover:border-white transition-colors"
+                                  style={{ backgroundColor: color }}
+                                  title={`Color ${index + 1}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className={`font-medium text-white flex-1 ${
+                        task.is_completed ? 'line-through' : ''
+                      }`}>{task.title}</div>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
