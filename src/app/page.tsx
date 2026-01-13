@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor } from '@/lib/palettes'
+import { completeTask, scheduleTask, updateScheduleTime } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -19,6 +20,8 @@ interface Task {
   title: string
   duration_minutes: number
   color_index: number
+  is_completed: boolean
+  completed_at: string | null
 }
 
 interface ScheduledTask {
@@ -74,7 +77,6 @@ export default function Home() {
   const handleDrop = async (time: string) => {
     if (!draggedTask) return
     
-    const supabase = getSupabase()
     const today = new Date().toISOString().split('T')[0]
     
     // Check if already scheduled
@@ -82,26 +84,14 @@ export default function Home() {
     
     if (existing) {
       // Update existing schedule
-      await supabase
-        .from('scheduled_tasks')
-        .update({ start_time: time + ':00' })
-        .eq('id', existing.id)
+      await updateScheduleTime(existing.id, time + ':00')
       
       setScheduled(scheduled.map(s => 
         s.id === existing.id ? { ...s, start_time: time + ':00' } : s
       ))
     } else {
       // Create new schedule
-      const { data } = await supabase
-        .from('scheduled_tasks')
-        .insert({
-          user_id: DEV_USER_ID,
-          task_id: draggedTask.id,
-          scheduled_date: today,
-          start_time: time + ':00',
-        })
-        .select()
-        .single()
+      const data = await scheduleTask(draggedTask.id, today, time + ':00')
       
       if (data) {
         setScheduled([...scheduled, data])
@@ -111,6 +101,22 @@ export default function Home() {
     setDraggedTask(null)
   }
 
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      await completeTask(taskId)
+      
+      // Update local state: mark task as completed and remove from schedule
+      setTasks(tasks.map(t => 
+        t.id === taskId 
+          ? { ...t, is_completed: true, completed_at: new Date().toISOString() }
+          : t
+      ))
+      setScheduled(scheduled.filter(s => s.task_id !== taskId))
+    } catch (error) {
+      console.error('Failed to complete task:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -118,7 +124,8 @@ export default function Home() {
     const scheduleItem = scheduled.find(s => s.start_time.startsWith(time))
     if (!scheduleItem) return null
     const task = tasks.find(t => t.id === scheduleItem.task_id)
-    return task ? { task, schedule: scheduleItem } : null
+    // Don't show completed tasks on calendar
+    return task && !task.is_completed ? { task, schedule: scheduleItem } : null
   }
 
   const getTaskHeight = (duration: number) => {
@@ -145,13 +152,21 @@ export default function Home() {
                 {getTasksForList(list.id).map(task => (
                   <div
                     key={task.id}
-                    draggable
-                    onDragStart={() => handleDragStart(task)}
-                    className="p-3 rounded cursor-grab active:cursor-grabbing transition-transform hover:scale-[1.02]"
+                    draggable={!task.is_completed}
+                    onDragStart={() => !task.is_completed && handleDragStart(task)}
+                    className={`p-3 rounded transition-transform hover:scale-[1.02] ${
+                      task.is_completed 
+                        ? 'opacity-50 cursor-default' 
+                        : 'cursor-grab active:cursor-grabbing'
+                    }`}
                     style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
                   >
-                    <div className="font-medium text-white">{task.title}</div>
-                    <div className="text-sm text-white/70">{task.duration_minutes} min</div>
+                    <div className={`font-medium text-white ${
+                      task.is_completed ? 'line-through' : ''
+                    }`}>{task.title}</div>
+                    <div className={`text-sm text-white/70 ${
+                      task.is_completed ? 'line-through' : ''
+                    }`}>{task.duration_minutes} min</div>
                   </div>
                 ))}
               </div>
@@ -188,14 +203,25 @@ export default function Home() {
                   <div className="flex-1 relative">
                     {scheduled && (
                       <div
-                        className="absolute left-0 right-2 rounded px-2 py-1 z-10"
+                        className="absolute left-0 right-2 rounded px-2 py-1 z-10 group"
                         style={{
                           backgroundColor: getColor(PALETTE_ID, scheduled.task.color_index),
                           height: getTaskHeight(scheduled.task.duration_minutes),
                         }}
                       >
-                        <div className="font-medium text-white text-sm">{scheduled.task.title}</div>
-                        <div className="text-xs text-white/70">{scheduled.task.duration_minutes} min</div>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-white text-sm truncate">{scheduled.task.title}</div>
+                            <div className="text-xs text-white/70">{scheduled.task.duration_minutes} min</div>
+                          </div>
+                          <button
+                            onClick={() => handleCompleteTask(scheduled.task.id)}
+                            className="ml-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Mark complete"
+                          >
+                            ✓
+                          </button>
+                        </div>
                       </div>
                     )}
                     {!scheduled && (
