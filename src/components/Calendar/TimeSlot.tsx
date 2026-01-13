@@ -12,6 +12,7 @@ interface ScheduledTask {
 interface TimeSlotProps {
   time: string
   isHour: boolean
+  isHalfHour: boolean
   scheduledTask: ScheduledTask | null
   taskHeight: number
   paletteId: string
@@ -23,6 +24,7 @@ interface TimeSlotProps {
 export function TimeSlot({
   time,
   isHour,
+  isHalfHour,
   scheduledTask,
   taskHeight,
   paletteId,
@@ -30,17 +32,33 @@ export function TimeSlot({
   onUnschedule,
   onComplete,
 }: TimeSlotProps) {
+  const getBorderStyle = () => {
+    if (isHour) return 'border-gray-500 border-b-2' // Strong line for hours
+    if (isHalfHour) return 'border-gray-700' // Medium line for half hours
+    return 'border-gray-800 border-dashed border-opacity-50' // Faint dotted for quarters
+  }
+
+  const getTimeLabel = () => {
+    if (isHour) return time
+    if (isHalfHour) return time
+    return '' // No label for quarter marks
+  }
+
+  const getTimeLabelStyle = () => {
+    if (isHour) return 'text-sm text-white font-bold' // Bold white for hours
+    if (isHalfHour) return 'text-xs text-gray-400' // Gray for half hours
+    return ''
+  }
+
   return (
     <div
-      className={`h-12 flex items-stretch border-b ${
-        isHour ? 'border-gray-600' : 'border-gray-800'
-      }`}
+      className={`h-12 flex items-stretch border-b ${getBorderStyle()}`}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
       {/* Time label */}
-      <div className="w-16 text-xs text-gray-500 pr-2 text-right pt-1">
-        {isHour ? time : ''}
+      <div className={`w-16 pr-2 text-right pt-1 ${getTimeLabelStyle()}`}>
+        {getTimeLabel()}
       </div>
       
       {/* Slot */}
