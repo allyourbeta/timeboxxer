@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor, getPalette } from '@/lib/palettes'
-import { completeTask, createList, createTask, deleteList, deleteTask, duplicateList, scheduleTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
+import { completeTask, createList, createTask, deleteList, deleteTask, duplicateList, scheduleTask, uncompleteTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -59,6 +59,7 @@ export default function Home() {
   const [editingListName, setEditingListName] = useState('')
   const [duplicatingListId, setDuplicatingListId] = useState<string | null>(null)
   const [duplicateListName, setDuplicateListName] = useState('')
+  const [currentView, setCurrentView] = useState<'main' | 'completed'>('main')
 
   useEffect(() => {
     async function loadData() {
@@ -136,6 +137,21 @@ export default function Home() {
       setScheduled(scheduled.filter(s => s.task_id !== taskId))
     } catch (error) {
       console.error('Failed to complete task:', error)
+    }
+  }
+
+  const handleUncompleteTask = async (taskId: string) => {
+    try {
+      await uncompleteTask(taskId)
+      
+      // Update local state: mark task as not completed
+      setTasks(tasks.map(t => 
+        t.id === taskId 
+          ? { ...t, is_completed: false, completed_at: null }
+          : t
+      ))
+    } catch (error) {
+      console.error('Failed to uncomplete task:', error)
     }
   }
 
@@ -311,13 +327,37 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
       {/* Header */}
-      <header className="p-4 border-b border-gray-700">
+      <header className="p-4 border-b border-gray-700 flex items-center justify-between">
         <h1 className="text-xl font-bold">Timeboxxer</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCurrentView('main')}
+            className={`px-3 py-1 rounded text-sm transition-colors ${
+              currentView === 'main' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            Main
+          </button>
+          <button
+            onClick={() => setCurrentView('completed')}
+            className={`px-3 py-1 rounded text-sm transition-colors ${
+              currentView === 'completed' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            Completed
+          </button>
+        </div>
       </header>
       
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Lists */}
-        <div className="w-80 border-r border-gray-700 overflow-y-auto p-4 space-y-4">
+        {currentView === 'main' ? (
+          <>
+            {/* Left: Lists */}
+            <div className="w-80 border-r border-gray-700 overflow-y-auto p-4 space-y-4">
           {lists.map(list => (
             <div key={list.id} className="bg-gray-800 rounded-lg p-3 group">
               {editingListId === list.id ? (
@@ -594,6 +634,61 @@ export default function Home() {
             })}
           </div>
         </div>
+          </>
+        ) : (
+          /* Completed Tasks View */
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Completed Tasks</h2>
+              <p className="text-sm text-gray-400">Tasks you've finished</p>
+            </div>
+            
+            <div className="space-y-2">
+              {tasks
+                .filter(t => t.is_completed)
+                .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
+                .map(task => {
+                  const completedDate = task.completed_at ? new Date(task.completed_at) : null
+                  const originalList = lists.find(l => l.id === task.list_id)
+                  
+                  return (
+                    <div
+                      key={task.id}
+                      className="p-3 rounded-lg bg-gray-800 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
+                        />
+                        <div>
+                          <div className="font-medium text-white">{task.title}</div>
+                          <div className="text-xs text-gray-400">
+                            {originalList ? `From: ${originalList.name}` : 'From: Unknown list'} • 
+                            {task.duration_minutes} min • 
+                            Completed {completedDate?.toLocaleString() || 'Unknown time'}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleUncompleteTask(task.id)}
+                        className="px-2 py-1 text-xs bg-blue-500/80 hover:bg-blue-500 text-white rounded transition-colors"
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  )
+                })}
+              
+              {tasks.filter(t => t.is_completed).length === 0 && (
+                <div className="text-center text-gray-400 py-8">
+                  <p>No completed tasks yet.</p>
+                  <p className="text-sm">Completed tasks will appear here.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
