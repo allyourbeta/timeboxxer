@@ -97,6 +97,7 @@ export default function Home() {
               onDrop={handleDrop}
               onUnschedule={unscheduleTask}
               onComplete={completeTask}
+              onDragStart={setDraggedTaskId}
             />
           </>
         ) : (

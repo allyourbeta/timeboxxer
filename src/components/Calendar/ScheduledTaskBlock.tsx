@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { getColor } from '@/lib/palettes'
 
 interface ScheduledTaskBlockProps {
@@ -10,6 +11,7 @@ interface ScheduledTaskBlockProps {
   height: number
   onUnschedule: () => void
   onComplete: () => void
+  onDragStart: () => void
 }
 
 export function ScheduledTaskBlock({
@@ -20,10 +22,27 @@ export function ScheduledTaskBlock({
   height,
   onUnschedule,
   onComplete,
+  onDragStart,
 }: ScheduledTaskBlockProps) {
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true)
+    onDragStart()
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
   return (
     <div
-      className="absolute left-0 right-2 rounded px-2 py-1 z-10 group"
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={`absolute left-0 right-2 rounded px-2 py-1 z-10 group cursor-move ${
+        isDragging ? 'opacity-50' : ''
+      }`}
       style={{
         backgroundColor: getColor(paletteId, colorIndex),
         height,

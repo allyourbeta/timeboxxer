@@ -19,6 +19,7 @@ interface TimeSlotProps {
   onDrop: () => void
   onUnschedule: () => void
   onComplete: () => void
+  onDragStart: () => void
 }
 
 export function TimeSlot({
@@ -31,6 +32,7 @@ export function TimeSlot({
   onDrop,
   onUnschedule,
   onComplete,
+  onDragStart,
 }: TimeSlotProps) {
   const getBorderStyle = () => {
     if (isHour) return 'border-gray-500 border-b-2' // Strong line for hours
@@ -72,6 +74,7 @@ export function TimeSlot({
             height={taskHeight}
             onUnschedule={onUnschedule}
             onComplete={onComplete}
+            onDragStart={onDragStart}
           />
         ) : (
           <div className="h-full w-full hover:bg-gray-800/50 transition-colors" />

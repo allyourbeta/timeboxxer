@@ -23,6 +23,7 @@ interface DayViewProps {
   onDrop: (time: string) => void
   onUnschedule: (taskId: string) => void
   onComplete: (taskId: string) => void
+  onDragStart: (taskId: string) => void
 }
 
 function generateTimeSlots() {
@@ -44,6 +45,7 @@ export function DayView({
   onDrop,
   onUnschedule,
   onComplete,
+  onDragStart,
 }: DayViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -142,6 +144,7 @@ export function DayView({
               onDrop={() => onDrop(time)}
               onUnschedule={() => scheduledTask && onUnschedule(scheduledTask.taskId)}
               onComplete={() => scheduledTask && onComplete(scheduledTask.taskId)}
+              onDragStart={() => scheduledTask && onDragStart(scheduledTask.taskId)}
             />
           )
         })}
