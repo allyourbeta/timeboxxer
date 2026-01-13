@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor, getPalette } from '@/lib/palettes'
-import { completeTask, createTask, deleteTask, scheduleTask, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
+import { completeTask, createList, createTask, deleteTask, scheduleTask, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -53,6 +53,8 @@ export default function Home() {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [newTaskInputs, setNewTaskInputs] = useState<Record<string, string>>({})
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null)
+  const [showNewListInput, setShowNewListInput] = useState(false)
+  const [newListName, setNewListName] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -206,6 +208,23 @@ export default function Home() {
     }
   }
 
+  const handleCreateList = async (name: string) => {
+    if (!name.trim()) return
+    
+    try {
+      const newList = await createList(name.trim())
+      
+      // Update local state: add new list
+      setLists([...lists, newList])
+      
+      // Reset input
+      setNewListName('')
+      setShowNewListInput(false)
+    } catch (error) {
+      console.error('Failed to create list:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -319,6 +338,41 @@ export default function Home() {
               </div>
             </div>
           ))}
+          
+          {/* Add new list */}
+          {showNewListInput ? (
+            <div className="bg-gray-800 rounded-lg p-3">
+              <input
+                type="text"
+                placeholder="List name..."
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCreateList(newListName)
+                  } else if (e.key === 'Escape') {
+                    setShowNewListInput(false)
+                    setNewListName('')
+                  }
+                }}
+                onBlur={() => {
+                  if (!newListName.trim()) {
+                    setShowNewListInput(false)
+                    setNewListName('')
+                  }
+                }}
+                autoFocus
+                className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowNewListInput(true)}
+              className="w-full p-3 text-left text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors border border-dashed border-gray-600 hover:border-gray-500"
+            >
+              + Add List
+            </button>
+          )}
         </div>
         
         {/* Right: Calendar */}
