@@ -80,7 +80,7 @@ export function ListCard({
     <div className={`
       rounded-xl overflow-hidden transition-all duration-200
       ${isExpanded 
-        ? 'bg-card shadow-lg ring-1 ring-border' 
+        ? 'bg-card shadow-lg ring-1 ring-gray-200 dark:ring-gray-800' 
         : 'bg-card/50 hover:bg-card hover:shadow-md'
       }
     `}>

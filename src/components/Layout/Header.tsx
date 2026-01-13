@@ -25,7 +25,7 @@ export function Header({
   }
 
   return (
-    <header className="h-14 px-4 border-b border-border flex items-center justify-between bg-background">
+    <header className="h-14 px-4 border-b flex items-center justify-between bg-background">
       <h1 className="text-xl font-bold text-foreground">Timeboxxer</h1>
       
       <div className="flex items-center gap-3">

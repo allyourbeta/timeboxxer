@@ -150,7 +150,7 @@ export function FullCalendarView({
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col bg-background">
-      <div className="flex gap-2 p-4 border-b border-border">
+      <div className="flex gap-2 p-4 border-b">
         <h2 className="text-lg font-semibold text-foreground">Today</h2>
       </div>
       
