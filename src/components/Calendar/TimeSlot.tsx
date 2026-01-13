@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { ScheduledTaskBlock } from './ScheduledTaskBlock'
 
 interface ScheduledTask {
@@ -36,36 +37,47 @@ export function TimeSlot({
   onDragStart,
   onDurationChange,
 }: TimeSlotProps) {
-  const getBorderStyle = () => {
-    if (isHour) return 'border-gray-500 border-b-2' // Strong line for hours
-    if (isHalfHour) return 'border-gray-700' // Medium line for half hours
-    return 'border-gray-800 border-dashed border-opacity-50' // Faint dotted for quarters
+  const [isHovered, setIsHovered] = useState(false)
+  
+  // Format time for display: "9:00 AM" format
+  const formatTime = (t: string) => {
+    const [hour, minute] = t.split(':').map(Number)
+    const period = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`
   }
-
-  const getTimeLabel = () => {
-    if (isHour) return time
-    if (isHalfHour) return time
-    return '' // No label for quarter marks
-  }
-
-  const getTimeLabelStyle = () => {
-    if (isHour) return 'text-sm text-white font-bold' // Bold white for hours
-    if (isHalfHour) return 'text-xs text-gray-400' // Gray for half hours
-    return ''
-  }
-
   return (
     <div
-      className={`h-12 flex items-stretch border-b ${getBorderStyle()}`}
+      className={`h-12 flex items-stretch ${
+        isHour ? 'border-t-2 border-theme' : isHalfHour ? 'border-t border-theme/50' : 'border-t border-theme/20'
+      }`}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Time label */}
-      <div className={`w-16 pr-2 text-right pt-1 ${getTimeLabelStyle()}`}>
-        {getTimeLabel()}
+      {/* Time label column */}
+      <div className="w-20 flex items-start justify-end pr-3 pt-1 relative">
+        {isHour && (
+          <span className="text-sm font-semibold text-theme-primary">
+            {formatTime(time)}
+          </span>
+        )}
+        {isHalfHour && !isHour && (
+          <span className="text-xs text-theme-secondary">
+            {formatTime(time)}
+          </span>
+        )}
+        
+        {/* Hover tooltip showing exact time */}
+        {isHovered && !isHour && !isHalfHour && (
+          <span className="absolute right-3 top-1 text-xs bg-blue-500 text-white px-2 py-0.5 rounded shadow-lg z-20">
+            {formatTime(time)}
+          </span>
+        )}
       </div>
       
-      {/* Slot */}
+      {/* Slot area */}
       <div className="flex-1 relative">
         {scheduledTask ? (
           <ScheduledTaskBlock
@@ -80,7 +92,11 @@ export function TimeSlot({
             onDurationChange={onDurationChange}
           />
         ) : (
-          <div className="h-full w-full hover:bg-gray-800/50 transition-colors" />
+          <div 
+            className={`h-full w-full transition-colors ${
+              isHovered ? 'bg-blue-500/20' : 'hover:bg-theme-tertiary/30'
+            }`}
+          />
         )}
       </div>
     </div>
