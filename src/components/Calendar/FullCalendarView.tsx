@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { EventInput, EventApi, DateSelectArg, EventDropArg } from '@fullcalendar/core'
+import { EventInput, EventApi, EventDropArg } from '@fullcalendar/core'
 
 interface Task {
   id: string
@@ -125,12 +125,6 @@ export function FullCalendarView({
     // Trigger the actual scheduling
     onExternalDrop(taskId, timeString)
   }, [onExternalDrop])
-
-  // Handle time slot selection (for dropping from task list)
-  const handleDateSelect = useCallback((selectInfo: DateSelectArg) => {
-    const timeString = `${selectInfo.start.getHours().toString().padStart(2, '0')}:${selectInfo.start.getMinutes().toString().padStart(2, '0')}`
-    onDrop(timeString)
-  }, [onDrop])
 
   // Handle event click (for context menu actions)
   const handleEventClick = useCallback((clickInfo: any) => {
