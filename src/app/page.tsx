@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor } from '@/lib/palettes'
-import { completeTask, createTask, deleteTask, scheduleTask, updateScheduleTime, unscheduleTask } from '@/api'
+import { completeTask, createTask, deleteTask, scheduleTask, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -157,6 +157,24 @@ export default function Home() {
     }
   }
 
+  const handleChangeDuration = async (taskId: string, currentDuration: number) => {
+    // Cycle: 15 → 30 → 45 → 60 → 15
+    const durations = [15, 30, 45, 60]
+    const currentIndex = durations.indexOf(currentDuration)
+    const nextDuration = durations[(currentIndex + 1) % durations.length]
+    
+    try {
+      await updateTask(taskId, { duration_minutes: nextDuration })
+      
+      // Update local state: change task duration
+      setTasks(tasks.map(t => 
+        t.id === taskId ? { ...t, duration_minutes: nextDuration } : t
+      ))
+    } catch (error) {
+      console.error('Failed to update task duration:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -204,9 +222,19 @@ export default function Home() {
                     <div className={`font-medium text-white ${
                       task.is_completed ? 'line-through' : ''
                     }`}>{task.title}</div>
-                    <div className={`text-sm text-white/70 ${
-                      task.is_completed ? 'line-through' : ''
-                    }`}>{task.duration_minutes} min</div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleChangeDuration(task.id, task.duration_minutes)
+                      }}
+                      className={`text-sm text-white/70 hover:text-white hover:bg-white/10 px-1 rounded transition-colors cursor-pointer ${
+                        task.is_completed ? 'line-through cursor-default' : ''
+                      }`}
+                      disabled={task.is_completed}
+                      title="Click to change duration"
+                    >
+                      {task.duration_minutes} min
+                    </button>
                     <button
                       onClick={() => handleDeleteTask(task.id)}
                       className="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
