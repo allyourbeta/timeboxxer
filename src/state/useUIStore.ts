@@ -25,6 +25,10 @@ interface UIStore {
   // Duplicate list
   duplicatingListId: string | null
   setDuplicatingListId: (listId: string | null) => void
+  
+  // Collapsible lists (multi-column layout)
+  expandedListByColumn: Record<number, string | null>
+  toggleListExpanded: (listId: string, column: number) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -46,4 +50,12 @@ export const useUIStore = create<UIStore>((set) => ({
   
   duplicatingListId: null,
   setDuplicatingListId: (listId) => set({ duplicatingListId: listId }),
+  
+  expandedListByColumn: { 0: null, 1: null, 2: null },
+  toggleListExpanded: (listId, column) => set((state) => ({
+    expandedListByColumn: {
+      ...state.expandedListByColumn,
+      [column]: state.expandedListByColumn[column] === listId ? null : listId
+    }
+  })),
 }))

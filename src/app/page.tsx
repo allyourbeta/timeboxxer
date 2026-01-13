@@ -20,6 +20,7 @@ export default function Home() {
     editingListId, setEditingListId,
     duplicatingListId, setDuplicatingListId,
     showNewListInput, setShowNewListInput,
+    expandedListByColumn, toggleListExpanded,
   } = useUIStore()
   
   // Load data on mount
@@ -75,6 +76,7 @@ export default function Home() {
               editingListId={editingListId}
               duplicatingListId={duplicatingListId}
               showNewListInput={showNewListInput}
+              expandedListByColumn={expandedListByColumn}
               onShowNewListInput={setShowNewListInput}
               onCreateList={createList}
               onEditList={updateList}
@@ -82,6 +84,7 @@ export default function Home() {
               onDuplicateList={duplicateList}
               onSetEditingListId={setEditingListId}
               onSetDuplicatingListId={setDuplicatingListId}
+              onToggleListExpanded={toggleListExpanded}
               onTaskDragStart={setDraggedTaskId}
               onTaskDurationChange={handleDurationChange}
               onTaskColorClick={openColorPicker}
