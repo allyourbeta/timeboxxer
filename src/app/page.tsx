@@ -4,8 +4,7 @@ import { useEffect } from 'react'
 import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
-import { DayView } from '@/components/Calendar'
-import { themes } from '@/lib/backgroundThemes'
+import { FullCalendarView } from '@/components/Calendar'
 
 const PALETTE_ID = 'ocean-bold'
 
@@ -17,7 +16,6 @@ export default function Home() {
   const { 
     currentView, setCurrentView,
     panelMode, setPanelMode,
-    theme, setTheme,
     draggedTaskId, setDraggedTaskId,
     colorPickerTaskId, openColorPicker, closeColorPicker,
     editingListId, setEditingListId,
@@ -32,17 +30,6 @@ export default function Home() {
     loadLists()
     loadSchedule()
   }, [loadTasks, loadLists, loadSchedule])
-  
-  // Single useEffect for theme:
-  useEffect(() => {
-    const colors = themes[theme]
-    document.documentElement.style.setProperty('--bg-primary', colors.bgPrimary)
-    document.documentElement.style.setProperty('--bg-secondary', colors.bgSecondary)
-    document.documentElement.style.setProperty('--bg-tertiary', colors.bgTertiary)
-    document.documentElement.style.setProperty('--text-primary', colors.textPrimary)
-    document.documentElement.style.setProperty('--text-secondary', colors.textSecondary)
-    document.documentElement.style.setProperty('--border-color', colors.borderColor)
-  }, [theme])
 
   // Close color picker on outside click
   useEffect(() => {
@@ -56,7 +43,11 @@ export default function Home() {
   const loading = tasksLoading || listsLoading || scheduleLoading
   
   if (loading) {
-    return <div className="h-screen flex items-center justify-center bg-[var(--bg-primary)] text-[var(--text-primary)]">Loading...</div>
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
   }
   
   const handleDrop = async (time: string) => {
@@ -76,14 +67,12 @@ export default function Home() {
   }
   
   return (
-    <div className="h-screen flex flex-col bg-theme-primary text-theme-primary">
+    <div className="h-screen flex flex-col bg-background">
       <Header 
         currentView={currentView} 
         panelMode={panelMode}
-        theme={theme}
         onViewChange={setCurrentView} 
         onPanelModeChange={setPanelMode}
-        onThemeChange={setTheme}
       />
       
       <div className="flex flex-1 overflow-hidden">
@@ -120,7 +109,7 @@ export default function Home() {
             
             {(panelMode === 'both' || panelMode === 'calendar-only') && (
               <div className={panelMode === 'calendar-only' ? 'flex-1' : 'flex-1'}>
-                <DayView
+                <FullCalendarView
                   tasks={tasks}
                   scheduled={scheduled}
                   paletteId={PALETTE_ID}
