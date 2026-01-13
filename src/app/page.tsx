@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { getColor, getPalette } from '@/lib/palettes'
-import { completeTask, createList, createTask, deleteList, deleteTask, scheduleTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
+import { completeTask, createList, createTask, deleteList, deleteTask, duplicateList, scheduleTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
 
 const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
@@ -57,6 +57,8 @@ export default function Home() {
   const [newListName, setNewListName] = useState('')
   const [editingListId, setEditingListId] = useState<string | null>(null)
   const [editingListName, setEditingListName] = useState('')
+  const [duplicatingListId, setDuplicatingListId] = useState<string | null>(null)
+  const [duplicateListName, setDuplicateListName] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -264,6 +266,30 @@ export default function Home() {
     }
   }
 
+  const handleDuplicateList = async (listId: string, newName: string) => {
+    if (!newName.trim()) return
+    
+    try {
+      await duplicateList(listId, newName.trim())
+      
+      // Re-fetch lists and tasks to get the new duplicated list and its tasks
+      const supabase = getSupabase()
+      const [listsRes, tasksRes] = await Promise.all([
+        supabase.from('lists').select('*').order('position'),
+        supabase.from('tasks').select('*').order('position'),
+      ])
+      
+      if (listsRes.data) setLists(listsRes.data)
+      if (tasksRes.data) setTasks(tasksRes.data)
+      
+      // Reset state
+      setDuplicatingListId(null)
+      setDuplicateListName('')
+    } catch (error) {
+      console.error('Failed to duplicate list:', error)
+    }
+  }
+
   const getTasksForList = (listId: string) => 
     tasks.filter(t => t.list_id === listId)
 
@@ -330,13 +356,25 @@ export default function Home() {
                   >
                     {list.name}
                   </h2>
-                  <button
-                    onClick={() => handleDeleteList(list.id)}
-                    className="w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity ml-2"
-                    title="Delete list"
-                  >
-                    🗑
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        setDuplicatingListId(list.id)
+                        setDuplicateListName(`${list.name} Copy`)
+                      }}
+                      className="w-5 h-5 rounded-full bg-blue-500/80 hover:bg-blue-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Duplicate list"
+                    >
+                      📋
+                    </button>
+                    <button
+                      onClick={() => handleDeleteList(list.id)}
+                      className="w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete list"
+                    >
+                      🗑
+                    </button>
+                  </div>
                 </div>
               )}
               <div className="space-y-2">
@@ -419,6 +457,36 @@ export default function Home() {
                   className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              
+              {/* Duplicate input */}
+              {duplicatingListId === list.id && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    placeholder="New list name..."
+                    value={duplicateListName}
+                    onChange={(e) => setDuplicateListName(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleDuplicateList(list.id, duplicateListName)
+                      } else if (e.key === 'Escape') {
+                        setDuplicatingListId(null)
+                        setDuplicateListName('')
+                      }
+                    }}
+                    onBlur={() => {
+                      if (duplicateListName.trim()) {
+                        handleDuplicateList(list.id, duplicateListName)
+                      } else {
+                        setDuplicatingListId(null)
+                        setDuplicateListName('')
+                      }
+                    }}
+                    autoFocus
+                    className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
             </div>
           ))}
           
