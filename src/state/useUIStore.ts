@@ -1,0 +1,49 @@
+import { create } from 'zustand'
+
+interface UIStore {
+  // View state
+  currentView: 'main' | 'completed'
+  setCurrentView: (view: 'main' | 'completed') => void
+  
+  // Drag state
+  draggedTaskId: string | null
+  setDraggedTaskId: (taskId: string | null) => void
+  
+  // Color picker
+  colorPickerTaskId: string | null
+  openColorPicker: (taskId: string) => void
+  closeColorPicker: () => void
+  
+  // List editing
+  editingListId: string | null
+  setEditingListId: (listId: string | null) => void
+  
+  // New list input
+  showNewListInput: boolean
+  setShowNewListInput: (show: boolean) => void
+  
+  // Duplicate list
+  duplicatingListId: string | null
+  setDuplicatingListId: (listId: string | null) => void
+}
+
+export const useUIStore = create<UIStore>((set) => ({
+  currentView: 'main',
+  setCurrentView: (view) => set({ currentView: view }),
+  
+  draggedTaskId: null,
+  setDraggedTaskId: (taskId) => set({ draggedTaskId: taskId }),
+  
+  colorPickerTaskId: null,
+  openColorPicker: (taskId) => set({ colorPickerTaskId: taskId }),
+  closeColorPicker: () => set({ colorPickerTaskId: null }),
+  
+  editingListId: null,
+  setEditingListId: (listId) => set({ editingListId: listId }),
+  
+  showNewListInput: false,
+  setShowNewListInput: (show) => set({ showNewListInput: show }),
+  
+  duplicatingListId: null,
+  setDuplicatingListId: (listId) => set({ duplicatingListId: listId }),
+}))

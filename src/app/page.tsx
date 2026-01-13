@@ -1,693 +1,111 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { getSupabase } from '@/lib/supabase'
-import { getColor, getPalette } from '@/lib/palettes'
-import { completeTask, createList, createTask, deleteList, deleteTask, duplicateList, scheduleTask, uncompleteTask, updateList, updateScheduleTime, updateTask, unscheduleTask } from '@/api'
+import { useEffect } from 'react'
+import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
+import { Header, CompletedView } from '@/components/Layout'
+import { ListPanel } from '@/components/Lists'
+import { DayView } from '@/components/Calendar'
 
-const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
 const PALETTE_ID = 'ocean-bold'
 
-interface List {
-  id: string
-  name: string
-  position: number
-}
-
-interface Task {
-  id: string
-  list_id: string | null
-  title: string
-  duration_minutes: number
-  color_index: number
-  is_completed: boolean
-  completed_at: string | null
-}
-
-interface ScheduledTask {
-  id: string
-  task_id: string
-  scheduled_date: string
-  start_time: string
-}
-
-// Generate time slots from 6am to 10pm
-function generateTimeSlots() {
-  const slots = []
-  for (let hour = 6; hour < 22; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-      slots.push(time)
-    }
-  }
-  return slots
-}
-
-const TIME_SLOTS = generateTimeSlots()
-
 export default function Home() {
-  const [lists, setLists] = useState<List[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [scheduled, setScheduled] = useState<ScheduledTask[]>([])
-  const [loading, setLoading] = useState(true)
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null)
-  const [newTaskInputs, setNewTaskInputs] = useState<Record<string, string>>({})
-  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null)
-  const [showNewListInput, setShowNewListInput] = useState(false)
-  const [newListName, setNewListName] = useState('')
-  const [editingListId, setEditingListId] = useState<string | null>(null)
-  const [editingListName, setEditingListName] = useState('')
-  const [duplicatingListId, setDuplicatingListId] = useState<string | null>(null)
-  const [duplicateListName, setDuplicateListName] = useState('')
-  const [currentView, setCurrentView] = useState<'main' | 'completed'>('main')
-
+  // Stores
+  const { tasks, loading: tasksLoading, loadTasks, createTask, updateTask, deleteTask, completeTask, uncompleteTask } = useTaskStore()
+  const { lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList } = useListStore()
+  const { scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask } = useScheduleStore()
+  const { 
+    currentView, setCurrentView,
+    draggedTaskId, setDraggedTaskId,
+    colorPickerTaskId, openColorPicker, closeColorPicker,
+    editingListId, setEditingListId,
+    duplicatingListId, setDuplicatingListId,
+    showNewListInput, setShowNewListInput,
+  } = useUIStore()
+  
+  // Load data on mount
   useEffect(() => {
-    async function loadData() {
-      const supabase = getSupabase()
-      
-      const [listsRes, tasksRes, scheduledRes] = await Promise.all([
-        supabase.from('lists').select('*').order('position'),
-        supabase.from('tasks').select('*').order('position'),
-        supabase.from('scheduled_tasks').select('*'),
-      ])
-      
-      setLists(listsRes.data || [])
-      setTasks(tasksRes.data || [])
-      setScheduled(scheduledRes.data || [])
-      setLoading(false)
-    }
-    loadData()
-  }, [])
-
-  // Close color picker when clicking outside
+    loadTasks()
+    loadLists()
+    loadSchedule()
+  }, [loadTasks, loadLists, loadSchedule])
+  
+  // Close color picker on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (colorPickerOpen) {
-        setColorPickerOpen(null)
-      }
+    if (colorPickerTaskId) {
+      const handler = () => closeColorPicker()
+      document.addEventListener('click', handler)
+      return () => document.removeEventListener('click', handler)
     }
-    
-    if (colorPickerOpen) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [colorPickerOpen])
-
-  const handleDragStart = (task: Task) => {
-    setDraggedTask(task)
+  }, [colorPickerTaskId, closeColorPicker])
+  
+  const loading = tasksLoading || listsLoading || scheduleLoading
+  
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>
   }
-
+  
   const handleDrop = async (time: string) => {
-    if (!draggedTask) return
-    
+    if (!draggedTaskId) return
     const today = new Date().toISOString().split('T')[0]
-    
-    // Check if already scheduled
-    const existing = scheduled.find(s => s.task_id === draggedTask.id)
-    
-    if (existing) {
-      // Update existing schedule
-      await updateScheduleTime(existing.id, time + ':00')
-      
-      setScheduled(scheduled.map(s => 
-        s.id === existing.id ? { ...s, start_time: time + ':00' } : s
-      ))
-    } else {
-      // Create new schedule
-      const data = await scheduleTask(draggedTask.id, today, time + ':00')
-      
-      if (data) {
-        setScheduled([...scheduled, data])
-      }
-    }
-    
-    setDraggedTask(null)
+    await scheduleTask(draggedTaskId, today, time + ':00')
+    setDraggedTaskId(null)
   }
-
-  const handleCompleteTask = async (taskId: string) => {
-    try {
-      await completeTask(taskId)
-      
-      // Update local state: mark task as completed and remove from schedule
-      setTasks(tasks.map(t => 
-        t.id === taskId 
-          ? { ...t, is_completed: true, completed_at: new Date().toISOString() }
-          : t
-      ))
-      setScheduled(scheduled.filter(s => s.task_id !== taskId))
-    } catch (error) {
-      console.error('Failed to complete task:', error)
-    }
+  
+  const handleDurationChange = async (taskId: string, newDuration: number) => {
+    await updateTask(taskId, { duration_minutes: newDuration })
   }
-
-  const handleUncompleteTask = async (taskId: string) => {
-    try {
-      await uncompleteTask(taskId)
-      
-      // Update local state: mark task as not completed
-      setTasks(tasks.map(t => 
-        t.id === taskId 
-          ? { ...t, is_completed: false, completed_at: null }
-          : t
-      ))
-    } catch (error) {
-      console.error('Failed to uncomplete task:', error)
-    }
+  
+  const handleColorSelect = async (taskId: string, colorIndex: number) => {
+    await updateTask(taskId, { color_index: colorIndex })
+    closeColorPicker()
   }
-
-  const handleUnscheduleTask = async (taskId: string) => {
-    try {
-      await unscheduleTask(taskId)
-      
-      // Update local state: remove from schedule
-      setScheduled(scheduled.filter(s => s.task_id !== taskId))
-    } catch (error) {
-      console.error('Failed to unschedule task:', error)
-    }
-  }
-
-  const handleCreateTask = async (listId: string, title: string) => {
-    if (!title.trim()) return
-    
-    try {
-      const newTask = await createTask(listId, title.trim())
-      
-      // Update local state: add new task
-      setTasks([...tasks, newTask])
-      
-      // Clear input
-      setNewTaskInputs({ ...newTaskInputs, [listId]: '' })
-    } catch (error) {
-      console.error('Failed to create task:', error)
-    }
-  }
-
-  const handleDeleteTask = async (taskId: string) => {
-    try {
-      await deleteTask(taskId)
-      
-      // Update local state: remove task and any schedule
-      setTasks(tasks.filter(t => t.id !== taskId))
-      setScheduled(scheduled.filter(s => s.task_id !== taskId))
-    } catch (error) {
-      console.error('Failed to delete task:', error)
-    }
-  }
-
-  const handleChangeDuration = async (taskId: string, currentDuration: number) => {
-    // Cycle: 15 → 30 → 45 → 60 → 15
-    const durations = [15, 30, 45, 60]
-    const currentIndex = durations.indexOf(currentDuration)
-    const nextDuration = durations[(currentIndex + 1) % durations.length]
-    
-    try {
-      await updateTask(taskId, { duration_minutes: nextDuration })
-      
-      // Update local state: change task duration
-      setTasks(tasks.map(t => 
-        t.id === taskId ? { ...t, duration_minutes: nextDuration } : t
-      ))
-    } catch (error) {
-      console.error('Failed to update task duration:', error)
-    }
-  }
-
-  const handleChangeColor = async (taskId: string, colorIndex: number) => {
-    try {
-      await updateTask(taskId, { color_index: colorIndex })
-      
-      // Update local state: change task color
-      setTasks(tasks.map(t => 
-        t.id === taskId ? { ...t, color_index: colorIndex } : t
-      ))
-      
-      // Close color picker
-      setColorPickerOpen(null)
-    } catch (error) {
-      console.error('Failed to update task color:', error)
-    }
-  }
-
-  const handleCreateList = async (name: string) => {
-    if (!name.trim()) return
-    
-    try {
-      const newList = await createList(name.trim())
-      
-      // Update local state: add new list
-      setLists([...lists, newList])
-      
-      // Reset input
-      setNewListName('')
-      setShowNewListInput(false)
-    } catch (error) {
-      console.error('Failed to create list:', error)
-    }
-  }
-
-  const handleRenameList = async (listId: string, newName: string) => {
-    if (!newName.trim()) return
-    
-    try {
-      await updateList(listId, newName.trim())
-      
-      // Update local state: change list name
-      setLists(lists.map(l => 
-        l.id === listId ? { ...l, name: newName.trim() } : l
-      ))
-      
-      // Reset editing state
-      setEditingListId(null)
-      setEditingListName('')
-    } catch (error) {
-      console.error('Failed to update list:', error)
-    }
-  }
-
-  const handleDeleteList = async (listId: string) => {
-    try {
-      await deleteList(listId)
-      
-      // Update local state: remove list and reload tasks to show orphaned ones
-      setLists(lists.filter(l => l.id !== listId))
-      
-      // Re-fetch tasks to get updated list_id values for orphaned tasks
-      const supabase = getSupabase()
-      const { data: updatedTasks } = await supabase.from('tasks').select('*').order('position')
-      if (updatedTasks) {
-        setTasks(updatedTasks)
-      }
-    } catch (error) {
-      console.error('Failed to delete list:', error)
-    }
-  }
-
-  const handleDuplicateList = async (listId: string, newName: string) => {
-    if (!newName.trim()) return
-    
-    try {
-      await duplicateList(listId, newName.trim())
-      
-      // Re-fetch lists and tasks to get the new duplicated list and its tasks
-      const supabase = getSupabase()
-      const [listsRes, tasksRes] = await Promise.all([
-        supabase.from('lists').select('*').order('position'),
-        supabase.from('tasks').select('*').order('position'),
-      ])
-      
-      if (listsRes.data) setLists(listsRes.data)
-      if (tasksRes.data) setTasks(tasksRes.data)
-      
-      // Reset state
-      setDuplicatingListId(null)
-      setDuplicateListName('')
-    } catch (error) {
-      console.error('Failed to duplicate list:', error)
-    }
-  }
-
-  const getTasksForList = (listId: string) => 
-    tasks.filter(t => t.list_id === listId)
-
-  const getScheduledTaskAtTime = (time: string) => {
-    const scheduleItem = scheduled.find(s => s.start_time.startsWith(time))
-    if (!scheduleItem) return null
-    const task = tasks.find(t => t.id === scheduleItem.task_id)
-    // Don't show completed tasks on calendar
-    return task && !task.is_completed ? { task, schedule: scheduleItem } : null
-  }
-
-  const getTaskHeight = (duration: number) => {
-    const slots = duration / 15
-    return slots * 48 - 4 // 48px per slot, minus gap
-  }
-
-  if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>
-
+  
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
-      {/* Header */}
-      <header className="p-4 border-b border-gray-700 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Timeboxxer</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentView('main')}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              currentView === 'main' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Main
-          </button>
-          <button
-            onClick={() => setCurrentView('completed')}
-            className={`px-3 py-1 rounded text-sm transition-colors ${
-              currentView === 'completed' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Completed
-          </button>
-        </div>
-      </header>
+      <Header currentView={currentView} onViewChange={setCurrentView} />
       
       <div className="flex flex-1 overflow-hidden">
         {currentView === 'main' ? (
           <>
-            {/* Left: Lists */}
-            <div className="w-80 border-r border-gray-700 overflow-y-auto p-4 space-y-4">
-          {lists.map(list => (
-            <div key={list.id} className="bg-gray-800 rounded-lg p-3 group">
-              {editingListId === list.id ? (
-                <input
-                  type="text"
-                  value={editingListName}
-                  onChange={(e) => setEditingListName(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleRenameList(list.id, editingListName)
-                    } else if (e.key === 'Escape') {
-                      setEditingListId(null)
-                      setEditingListName('')
-                    }
-                  }}
-                  onBlur={() => {
-                    if (editingListName.trim()) {
-                      handleRenameList(list.id, editingListName)
-                    } else {
-                      setEditingListId(null)
-                      setEditingListName('')
-                    }
-                  }}
-                  autoFocus
-                  className="font-semibold text-gray-300 mb-2 w-full bg-gray-700 rounded px-2 py-1 border-none outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              ) : (
-                <div className="flex items-center justify-between mb-2">
-                  <h2 
-                    className="font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors flex-1"
-                    onDoubleClick={() => {
-                      setEditingListId(list.id)
-                      setEditingListName(list.name)
-                    }}
-                    title="Double-click to rename"
-                  >
-                    {list.name}
-                  </h2>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => {
-                        setDuplicatingListId(list.id)
-                        setDuplicateListName(`${list.name} Copy`)
-                      }}
-                      className="w-5 h-5 rounded-full bg-blue-500/80 hover:bg-blue-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Duplicate list"
-                    >
-                      📋
-                    </button>
-                    <button
-                      onClick={() => handleDeleteList(list.id)}
-                      className="w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete list"
-                    >
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              )}
-              <div className="space-y-2">
-                {getTasksForList(list.id).map(task => (
-                  <div
-                    key={task.id}
-                    draggable={!task.is_completed}
-                    onDragStart={() => !task.is_completed && handleDragStart(task)}
-                    className={`p-3 rounded transition-transform hover:scale-[1.02] group relative ${
-                      task.is_completed 
-                        ? 'opacity-50 cursor-default' 
-                        : 'cursor-grab active:cursor-grabbing'
-                    }`}
-                    style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setColorPickerOpen(colorPickerOpen === task.id ? null : task.id)
-                          }}
-                          className="w-4 h-4 rounded-full border border-white/30 hover:border-white/60 transition-colors cursor-pointer"
-                          style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
-                          title="Click to change color"
-                          disabled={task.is_completed}
-                        />
-                        {colorPickerOpen === task.id && (
-                          <div className="absolute top-6 left-0 z-20 bg-gray-800 border border-gray-600 rounded-lg p-2 shadow-xl">
-                            <div className="grid grid-cols-3 gap-2">
-                              {getPalette(PALETTE_ID).colors.map((color, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => handleChangeColor(task.id, index)}
-                                  className="w-6 h-6 rounded-full border border-gray-500 hover:border-white transition-colors"
-                                  style={{ backgroundColor: color }}
-                                  title={`Color ${index + 1}`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className={`font-medium text-white flex-1 ${
-                        task.is_completed ? 'line-through' : ''
-                      }`}>{task.title}</div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleChangeDuration(task.id, task.duration_minutes)
-                      }}
-                      className={`text-sm text-white/70 hover:text-white hover:bg-white/10 px-1 rounded transition-colors cursor-pointer ${
-                        task.is_completed ? 'line-through cursor-default' : ''
-                      }`}
-                      disabled={task.is_completed}
-                      title="Click to change duration"
-                    >
-                      {task.duration_minutes} min
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete task"
-                    >
-                      🗑
-                    </button>
-                  </div>
-                ))}
-                <input
-                  type="text"
-                  placeholder="Add task..."
-                  value={newTaskInputs[list.id] || ''}
-                  onChange={(e) => setNewTaskInputs({ ...newTaskInputs, [list.id]: e.target.value })}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreateTask(list.id, newTaskInputs[list.id] || '')
-                    }
-                  }}
-                  className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              {/* Duplicate input */}
-              {duplicatingListId === list.id && (
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    placeholder="New list name..."
-                    value={duplicateListName}
-                    onChange={(e) => setDuplicateListName(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleDuplicateList(list.id, duplicateListName)
-                      } else if (e.key === 'Escape') {
-                        setDuplicatingListId(null)
-                        setDuplicateListName('')
-                      }
-                    }}
-                    onBlur={() => {
-                      if (duplicateListName.trim()) {
-                        handleDuplicateList(list.id, duplicateListName)
-                      } else {
-                        setDuplicatingListId(null)
-                        setDuplicateListName('')
-                      }
-                    }}
-                    autoFocus
-                    className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-          
-          {/* Add new list */}
-          {showNewListInput ? (
-            <div className="bg-gray-800 rounded-lg p-3">
-              <input
-                type="text"
-                placeholder="List name..."
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleCreateList(newListName)
-                  } else if (e.key === 'Escape') {
-                    setShowNewListInput(false)
-                    setNewListName('')
-                  }
-                }}
-                onBlur={() => {
-                  if (!newListName.trim()) {
-                    setShowNewListInput(false)
-                    setNewListName('')
-                  }
-                }}
-                autoFocus
-                className="w-full p-2 text-sm bg-gray-700 text-white placeholder-gray-400 rounded border-none outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNewListInput(true)}
-              className="w-full p-3 text-left text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors border border-dashed border-gray-600 hover:border-gray-500"
-            >
-              + Add List
-            </button>
-          )}
-        </div>
-        
-        {/* Right: Calendar */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="flex gap-2 mb-4">
-            <h2 className="text-lg font-semibold">Today</h2>
-          </div>
-          
-          <div className="relative">
-            {TIME_SLOTS.map((time, index) => {
-              const scheduled = getScheduledTaskAtTime(time)
-              const isHour = time.endsWith(':00')
-              
-              return (
-                <div
-                  key={time}
-                  className={`h-12 flex items-stretch border-b border-gray-700 ${
-                    isHour ? 'border-gray-600' : 'border-gray-800'
-                  }`}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => handleDrop(time)}
-                >
-                  {/* Time label */}
-                  <div className="w-16 text-xs text-gray-500 pr-2 text-right pt-1">
-                    {isHour ? time : ''}
-                  </div>
-                  
-                  {/* Slot */}
-                  <div className="flex-1 relative">
-                    {scheduled && (
-                      <div
-                        className="absolute left-0 right-2 rounded px-2 py-1 z-10 group"
-                        style={{
-                          backgroundColor: getColor(PALETTE_ID, scheduled.task.color_index),
-                          height: getTaskHeight(scheduled.task.duration_minutes),
-                        }}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-white text-sm truncate">{scheduled.task.title}</div>
-                            <div className="text-xs text-white/70">{scheduled.task.duration_minutes} min</div>
-                          </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleUnscheduleTask(scheduled.task.id)}
-                              className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xs"
-                              title="Unschedule"
-                            >
-                              ×
-                            </button>
-                            <button
-                              onClick={() => handleCompleteTask(scheduled.task.id)}
-                              className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xs"
-                              title="Mark complete"
-                            >
-                              ✓
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {!scheduled && (
-                      <div className="h-full w-full hover:bg-gray-800/50 transition-colors" />
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+            <ListPanel
+              lists={lists}
+              tasks={tasks}
+              paletteId={PALETTE_ID}
+              colorPickerTaskId={colorPickerTaskId}
+              editingListId={editingListId}
+              duplicatingListId={duplicatingListId}
+              showNewListInput={showNewListInput}
+              onShowNewListInput={setShowNewListInput}
+              onCreateList={createList}
+              onEditList={updateList}
+              onDeleteList={deleteList}
+              onDuplicateList={duplicateList}
+              onSetEditingListId={setEditingListId}
+              onSetDuplicatingListId={setDuplicatingListId}
+              onTaskDragStart={setDraggedTaskId}
+              onTaskDurationChange={handleDurationChange}
+              onTaskColorClick={openColorPicker}
+              onTaskColorSelect={handleColorSelect}
+              onTaskDelete={deleteTask}
+              onTaskCreate={createTask}
+            />
+            
+            <DayView
+              tasks={tasks}
+              scheduled={scheduled}
+              paletteId={PALETTE_ID}
+              onDrop={handleDrop}
+              onUnschedule={unscheduleTask}
+              onComplete={completeTask}
+            />
           </>
         ) : (
-          /* Completed Tasks View */
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Completed Tasks</h2>
-              <p className="text-sm text-gray-400">Tasks you've finished</p>
-            </div>
-            
-            <div className="space-y-2">
-              {tasks
-                .filter(t => t.is_completed)
-                .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
-                .map(task => {
-                  const completedDate = task.completed_at ? new Date(task.completed_at) : null
-                  const originalList = lists.find(l => l.id === task.list_id)
-                  
-                  return (
-                    <div
-                      key={task.id}
-                      className="p-3 rounded-lg bg-gray-800 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: getColor(PALETTE_ID, task.color_index) }}
-                        />
-                        <div>
-                          <div className="font-medium text-white">{task.title}</div>
-                          <div className="text-xs text-gray-400">
-                            {originalList ? `From: ${originalList.name}` : 'From: Unknown list'} • 
-                            {task.duration_minutes} min • 
-                            Completed {completedDate?.toLocaleString() || 'Unknown time'}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleUncompleteTask(task.id)}
-                        className="px-2 py-1 text-xs bg-blue-500/80 hover:bg-blue-500 text-white rounded transition-colors"
-                      >
-                        Restore
-                      </button>
-                    </div>
-                  )
-                })}
-              
-              {tasks.filter(t => t.is_completed).length === 0 && (
-                <div className="text-center text-gray-400 py-8">
-                  <p>No completed tasks yet.</p>
-                  <p className="text-sm">Completed tasks will appear here.</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <CompletedView
+            tasks={tasks}
+            lists={lists}
+            paletteId={PALETTE_ID}
+            onRestore={uncompleteTask}
+          />
         )}
       </div>
     </div>
