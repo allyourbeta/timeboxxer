@@ -50,11 +50,16 @@ export default function Home() {
     )
   }
   
-  const handleDrop = async (time: string) => {
-    if (!draggedTaskId) return
+  const handleExternalDrop = async (taskId: string, time: string) => {
     const today = new Date().toISOString().split('T')[0]
-    await scheduleTask(draggedTaskId, today, time + ':00')
-    setDraggedTaskId(null)
+    await scheduleTask(taskId, today, time + ':00')
+  }
+
+  const handleEventMove = async (taskId: string, time: string) => {
+    const today = new Date().toISOString().split('T')[0]
+    // First unschedule, then reschedule at new time
+    await unscheduleTask(taskId)
+    await scheduleTask(taskId, today, time + ':00')
   }
   
   const handleDurationChange = async (taskId: string, newDuration: number) => {
@@ -113,10 +118,10 @@ export default function Home() {
                   tasks={tasks}
                   scheduled={scheduled}
                   paletteId={PALETTE_ID}
-                  onDrop={handleDrop}
+                  onExternalDrop={handleExternalDrop}
+                  onEventMove={handleEventMove}
                   onUnschedule={unscheduleTask}
                   onComplete={completeTask}
-                  onDragStart={setDraggedTaskId}
                   onDurationChange={handleDurationChange}
                 />
               </div>
