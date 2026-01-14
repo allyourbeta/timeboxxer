@@ -8,6 +8,7 @@ import {
   uncompleteTask as apiUncompleteTask,
   moveToPurgatory as apiMoveToPurgatory,
   moveFromPurgatory as apiMoveFromPurgatory,
+  spawnDailyTasks,
 } from '@/api'
 
 interface Task {
@@ -40,6 +41,7 @@ interface TaskStore {
   uncompleteTask: (taskId: string) => Promise<void>
   moveToPurgatory: (taskId: string, originalListId: string, originalListName: string) => Promise<void>
   moveFromPurgatory: (taskId: string, newListId: string) => Promise<void>
+  spawnDailyTasksForToday: (todayListId: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -102,5 +104,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set({
       tasks: get().tasks.map(t => t.id === taskId ? updatedTask : t)
     })
+  },
+
+  spawnDailyTasksForToday: async (todayListId) => {
+    const newTasks = await spawnDailyTasks(todayListId)
+    if (newTasks && newTasks.length > 0) {
+      set({ tasks: [...get().tasks, ...newTasks] })
+    }
   },
 }))

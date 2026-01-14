@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, duplicateList as apiDuplicateList } from '@/api'
+import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, duplicateList as apiDuplicateList, ensureTodayList } from '@/api'
 
 interface List {
   id: string
@@ -26,6 +26,9 @@ export const useListStore = create<ListStore>((set, get) => ({
   loading: true,
   
   loadLists: async () => {
+    // Ensure today's date list exists
+    await ensureTodayList()
+    
     const data = await getLists()
     set({ lists: data || [], loading: false })
   },

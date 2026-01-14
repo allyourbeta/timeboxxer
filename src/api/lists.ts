@@ -1,6 +1,6 @@
 import { getSupabase } from '@/lib/supabase'
-
-const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
+import { DEV_USER_ID } from '@/lib/constants'
+import { getTodayListName, getTodayISO } from '@/lib/dateList'
 
 export async function getLists() {
   const supabase = getSupabase()
@@ -123,4 +123,36 @@ export async function duplicateList(listId: string, newName: string) {
   }
   
   return newList.id
+}
+
+export async function ensureTodayList() {
+  const supabase = getSupabase()
+  const todayName = getTodayListName()
+  const todayISO = getTodayISO()
+  
+  // Check if today's list already exists
+  const { data: existing } = await supabase
+    .from('lists')
+    .select('*')
+    .eq('system_type', 'date')
+    .eq('name', todayName)
+    .single()
+  
+  if (existing) return existing
+  
+  // Create today's list
+  const { data, error } = await supabase
+    .from('lists')
+    .insert({
+      user_id: DEV_USER_ID,
+      name: todayName,
+      position: -500, // Show near top
+      is_system: true,
+      system_type: 'date',
+    })
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data
 }

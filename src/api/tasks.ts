@@ -135,6 +135,52 @@ export async function moveFromPurgatory(taskId: string, newListId: string) {
   return data
 }
 
+export async function spawnDailyTasks(todayListId: string) {
+  const supabase = getSupabase()
+  
+  // Get all daily tasks that haven't been spawned today
+  const { data: dailyTasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('is_daily', true)
+    .is('daily_source_id', null) // Original daily tasks, not spawned instances
+  
+  if (!dailyTasks || dailyTasks.length === 0) return []
+  
+  // Check which ones already have today's instance
+  const { data: existingToday } = await supabase
+    .from('tasks')
+    .select('daily_source_id')
+    .eq('list_id', todayListId)
+    .not('daily_source_id', 'is', null)
+  
+  const alreadySpawnedIds = new Set(existingToday?.map((t: any) => t.daily_source_id) || [])
+  
+  // Spawn new instances for tasks not yet spawned today
+  const toSpawn = dailyTasks.filter((t: any) => !alreadySpawnedIds.has(t.id))
+  
+  if (toSpawn.length === 0) return []
+  
+  const newTasks = toSpawn.map((task: any) => ({
+    user_id: DEV_USER_ID,
+    list_id: todayListId,
+    title: task.title,
+    duration_minutes: task.duration_minutes,
+    color_index: task.color_index,
+    is_daily: false, // Spawned instance is not itself daily
+    daily_source_id: task.id, // Reference to original daily task
+    position: task.position,
+  }))
+  
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert(newTasks)
+    .select()
+  
+  if (error) throw error
+  return data
+}
+
 export async function moveTaskToList(taskId: string, newListId: string | null) {
   const supabase = getSupabase()
   const { data, error } = await supabase

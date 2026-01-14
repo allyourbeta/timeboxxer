@@ -20,7 +20,8 @@ export default function Home() {
         deleteTask,
         completeTask,
         uncompleteTask,
-        moveToPurgatory
+        moveToPurgatory,
+        spawnDailyTasksForToday
     } = useTaskStore()
     const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
     const {scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask} = useScheduleStore()
@@ -41,6 +42,16 @@ export default function Home() {
         loadLists()
         loadSchedule()
     }, [loadTasks, loadLists, loadSchedule])
+
+    // Separate effect for spawning daily tasks after lists are loaded
+    useEffect(() => {
+        if (!listsLoading && lists.length > 0) {
+            const todayList = lists.find(l => l.system_type === 'date')
+            if (todayList) {
+                spawnDailyTasksForToday(todayList.id)
+            }
+        }
+    }, [listsLoading, lists, spawnDailyTasksForToday])
 
     // Close color picker on outside click
     useEffect(() => {
