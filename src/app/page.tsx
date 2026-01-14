@@ -375,9 +375,12 @@ export default function Home() {
             {toastMessage && (
                 <Toast
                     message={toastMessage}
+                    action={undoAction ? {
+                        label: 'Undo',
+                        onClick: undoAction
+                    } : undefined}
                     duration={5000}
-                    onUndo={undoAction || undefined}
-                    onDismiss={() => {
+                    onClose={() => {
                         setToastMessage(null)
                         setUndoAction(null)
                     }}

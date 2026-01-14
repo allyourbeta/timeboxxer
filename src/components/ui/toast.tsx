@@ -1,94 +1,69 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, RotateCcw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import { Button } from './button'
 
 interface ToastProps {
   message: string
-  duration?: number // in ms, defaults to 5000
-  onUndo?: () => void
-  onDismiss: () => void
+  action?: {
+    label: string
+    onClick: () => void
+  }
+  duration?: number
+  onClose: () => void
 }
 
-export function Toast({ 
-  message, 
-  duration = 5000, 
-  onUndo, 
-  onDismiss 
-}: ToastProps) {
+export function Toast({ message, action, duration = 5000, onClose }: ToastProps) {
   const [progress, setProgress] = useState(100)
-  const [isVisible, setIsVisible] = useState(true)
-
+  
   useEffect(() => {
+    const startTime = Date.now()
     const interval = setInterval(() => {
-      setProgress(prev => {
-        const decrement = (100 / duration) * 50 // Update every 50ms
-        const newProgress = prev - decrement
-        
-        if (newProgress <= 0) {
-          setIsVisible(false)
-          setTimeout(onDismiss, 200) // Allow fade animation
-          return 0
-        }
-        
-        return newProgress
-      })
+      const elapsed = Date.now() - startTime
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100)
+      setProgress(remaining)
+      
+      if (remaining === 0) {
+        clearInterval(interval)
+        onClose()
+      }
     }, 50)
-
+    
     return () => clearInterval(interval)
-  }, [duration, onDismiss])
-
-  const handleUndo = () => {
-    onUndo?.()
-    onDismiss()
-  }
-
+  }, [duration, onClose])
+  
   return (
-    <div
-      className={`
-        fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50
-        bg-card border border-border shadow-lg rounded-lg
-        min-w-[320px] max-w-[480px]
-        transition-all duration-200
-        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
-      `}
-    >
-      {/* Progress bar */}
-      <div className="h-1 bg-muted rounded-t-lg overflow-hidden">
-        <div
-          className="h-full bg-primary transition-all duration-50 ease-linear"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex items-center justify-between p-4">
-        <span className="text-sm text-foreground flex-1 mr-3">
-          {message}
-        </span>
-        
-        <div className="flex items-center gap-2">
-          {onUndo && (
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-2">
+      <div className="bg-yellow-500 text-black rounded-lg shadow-2xl overflow-hidden min-w-[350px] border-2 border-yellow-400">
+        <div className="p-4 flex items-center gap-4">
+          <span className="flex-1 font-medium text-base">{message}</span>
+          {action && (
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
-              onClick={handleUndo}
-              className="h-8 text-xs gap-1"
+              onClick={() => {
+                action.onClick()
+                onClose()
+              }}
+              className="font-bold bg-black text-yellow-500 hover:bg-gray-900 px-4"
             >
-              <RotateCcw className="w-3 h-3" />
-              Undo
+              {action.label}
             </Button>
           )}
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDismiss}
-            className="h-8 w-8 p-0"
+          <button
+            onClick={onClose}
+            className="text-black/60 hover:text-black"
           >
-            <X className="w-3 h-3" />
-          </Button>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {/* Progress bar */}
+        <div className="h-1.5 bg-yellow-600">
+          <div 
+            className="h-full bg-black transition-all duration-50"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
     </div>
