@@ -25,6 +25,7 @@ interface ListCardProps {
   id: string
   name: string
   isInbox: boolean
+  isSystemList: boolean
   tasks: Task[]
   paletteId: string
   colorPickerTaskId: string | null
@@ -52,6 +53,7 @@ export function ListCard({
   id,
   name,
   isInbox,
+  isSystemList,
   tasks,
   paletteId,
   colorPickerTaskId,
@@ -124,7 +126,9 @@ export function ListCard({
                 className="font-semibold text-foreground"
                 onDoubleClick={(e) => {
                   e.stopPropagation()
-                  onStartEdit()
+                  if (!isSystemList) {
+                    onStartEdit()
+                  }
                 }}
               >
                 {name}
@@ -146,7 +150,7 @@ export function ListCard({
       )}
       
       {/* Action buttons - only when expanded and not editing */}
-      {!isEditing && isExpanded && (
+      {!isEditing && isExpanded && !isSystemList && (
         <div className="px-4 pb-2">
           <div className="flex justify-end gap-2">
             <Button
@@ -158,17 +162,15 @@ export function ListCard({
             >
               <Copy className="h-3 w-3" />
             </Button>
-            {!isInbox && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onDelete}
-                className="h-8 w-8 hover:bg-destructive hover:text-destructive-foreground"
-                title="Delete list"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onDelete}
+              className="h-8 w-8 hover:bg-destructive hover:text-destructive-foreground"
+              title="Delete list"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
           </div>
         </div>
       )}

@@ -139,6 +139,7 @@ export function ListPanel({
               id={list.id}
               name={list.name}
               isInbox={list.system_type === 'purgatory'}
+              isSystemList={list.is_system}
               tasks={getTasksForList(list.id)}
               paletteId={paletteId}
               colorPickerTaskId={colorPickerTaskId}
