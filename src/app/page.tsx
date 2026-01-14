@@ -113,6 +113,10 @@ export default function Home() {
         }
     }
 
+    const handleEnergyChange = async (taskId: string, level: 'high' | 'medium' | 'low') => {
+        await updateTask(taskId, { energy_level: level })
+    }
+
     const handleUnschedule = async (taskId: string) => {
         // First unschedule from calendar
         await unscheduleTask(taskId)
@@ -173,6 +177,7 @@ export default function Home() {
                                     onTaskDelete={deleteTask}
                                     onTaskCreate={createTask}
                                     onTaskDailyToggle={handleDailyToggle}
+                                    onTaskEnergyChange={handleEnergyChange}
                                 />
                             </div>
                         )}

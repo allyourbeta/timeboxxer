@@ -15,6 +15,7 @@ interface TaskCardProps {
   isInPurgatory: boolean
   paletteId: string
   isColorPickerOpen: boolean
+  energyLevel: 'high' | 'medium' | 'low'
   // Purgatory info (optional)
   purgatoryInfo?: {
     movedAt: string
@@ -25,6 +26,7 @@ interface TaskCardProps {
   onColorSelect: (colorIndex: number) => void
   onDelete: () => void
   onDailyToggle: () => void
+  onEnergyChange: (level: 'high' | 'medium' | 'low') => void
 }
 
 export function TaskCard({
@@ -38,12 +40,14 @@ export function TaskCard({
   isInPurgatory,
   paletteId,
   isColorPickerOpen,
+  energyLevel,
   purgatoryInfo,
   onDurationClick,
   onColorClick,
   onColorSelect,
   onDelete,
   onDailyToggle,
+  onEnergyChange,
 }: TaskCardProps) {
   const bgColor = getColor(paletteId, colorIndex)
   
@@ -98,6 +102,30 @@ export function TaskCard({
           >
             {durationMinutes} min
           </button>
+          {/* Energy level picker */}
+          <div className="flex gap-1 mt-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEnergyChange('high'); }}
+              className={`text-xs px-1 rounded transition-opacity ${energyLevel === 'high' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              title="High energy"
+            >
+              🔥
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onEnergyChange('medium'); }}
+              className={`text-xs px-1 rounded transition-opacity ${energyLevel === 'medium' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              title="Medium energy"
+            >
+              ⚡
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onEnergyChange('low'); }}
+              className={`text-xs px-1 rounded transition-opacity ${energyLevel === 'low' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              title="Low energy"
+            >
+              🌙
+            </button>
+          </div>
           <label className="flex items-center gap-1 text-sm text-white/70 hover:text-white cursor-pointer">
             <input
               type="checkbox"

@@ -19,6 +19,9 @@ interface Task {
   // Daily task fields
   is_daily: boolean
   daily_source_id: string | null
+  // Energy and highlight
+  energy_level: 'high' | 'medium' | 'low'
+  is_daily_highlight: boolean
 }
 
 interface List {
@@ -54,6 +57,7 @@ interface ListPanelProps {
   onTaskDelete: (taskId: string) => void
   onTaskCreate: (listId: string, title: string) => void
   onTaskDailyToggle: (taskId: string) => void
+  onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
 }
 
 export function ListPanel({
@@ -80,6 +84,7 @@ export function ListPanel({
   onTaskDelete,
   onTaskCreate,
   onTaskDailyToggle,
+  onTaskEnergyChange,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -169,6 +174,7 @@ export function ListPanel({
               onTaskDelete={onTaskDelete}
               onTaskAdd={(title) => onTaskCreate(list.id, title)}
               onTaskDailyToggle={onTaskDailyToggle}
+              onTaskEnergyChange={onTaskEnergyChange}
             />
           )
         })}
