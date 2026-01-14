@@ -188,6 +188,7 @@ export function ListCard({
               isCompleted={task.is_completed}
               isScheduled={scheduledTaskIds.includes(task.id)}
               isDaily={task.is_daily}
+              isInPurgatory={isInbox}
               paletteId={paletteId}
               isColorPickerOpen={colorPickerTaskId === task.id}
               purgatoryInfo={task.moved_to_purgatory_at ? {

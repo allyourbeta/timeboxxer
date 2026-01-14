@@ -12,6 +12,7 @@ interface TaskCardProps {
   isCompleted: boolean
   isScheduled: boolean
   isDaily: boolean
+  isInPurgatory: boolean
   paletteId: string
   isColorPickerOpen: boolean
   // Purgatory info (optional)
@@ -34,6 +35,7 @@ export function TaskCard({
   isCompleted,
   isScheduled,
   isDaily,
+  isInPurgatory,
   paletteId,
   isColorPickerOpen,
   purgatoryInfo,
@@ -76,7 +78,7 @@ export function TaskCard({
             <span className={`font-medium text-white ${isCompleted ? 'line-through' : ''}`}>
               {title}
             </span>
-            {isScheduled && (
+            {isScheduled && !isInPurgatory && (
               <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded text-white/80">
                 scheduled
               </span>
