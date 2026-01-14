@@ -16,6 +16,7 @@ interface TaskCardProps {
   paletteId: string
   isColorPickerOpen: boolean
   energyLevel: 'high' | 'medium' | 'low'
+  isHighlight: boolean
   // Purgatory info (optional)
   purgatoryInfo?: {
     movedAt: string
@@ -27,6 +28,7 @@ interface TaskCardProps {
   onDelete: () => void
   onDailyToggle: () => void
   onEnergyChange: (level: 'high' | 'medium' | 'low') => void
+  onHighlightToggle: () => void
 }
 
 export function TaskCard({
@@ -41,6 +43,7 @@ export function TaskCard({
   paletteId,
   isColorPickerOpen,
   energyLevel,
+  isHighlight,
   purgatoryInfo,
   onDurationClick,
   onColorClick,
@@ -48,14 +51,17 @@ export function TaskCard({
   onDelete,
   onDailyToggle,
   onEnergyChange,
+  onHighlightToggle,
 }: TaskCardProps) {
   const bgColor = getColor(paletteId, colorIndex)
   
   return (
     <div
       className={`fc-event p-3 rounded-lg transition-transform group relative ${
+        isHighlight ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent' : ''
+      } ${
         isCompleted ? 'opacity-50 pointer-events-none' : 
-        isScheduled ? 'opacity-60 cursor-default' : 
+        isScheduled && !isInPurgatory ? 'opacity-60 cursor-default' : 
         'cursor-grab active:cursor-grabbing hover:scale-[1.02]'
       }`}
       style={{ backgroundColor: bgColor }}
@@ -139,6 +145,17 @@ export function TaskCard({
             <span className="text-xs">Daily</span>
           </label>
         </div>
+        
+        {/* Highlight toggle */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onHighlightToggle(); }}
+          className={`h-6 w-6 flex items-center justify-center rounded transition-opacity ${
+            isHighlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
+          }`}
+          title={isHighlight ? 'Remove highlight' : 'Set as daily highlight'}
+        >
+          {isHighlight ? '⭐' : '☆'}
+        </button>
         
         {/* Delete button */}
         <Button

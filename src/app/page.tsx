@@ -117,6 +117,24 @@ export default function Home() {
         await updateTask(taskId, { energy_level: level })
     }
 
+    const handleHighlightToggle = async (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId)
+        if (!task) return
+        
+        if (task.is_daily_highlight) {
+            // Just remove highlight
+            await updateTask(taskId, { is_daily_highlight: false })
+        } else {
+            // Clear any existing highlight first
+            const currentHighlight = tasks.find(t => t.is_daily_highlight)
+            if (currentHighlight) {
+                await updateTask(currentHighlight.id, { is_daily_highlight: false })
+            }
+            // Set new highlight
+            await updateTask(taskId, { is_daily_highlight: true })
+        }
+    }
+
     const handleUnschedule = async (taskId: string) => {
         // First unschedule from calendar
         await unscheduleTask(taskId)
@@ -178,6 +196,7 @@ export default function Home() {
                                     onTaskCreate={createTask}
                                     onTaskDailyToggle={handleDailyToggle}
                                     onTaskEnergyChange={handleEnergyChange}
+                                    onTaskHighlightToggle={handleHighlightToggle}
                                 />
                             </div>
                         )}

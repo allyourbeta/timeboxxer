@@ -58,6 +58,7 @@ interface ListPanelProps {
   onTaskCreate: (listId: string, title: string) => void
   onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
+  onTaskHighlightToggle: (taskId: string) => void
 }
 
 export function ListPanel({
@@ -85,6 +86,7 @@ export function ListPanel({
   onTaskCreate,
   onTaskDailyToggle,
   onTaskEnergyChange,
+  onTaskHighlightToggle,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -175,6 +177,7 @@ export function ListPanel({
               onTaskAdd={(title) => onTaskCreate(list.id, title)}
               onTaskDailyToggle={onTaskDailyToggle}
               onTaskEnergyChange={onTaskEnergyChange}
+              onTaskHighlightToggle={onTaskHighlightToggle}
             />
           )
         })}

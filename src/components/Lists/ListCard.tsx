@@ -51,6 +51,7 @@ interface ListCardProps {
   onTaskAdd: (title: string) => void
   onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
+  onTaskHighlightToggle: (taskId: string) => void
 }
 
 export function ListCard({
@@ -80,6 +81,7 @@ export function ListCard({
   onTaskAdd,
   onTaskDailyToggle,
   onTaskEnergyChange,
+  onTaskHighlightToggle,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
@@ -197,6 +199,7 @@ export function ListCard({
               paletteId={paletteId}
               isColorPickerOpen={colorPickerTaskId === task.id}
               energyLevel={task.energy_level || 'medium'}
+              isHighlight={task.is_daily_highlight || false}
               purgatoryInfo={task.moved_to_purgatory_at ? {
                 movedAt: task.moved_to_purgatory_at,
                 originalListName: task.original_list_name || 'Unknown'
@@ -207,6 +210,7 @@ export function ListCard({
               onDelete={() => onTaskDelete(task.id)}
               onDailyToggle={() => onTaskDailyToggle(task.id)}
               onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
+              onHighlightToggle={() => onTaskHighlightToggle(task.id)}
             />
           ))}
           
