@@ -128,7 +128,6 @@ export async function duplicateList(listId: string, newName: string) {
 export async function ensureTodayList() {
   const supabase = getSupabase()
   const todayName = getTodayListName()
-  const todayISO = getTodayISO()
   
   // Check if today's list already exists
   const { data: existing } = await supabase
@@ -136,23 +135,36 @@ export async function ensureTodayList() {
     .select('*')
     .eq('system_type', 'date')
     .eq('name', todayName)
-    .single()
+    .maybeSingle()
   
   if (existing) return existing
   
-  // Create today's list
+  // Create today's list with position 0 (system lists don't use position for sorting)
   const { data, error } = await supabase
     .from('lists')
     .insert({
       user_id: DEV_USER_ID,
       name: todayName,
-      position: -500, // Show near top
+      position: 0,
       is_system: true,
       system_type: 'date',
     })
     .select()
     .single()
   
-  if (error) throw error
+  if (error) {
+    // If conflict, the list was created by another request - fetch it
+    if (error.code === '23505') {
+      const { data: refetched } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('system_type', 'date')
+        .eq('name', todayName)
+        .single()
+      return refetched
+    }
+    throw error
+  }
+  
   return data
 }
