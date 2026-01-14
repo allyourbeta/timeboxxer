@@ -1,5 +1,14 @@
 import { create } from 'zustand'
-import { getTasks, createTask as apiCreateTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask, completeTask as apiCompleteTask, uncompleteTask as apiUncompleteTask } from '@/api'
+import { 
+  getTasks, 
+  createTask as apiCreateTask, 
+  updateTask as apiUpdateTask, 
+  deleteTask as apiDeleteTask, 
+  completeTask as apiCompleteTask, 
+  uncompleteTask as apiUncompleteTask,
+  moveToPurgatory as apiMoveToPurgatory,
+  moveFromPurgatory as apiMoveFromPurgatory,
+} from '@/api'
 
 interface Task {
   id: string
@@ -29,6 +38,8 @@ interface TaskStore {
   deleteTask: (taskId: string) => Promise<void>
   completeTask: (taskId: string) => Promise<void>
   uncompleteTask: (taskId: string) => Promise<void>
+  moveToPurgatory: (taskId: string, originalListId: string, originalListName: string) => Promise<void>
+  moveFromPurgatory: (taskId: string, newListId: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -76,6 +87,20 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       tasks: get().tasks.map(t =>
         t.id === taskId ? { ...t, is_completed: false, completed_at: null } : t
       )
+    })
+  },
+
+  moveToPurgatory: async (taskId, originalListId, originalListName) => {
+    const updatedTask = await apiMoveToPurgatory(taskId, originalListId, originalListName)
+    set({
+      tasks: get().tasks.map(t => t.id === taskId ? updatedTask : t)
+    })
+  },
+
+  moveFromPurgatory: async (taskId, newListId) => {
+    const updatedTask = await apiMoveFromPurgatory(taskId, newListId)
+    set({
+      tasks: get().tasks.map(t => t.id === taskId ? updatedTask : t)
     })
   },
 }))

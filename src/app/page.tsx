@@ -5,6 +5,7 @@ import {useTaskStore, useListStore, useScheduleStore, useUIStore} from '@/state'
 import {Header, CompletedView} from '@/components/Layout'
 import {ListPanel} from '@/components/Lists'
 import {FullCalendarView} from '@/components/Calendar'
+import { PURGATORY_LIST_ID } from '@/lib/constants'
 
 const PALETTE_ID = 'ocean-bold'
 
@@ -18,7 +19,8 @@ export default function Home() {
         updateTask,
         deleteTask,
         completeTask,
-        uncompleteTask
+        uncompleteTask,
+        moveToPurgatory
     } = useTaskStore()
     const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
     const {scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask} = useScheduleStore()
@@ -63,8 +65,17 @@ export default function Home() {
     const scheduledTaskIds = scheduled.map(s => s.task_id)
 
     const handleExternalDrop = async (taskId: string, time: string) => {
+        const task = tasks.find(t => t.id === taskId)
+        if (!task) return
+        
         const today = new Date().toISOString().split('T')[0]
         await scheduleTask(taskId, today, time + ':00')
+        
+        // Move task to Purgatory if not already there
+        if (task.list_id !== PURGATORY_LIST_ID) {
+            const originalList = lists.find(l => l.id === task.list_id)
+            await moveToPurgatory(taskId, task.list_id || '', originalList?.name || 'Unknown')
+        }
     }
 
     const handleEventMove = async (taskId: string, time: string) => {

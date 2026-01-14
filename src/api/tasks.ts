@@ -1,6 +1,5 @@
 import { getSupabase } from '@/lib/supabase'
-
-const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
+import { DEV_USER_ID, PURGATORY_LIST_ID } from '@/lib/constants'
 
 export async function getTasks() {
   const supabase = getSupabase()
@@ -96,6 +95,44 @@ export async function deleteTask(taskId: string) {
     .delete()
     .eq('id', taskId)
   if (error) throw error
+}
+
+export async function moveToPurgatory(taskId: string, originalListId: string, originalListName: string) {
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({
+      list_id: PURGATORY_LIST_ID,
+      moved_to_purgatory_at: new Date().toISOString(),
+      original_list_id: originalListId,
+      original_list_name: originalListName,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', taskId)
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data
+}
+
+export async function moveFromPurgatory(taskId: string, newListId: string) {
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({
+      list_id: newListId,
+      moved_to_purgatory_at: null,
+      original_list_id: null,
+      original_list_name: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', taskId)
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data
 }
 
 export async function moveTaskToList(taskId: string, newListId: string | null) {
