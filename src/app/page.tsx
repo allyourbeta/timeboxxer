@@ -94,6 +94,13 @@ export default function Home() {
         closeColorPicker()
     }
 
+    const handleDailyToggle = async (taskId: string) => {
+        const task = tasks.find(t => t.id === taskId)
+        if (task) {
+            await updateTask(taskId, { is_daily: !task.is_daily })
+        }
+    }
+
     return (
         <div className="h-screen flex flex-col bg-background">
             <Header
@@ -131,6 +138,7 @@ export default function Home() {
                                     onTaskColorSelect={handleColorSelect}
                                     onTaskDelete={deleteTask}
                                     onTaskCreate={createTask}
+                                    onTaskDailyToggle={handleDailyToggle}
                                 />
                             </div>
                         )}

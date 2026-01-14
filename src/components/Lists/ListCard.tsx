@@ -12,6 +12,13 @@ interface Task {
   duration_minutes: number
   color_index: number
   is_completed: boolean
+  // Purgatory fields
+  moved_to_purgatory_at: string | null
+  original_list_id: string | null
+  original_list_name: string | null
+  // Daily task fields
+  is_daily: boolean
+  daily_source_id: string | null
 }
 
 interface ListCardProps {
@@ -38,6 +45,7 @@ interface ListCardProps {
   onTaskColorSelect: (taskId: string, colorIndex: number) => void
   onTaskDelete: (taskId: string) => void
   onTaskAdd: (title: string) => void
+  onTaskDailyToggle: (taskId: string) => void
 }
 
 export function ListCard({
@@ -64,6 +72,7 @@ export function ListCard({
   onTaskColorSelect,
   onTaskDelete,
   onTaskAdd,
+  onTaskDailyToggle,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
@@ -176,12 +185,18 @@ export function ListCard({
               colorIndex={task.color_index}
               isCompleted={task.is_completed}
               isScheduled={scheduledTaskIds.includes(task.id)}
+              isDaily={task.is_daily}
               paletteId={paletteId}
               isColorPickerOpen={colorPickerTaskId === task.id}
+              purgatoryInfo={task.moved_to_purgatory_at ? {
+                movedAt: task.moved_to_purgatory_at,
+                originalListName: task.original_list_name || 'Unknown'
+              } : undefined}
               onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
               onColorClick={() => onTaskColorClick(task.id)}
               onColorSelect={(colorIndex) => onTaskColorSelect(task.id, colorIndex)}
               onDelete={() => onTaskDelete(task.id)}
+              onDailyToggle={() => onTaskDailyToggle(task.id)}
             />
           ))}
           

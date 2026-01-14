@@ -12,6 +12,13 @@ interface Task {
   duration_minutes: number
   color_index: number
   is_completed: boolean
+  // Purgatory fields
+  moved_to_purgatory_at: string | null
+  original_list_id: string | null
+  original_list_name: string | null
+  // Daily task fields
+  is_daily: boolean
+  daily_source_id: string | null
 }
 
 interface List {
@@ -46,6 +53,7 @@ interface ListPanelProps {
   onTaskColorSelect: (taskId: string, colorIndex: number) => void
   onTaskDelete: (taskId: string) => void
   onTaskCreate: (listId: string, title: string) => void
+  onTaskDailyToggle: (taskId: string) => void
 }
 
 export function ListPanel({
@@ -71,6 +79,7 @@ export function ListPanel({
   onTaskColorSelect,
   onTaskDelete,
   onTaskCreate,
+  onTaskDailyToggle,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -158,6 +167,7 @@ export function ListPanel({
               onTaskColorSelect={onTaskColorSelect}
               onTaskDelete={onTaskDelete}
               onTaskAdd={(title) => onTaskCreate(list.id, title)}
+              onTaskDailyToggle={onTaskDailyToggle}
             />
           )
         })}

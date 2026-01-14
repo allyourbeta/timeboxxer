@@ -11,12 +11,19 @@ interface TaskCardProps {
   colorIndex: number
   isCompleted: boolean
   isScheduled: boolean
+  isDaily: boolean
   paletteId: string
   isColorPickerOpen: boolean
+  // Purgatory info (optional)
+  purgatoryInfo?: {
+    movedAt: string
+    originalListName: string
+  }
   onDurationClick: (reverse: boolean) => void
   onColorClick: () => void
   onColorSelect: (colorIndex: number) => void
   onDelete: () => void
+  onDailyToggle: () => void
 }
 
 export function TaskCard({
@@ -26,12 +33,15 @@ export function TaskCard({
   colorIndex,
   isCompleted,
   isScheduled,
+  isDaily,
   paletteId,
   isColorPickerOpen,
+  purgatoryInfo,
   onDurationClick,
   onColorClick,
   onColorSelect,
   onDelete,
+  onDailyToggle,
 }: TaskCardProps) {
   const bgColor = getColor(paletteId, colorIndex)
   
@@ -72,6 +82,11 @@ export function TaskCard({
               </span>
             )}
           </div>
+          {purgatoryInfo && (
+            <div className="text-xs text-white/60 mt-1">
+              From: {purgatoryInfo.originalListName} • {new Date(purgatoryInfo.movedAt).toLocaleDateString()}
+            </div>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -81,6 +96,18 @@ export function TaskCard({
           >
             {durationMinutes} min
           </button>
+          <label className="flex items-center gap-1 text-sm text-white/70 hover:text-white cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isDaily}
+              onChange={(e) => {
+                e.stopPropagation()
+                onDailyToggle()
+              }}
+              className="w-3 h-3 rounded"
+            />
+            <span className="text-xs">Daily</span>
+          </label>
         </div>
         
         {/* Delete button */}
