@@ -136,9 +136,9 @@ export function ListPanel({
   
   return (
     <div ref={containerRef} className="border-r border-theme overflow-y-auto">
-      <div className="grid grid-cols-3 gap-4 p-4">
+      <div className="grid grid-cols-2 gap-4 p-4">
         {lists.map((list, index) => {
-          const column = index % 3
+          const column = index % 2
           const isExpanded = expandedListByColumn[column] === list.id
           return (
             <ListCard
