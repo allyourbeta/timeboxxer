@@ -86,13 +86,35 @@ export function ListCard({
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
   const [showMenu, setShowMenu] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  // Handle menu toggle with position calculation
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (showMenu) {
+      setShowMenu(false)
+      setMenuPosition(null)
+    } else {
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect()
+        // Position menu below button, aligned to right edge
+        setMenuPosition({
+          top: rect.bottom + 4,
+          left: rect.right - 176, // 176px = w-44 = 11rem
+        })
+      }
+      setShowMenu(true)
+    }
+  }
 
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false)
+        setMenuPosition(null)
       }
     }
     
@@ -177,27 +199,32 @@ export function ListCard({
         <div className="px-4 pb-2">
           <div className="flex justify-end gap-2">
             {/* Overflow menu */}
-            <div className="relative" ref={menuRef}>
+            <div ref={menuRef}>
               <Button
+                ref={buttonRef}
                 variant="ghost"
                 size="icon"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowMenu(!showMenu)
-                }}
+                onClick={handleMenuToggle}
                 className="h-8 w-8 text-muted-foreground"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
               
-              {showMenu && (
-                <div className="absolute right-0 top-full mt-1 w-40 bg-popover border rounded-lg shadow-lg z-20 py-1">
+              {showMenu && menuPosition && (
+                <div 
+                  className="fixed w-44 bg-popover border border-border rounded-lg shadow-xl z-50 py-1"
+                  style={{
+                    top: menuPosition.top,
+                    left: menuPosition.left,
+                  }}
+                >
                   {!isSystemList && (
                     <>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setShowMenu(false)
+                          setMenuPosition(null)
                           onStartDuplicate()
                         }}
                         className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
@@ -209,9 +236,10 @@ export function ListCard({
                         onClick={(e) => {
                           e.stopPropagation()
                           setShowMenu(false)
+                          setMenuPosition(null)
                           onDelete()
                         }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-accent text-destructive flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-destructive hover:text-destructive-foreground text-destructive flex items-center gap-2"
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete List
@@ -219,8 +247,8 @@ export function ListCard({
                     </>
                   )}
                   {isSystemList && (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      System list
+                    <div className="px-3 py-2 text-sm text-muted-foreground italic">
+                      System list (cannot delete)
                     </div>
                   )}
                 </div>
