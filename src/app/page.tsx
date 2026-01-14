@@ -1,10 +1,12 @@
 'use client'
 
-import {useEffect} from 'react'
+import {useEffect, useState} from 'react'
 import {useTaskStore, useListStore, useScheduleStore, useUIStore} from '@/state'
 import {Header, CompletedView} from '@/components/Layout'
 import {ListPanel} from '@/components/Lists'
 import {FullCalendarView} from '@/components/Calendar'
+import {Toast} from '@/components/ui'
+import {FocusMode} from '@/components/Focus'
 import { PURGATORY_LIST_ID } from '@/lib/constants'
 
 const PALETTE_ID = 'ocean-bold'
@@ -37,6 +39,13 @@ export default function Home() {
         showNewListInput, setShowNewListInput,
         expandedListByColumn, toggleListExpanded,
     } = useUIStore()
+
+    // Toast state for undo functionality
+    const [toastMessage, setToastMessage] = useState<string | null>(null)
+    const [undoAction, setUndoAction] = useState<(() => void) | null>(null)
+
+    // Focus mode state
+    const [focusTask, setFocusTask] = useState<string | null>(null)
 
     // Load data on mount
     useEffect(() => {
@@ -76,6 +85,80 @@ export default function Home() {
 
     // Get list of scheduled task IDs
     const scheduledTaskIds = scheduled.map(s => s.task_id)
+
+    // Focus mode handlers
+    const handleEnterFocus = (taskId: string) => {
+        setFocusTask(taskId)
+    }
+
+    const handleExitFocus = () => {
+        setFocusTask(null)
+    }
+
+    const handleFocusComplete = async (taskId: string) => {
+        await completeTask(taskId)
+        setFocusTask(null)
+    }
+
+    const handleJustStart = () => {
+        // Get unscheduled tasks that aren't completed
+        const unscheduledTasks = tasks.filter(task => 
+            !task.is_completed &&
+            !scheduledTaskIds.includes(task.id) &&
+            task.list_id !== PURGATORY_LIST_ID
+        )
+        
+        if (unscheduledTasks.length > 0) {
+            // Randomly select a task
+            const randomIndex = Math.floor(Math.random() * unscheduledTasks.length)
+            const randomTask = unscheduledTasks[randomIndex]
+            handleEnterFocus(randomTask.id)
+        }
+    }
+
+    // Soft delete with undo functionality
+    const handleSoftDeleteList = async (listId: string, listName: string) => {
+        // Get all tasks from the list that we'll need to restore
+        const listTasks = tasks.filter(t => t.list_id === listId)
+        
+        // Move all tasks to Inbox first (so they don't get lost)
+        const inboxList = lists.find(l => l.name === 'Inbox' && !l.is_system)
+        if (inboxList && listTasks.length > 0) {
+            // Move tasks to Inbox but track original list for undo
+            const taskMovePromises = listTasks.map(task => 
+                updateTask(task.id, { list_id: inboxList.id })
+            )
+            await Promise.all(taskMovePromises)
+        }
+        
+        // Delete the list
+        await deleteList(listId)
+        
+        // Show toast with undo option
+        setToastMessage(`"${listName}" deleted`)
+        setUndoAction(() => async () => {
+            // Recreate the list with same name
+            const recreatedList = await createList(listName)
+            
+            // Move tasks back to recreated list
+            if (listTasks.length > 0 && recreatedList) {
+                const restorePromises = listTasks.map(task =>
+                    updateTask(task.id, { list_id: recreatedList.id })
+                )
+                await Promise.all(restorePromises)
+            }
+            
+            // Clear toast
+            setToastMessage(null)
+            setUndoAction(null)
+        })
+        
+        // Auto-clear after 5 seconds if no undo
+        setTimeout(() => {
+            setToastMessage(null)
+            setUndoAction(null)
+        }, 5000)
+    }
 
     const handleExternalDrop = async (taskId: string, time: string) => {
         const task = tasks.find(t => t.id === taskId)
@@ -170,6 +253,7 @@ export default function Home() {
                 onViewChange={setCurrentView}
                 onPanelModeChange={setPanelMode}
                 onParkThought={handleParkThought}
+                onJustStart={handleJustStart}
             />
 
             <div className="flex flex-1 overflow-hidden">
@@ -190,7 +274,10 @@ export default function Home() {
                                     onShowNewListInput={setShowNewListInput}
                                     onCreateList={createList}
                                     onEditList={updateList}
-                                    onDeleteList={deleteList}
+                                    onDeleteList={(listId) => {
+                                        const list = lists.find(l => l.id === listId)
+                                        if (list) handleSoftDeleteList(listId, list.name)
+                                    }}
                                     onDuplicateList={duplicateList}
                                     onSetEditingListId={setEditingListId}
                                     onSetDuplicatingListId={setDuplicatingListId}
@@ -230,6 +317,34 @@ export default function Home() {
                     />
                 )}
             </div>
+
+            {/* Focus Mode Overlay */}
+            {focusTask && (() => {
+                const task = tasks.find(t => t.id === focusTask)
+                if (!task) return null
+                
+                return (
+                    <FocusMode
+                        task={task}
+                        paletteId={PALETTE_ID}
+                        onExit={handleExitFocus}
+                        onComplete={handleFocusComplete}
+                    />
+                )
+            })()}
+
+            {/* Toast for undo actions */}
+            {toastMessage && (
+                <Toast
+                    message={toastMessage}
+                    duration={5000}
+                    onUndo={undoAction || undefined}
+                    onDismiss={() => {
+                        setToastMessage(null)
+                        setUndoAction(null)
+                    }}
+                />
+            )}
         </div>
     )
 }

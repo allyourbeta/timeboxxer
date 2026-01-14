@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X } from 'lucide-react'
+import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ interface HeaderProps {
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
   onParkThought: (title: string) => void
+  onJustStart: () => void
 }
 
 export function Header({ 
@@ -21,6 +22,7 @@ export function Header({
   onViewChange, 
   onPanelModeChange,
   onParkThought,
+  onJustStart,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [showParkInput, setShowParkInput] = useState(false)
@@ -120,6 +122,19 @@ export function Header({
               Calendar
             </Toggle>
           </div>
+        )}
+        
+        {/* Just Start button - only show on main view */}
+        {currentView === 'main' && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onJustStart}
+            className="h-9 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+          >
+            <Shuffle className="h-4 w-4 mr-1" />
+            Just Start
+          </Button>
         )}
         
         {/* Theme Toggle */}

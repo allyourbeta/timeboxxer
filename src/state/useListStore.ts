@@ -16,7 +16,7 @@ interface ListStore {
   loading: boolean
   
   loadLists: () => Promise<void>
-  createList: (name: string) => Promise<void>
+  createList: (name: string) => Promise<List>
   updateList: (listId: string, name: string) => Promise<void>
   deleteList: (listId: string) => Promise<void>
   duplicateList: (listId: string, newName: string) => Promise<void>
@@ -38,6 +38,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   createList: async (name) => {
     const newList = await apiCreateList(name)
     set({ lists: [...get().lists, newList] })
+    return newList
   },
   
   updateList: async (listId, name) => {

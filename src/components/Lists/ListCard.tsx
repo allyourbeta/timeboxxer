@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, Copy, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, ChevronUp, MoreVertical, Trash2, Copy, Edit2 } from 'lucide-react'
 import { TaskCard, AddTaskInput } from '@/components/Tasks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -85,6 +85,22 @@ export function ListCard({
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMenu])
   
   // Get the first task's color for accent bar
   const getFirstTaskColor = () => {
@@ -157,27 +173,59 @@ export function ListCard({
       )}
       
       {/* Action buttons - only when expanded and not editing */}
-      {!isEditing && isExpanded && !isSystemList && (
+      {!isEditing && isExpanded && (
         <div className="px-4 pb-2">
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onStartDuplicate}
-              className="h-8 w-8"
-              title="Duplicate list"
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onDelete}
-              className="h-8 w-8 hover:bg-destructive hover:text-destructive-foreground"
-              title="Delete list"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            {/* Overflow menu */}
+            <div className="relative" ref={menuRef}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowMenu(!showMenu)
+                }}
+                className="h-8 w-8 text-muted-foreground"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+              
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-1 w-40 bg-popover border rounded-lg shadow-lg z-20 py-1">
+                  {!isSystemList && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowMenu(false)
+                          onStartDuplicate()
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                      >
+                        <Copy className="h-4 w-4" />
+                        Duplicate
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowMenu(false)
+                          onDelete()
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-accent text-destructive flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete List
+                      </button>
+                    </>
+                  )}
+                  {isSystemList && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      System list
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
