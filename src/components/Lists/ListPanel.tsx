@@ -105,9 +105,14 @@ export function ListPanel({
   const getTasksForList = (listId: string) =>
     tasks.filter(t => t.list_id === listId && !t.is_completed)
   
-  const cycleDuration = (current: number) => {
+  const cycleDuration = (current: number, reverse: boolean) => {
     const durations = [15, 30, 45, 60]
     const idx = durations.indexOf(current)
+    if (idx === -1) return 30 // Default if current not in list
+    
+    if (reverse) {
+      return durations[(idx - 1 + durations.length) % durations.length]
+    }
     return durations[(idx + 1) % durations.length]
   }
   
@@ -144,8 +149,8 @@ export function ListPanel({
               }}
               onCancelDuplicate={() => onSetDuplicatingListId(null)}
               onDelete={() => onDeleteList(list.id)}
-              onTaskDurationClick={(taskId, duration) => 
-                onTaskDurationChange(taskId, cycleDuration(duration))
+              onTaskDurationClick={(taskId, duration, reverse) => 
+                onTaskDurationChange(taskId, cycleDuration(duration, reverse))
               }
               onTaskColorClick={onTaskColorClick}
               onTaskColorSelect={onTaskColorSelect}

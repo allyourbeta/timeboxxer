@@ -13,7 +13,7 @@ interface TaskCardProps {
   isScheduled: boolean
   paletteId: string
   isColorPickerOpen: boolean
-  onDurationClick: () => void
+  onDurationClick: (reverse: boolean) => void
   onColorClick: () => void
   onColorSelect: (colorIndex: number) => void
   onDelete: () => void
@@ -75,7 +75,7 @@ export function TaskCard({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onDurationClick()
+              onDurationClick(e.shiftKey)
             }}
             className="text-sm text-white/70 hover:text-white cursor-pointer transition-colors"
           >
