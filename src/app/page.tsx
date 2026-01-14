@@ -5,7 +5,7 @@ import {useTaskStore, useListStore, useScheduleStore, useUIStore} from '@/state'
 import {Header, CompletedView} from '@/components/Layout'
 import {ListPanel} from '@/components/Lists'
 import {FullCalendarView} from '@/components/Calendar'
-import {Toast} from '@/components/ui'
+import {Toast, ConfirmDialog} from '@/components/ui'
 import {FocusMode} from '@/components/Focus'
 import { PURGATORY_LIST_ID } from '@/lib/constants'
 
@@ -46,6 +46,13 @@ export default function Home() {
 
     // Focus mode state
     const [focusTask, setFocusTask] = useState<string | null>(null)
+
+    // Delete confirmation state
+    const [deleteConfirm, setDeleteConfirm] = useState<{
+        listId: string
+        listName: string
+        taskCount: number
+    } | null>(null)
 
     // Load data on mount
     useEffect(() => {
@@ -116,8 +123,26 @@ export default function Home() {
         }
     }
 
-    // Soft delete with undo functionality
-    const handleSoftDeleteList = async (listId: string, listName: string) => {
+    // Handle delete list click - shows confirmation first
+    const handleDeleteListClick = (listId: string) => {
+        const list = lists.find(l => l.id === listId)
+        if (!list || list.is_system) return
+        
+        const taskCount = tasks.filter(t => t.list_id === listId).length
+        
+        setDeleteConfirm({
+            listId,
+            listName: list.name,
+            taskCount,
+        })
+    }
+
+    // Confirmed delete - perform the soft delete with undo
+    const handleDeleteListConfirm = async () => {
+        if (!deleteConfirm) return
+        
+        const { listId, listName } = deleteConfirm
+        
         // Get all tasks from the list that we'll need to restore
         const listTasks = tasks.filter(t => t.list_id === listId)
         
@@ -158,6 +183,9 @@ export default function Home() {
             setToastMessage(null)
             setUndoAction(null)
         }, 5000)
+        
+        // Close confirmation dialog
+        setDeleteConfirm(null)
     }
 
     const handleExternalDrop = async (taskId: string, time: string) => {
@@ -274,10 +302,7 @@ export default function Home() {
                                     onShowNewListInput={setShowNewListInput}
                                     onCreateList={createList}
                                     onEditList={updateList}
-                                    onDeleteList={(listId) => {
-                                        const list = lists.find(l => l.id === listId)
-                                        if (list) handleSoftDeleteList(listId, list.name)
-                                    }}
+                                    onDeleteList={handleDeleteListClick}
                                     onDuplicateList={duplicateList}
                                     onSetEditingListId={setEditingListId}
                                     onSetDuplicatingListId={setDuplicatingListId}
@@ -317,6 +342,19 @@ export default function Home() {
                     />
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            {deleteConfirm && (
+                <ConfirmDialog
+                    title="Delete List"
+                    message={`Delete "${deleteConfirm.listName}"${deleteConfirm.taskCount > 0 ? ` and move ${deleteConfirm.taskCount} task${deleteConfirm.taskCount > 1 ? 's' : ''} to Inbox` : ''}?`}
+                    confirmLabel="Delete"
+                    cancelLabel="Cancel"
+                    onConfirm={handleDeleteListConfirm}
+                    onCancel={() => setDeleteConfirm(null)}
+                    isDestructive
+                />
+            )}
 
             {/* Focus Mode Overlay */}
             {focusTask && (() => {
