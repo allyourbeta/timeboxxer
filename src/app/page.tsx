@@ -21,6 +21,7 @@ export default function Home() {
         completeTask,
         uncompleteTask,
         moveToPurgatory,
+        moveFromPurgatory,
         spawnDailyTasksForToday
     } = useTaskStore()
     const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
@@ -112,6 +113,28 @@ export default function Home() {
         }
     }
 
+    const handleUnschedule = async (taskId: string) => {
+        // First unschedule from calendar
+        await unscheduleTask(taskId)
+        
+        // Then move back to original list (or Inbox if original was deleted)
+        const task = tasks.find(t => t.id === taskId)
+        if (task && task.list_id === PURGATORY_LIST_ID) {
+            // Check if original list still exists
+            const originalListExists = task.original_list_id && lists.some(l => l.id === task.original_list_id)
+            
+            // Find Inbox as fallback
+            const inboxList = lists.find(l => l.name === 'Inbox' && !l.is_system)
+            const targetListId = originalListExists 
+                ? task.original_list_id! 
+                : inboxList?.id || lists.find(l => !l.is_system)?.id
+            
+            if (targetListId) {
+                await moveFromPurgatory(taskId, targetListId)
+            }
+        }
+    }
+
     return (
         <div className="h-screen flex flex-col bg-background">
             <Header
@@ -161,7 +184,7 @@ export default function Home() {
                                 paletteId={PALETTE_ID}
                                 onExternalDrop={handleExternalDrop}
                                 onEventMove={handleEventMove}
-                                onUnschedule={unscheduleTask}
+                                onUnschedule={handleUnschedule}
                                 onComplete={completeTask}
                                 onDurationChange={handleDurationChange}
                             />
