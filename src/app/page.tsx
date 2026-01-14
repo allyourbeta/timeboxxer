@@ -25,7 +25,8 @@ export default function Home() {
         moveToPurgatory,
         moveFromPurgatory,
         spawnDailyTasksForToday,
-        createParkedThought
+        createParkedThought,
+        createCalendarTask
     } = useTaskStore()
     const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
     const {scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask} = useScheduleStore()
@@ -287,6 +288,13 @@ export default function Home() {
         }
     }
 
+    const handleCreateCalendarTask = async (title: string, time: string) => {
+        const today = new Date().toISOString().split('T')[0]
+        await createCalendarTask(title, time, today)
+        // Reload schedule to show the new event
+        await loadSchedule()
+    }
+
     return (
         <div className="h-screen flex flex-col bg-background">
             <Header
@@ -342,6 +350,7 @@ export default function Home() {
                                 onEventMove={handleEventMove}
                                 onUnschedule={handleUnschedule}
                                 onComplete={completeTask}
+                                onCreateTask={handleCreateCalendarTask}
                                 onDurationChange={handleDurationChange}
                             />
                             </div>

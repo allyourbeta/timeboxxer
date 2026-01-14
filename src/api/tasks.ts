@@ -213,3 +213,37 @@ export async function createParkedThought(title: string) {
   if (error) throw error
   return data
 }
+
+export async function createCalendarTask(title: string, startTime: string, date: string) {
+  const supabase = getSupabase()
+  
+  const { data: task, error: taskError } = await supabase
+    .from('tasks')
+    .insert({
+      user_id: DEV_USER_ID,
+      list_id: null,  // No list - created directly on calendar
+      title,
+      duration_minutes: 30,  // Default duration
+      color_index: Math.floor(Math.random() * 12),  // Random color
+      energy_level: 'medium',
+      position: 0,
+    })
+    .select()
+    .single()
+  
+  if (taskError) throw taskError
+  
+  // Also schedule it
+  const { error: scheduleError } = await supabase
+    .from('scheduled_tasks')
+    .insert({
+      user_id: DEV_USER_ID,
+      task_id: task.id,
+      scheduled_date: date,
+      start_time: startTime + ':00',
+    })
+  
+  if (scheduleError) throw scheduleError
+  
+  return task
+}

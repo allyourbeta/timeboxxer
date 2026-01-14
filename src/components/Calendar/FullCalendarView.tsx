@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -28,6 +28,7 @@ interface FullCalendarViewProps {
   onEventMove: (taskId: string, time: string) => void     // NEW - for moving existing events
   onUnschedule: (taskId: string) => void
   onComplete: (taskId: string) => void
+  onCreateTask: (title: string, time: string) => void
   onDurationChange: (taskId: string, newDuration: number) => void
 }
 
@@ -40,9 +41,17 @@ export function FullCalendarView({
   onEventMove,
   onUnschedule,
   onComplete,
+  onCreateTask,
   onDurationChange,
 }: FullCalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null)
+  
+  // State for inline task creation
+  const [newTaskSlot, setNewTaskSlot] = useState<{
+    time: string
+    date: Date
+  } | null>(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
   
   // Convert scheduled tasks to FullCalendar events
   const events: EventInput[] = scheduled.map(scheduledTask => {
@@ -135,6 +144,37 @@ export function FullCalendarView({
     }
   }, [onComplete, onUnschedule])
 
+  // Handle date click for inline task creation
+  const handleDateClick = useCallback((info: any) => {
+    const clickedDate = info.date
+    const hours = clickedDate.getHours().toString().padStart(2, '0')
+    const minutes = clickedDate.getMinutes().toString().padStart(2, '0')
+    const time = `${hours}:${minutes}`
+    
+    setNewTaskSlot({
+      time,
+      date: clickedDate,
+    })
+    setNewTaskTitle('')
+  }, [])
+
+  const handleCreateSubmit = () => {
+    if (newTaskTitle.trim() && newTaskSlot) {
+      onCreateTask(newTaskTitle.trim(), newTaskSlot.time)
+      setNewTaskSlot(null)
+      setNewTaskTitle('')
+    }
+  }
+
+  const handleCreateKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCreateSubmit()
+    } else if (e.key === 'Escape') {
+      setNewTaskSlot(null)
+      setNewTaskTitle('')
+    }
+  }
+
   // Auto-scroll to current time on mount
   useEffect(() => {
     const scrollToCurrentTime = () => {
@@ -187,6 +227,8 @@ export function FullCalendarView({
           eventResize={handleEventResize}
           eventReceive={handleEventReceive}
           eventClick={handleEventClick}
+          dateClick={handleDateClick}
+          selectable={false}
           slotLabelFormat={{
             hour: 'numeric',
             minute: '2-digit',
@@ -199,6 +241,46 @@ export function FullCalendarView({
           }}
         />
       </div>
+
+      {/* Inline task creation UI */}
+      {newTaskSlot && (
+        <div 
+          className="fixed z-50 bg-popover border rounded-lg shadow-xl p-3"
+          style={{
+            // Position near the click - we'll refine this
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div className="text-sm text-muted-foreground mb-2">
+            New task at {newTaskSlot.time}
+          </div>
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            onKeyDown={handleCreateKeyDown}
+            placeholder="Task name..."
+            className="w-64 px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2 mt-3">
+            <button
+              onClick={() => setNewTaskSlot(null)}
+              className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateSubmit}
+              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

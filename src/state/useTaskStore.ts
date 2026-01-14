@@ -8,6 +8,7 @@ import {
   uncompleteTask as apiUncompleteTask,
   moveToPurgatory as apiMoveToPurgatory,
   moveFromPurgatory as apiMoveFromPurgatory,
+  createCalendarTask as apiCreateCalendarTask,
   spawnDailyTasks,
   createParkedThought as apiCreateParkedThought,
 } from '@/api'
@@ -47,6 +48,7 @@ interface TaskStore {
   moveFromPurgatory: (taskId: string, newListId: string) => Promise<void>
   spawnDailyTasksForToday: (todayListId: string) => Promise<void>
   createParkedThought: (title: string) => Promise<void>
+  createCalendarTask: (title: string, time: string, date: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -120,6 +122,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   
   createParkedThought: async (title) => {
     const newTask = await apiCreateParkedThought(title)
+    set({ tasks: [...get().tasks, newTask] })
+  },
+
+  createCalendarTask: async (title, time, date) => {
+    const newTask = await apiCreateCalendarTask(title, time, date)
     set({ tasks: [...get().tasks, newTask] })
   },
 }))
