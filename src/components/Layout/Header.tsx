@@ -6,6 +6,7 @@ import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle } from 'lucide-
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
+import { WeekStreak } from './WeekStreak'
 
 interface HeaderProps {
   currentView: 'main' | 'completed'
@@ -15,6 +16,7 @@ interface HeaderProps {
   onParkThought: (title: string) => void
   onJustStart: () => void
   completedToday: number
+  weekData: number[]
 }
 
 export function Header({ 
@@ -25,6 +27,7 @@ export function Header({
   onParkThought,
   onJustStart,
   completedToday,
+  weekData,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [showParkInput, setShowParkInput] = useState(false)
@@ -56,13 +59,16 @@ export function Header({
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-bold text-foreground">Timeboxxer</h1>
         
-        {/* Streak counter */}
-        {completedToday > 0 && (
-          <div className="flex items-center gap-1 text-sm text-emerald-500 font-medium">
-            <span>✓</span>
-            <span>{completedToday} today</span>
-          </div>
-        )}
+        {/* Streak section */}
+        <div className="flex items-center gap-3">
+          <WeekStreak weekData={weekData} />
+          {completedToday > 0 && (
+            <div className="flex items-center gap-1 text-sm text-emerald-500 font-medium">
+              <span>✓</span>
+              <span>{completedToday}</span>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="flex items-center gap-3">

@@ -303,6 +303,29 @@ export default function Home() {
         return completedDate === today
     }).length
 
+    // Calculate completions for last 7 days
+    const getWeekData = (): number[] => {
+        const result: number[] = []
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date()
+            date.setDate(date.getDate() - i)
+            const dateStr = date.toDateString()
+            
+            const count = tasks.filter(t => {
+                if (!t.is_completed || !t.completed_at) return false
+                const completedDate = new Date(t.completed_at).toDateString()
+                return completedDate === dateStr
+            }).length
+            
+            result.push(count)
+        }
+        
+        return result
+    }
+
+    const weekData = getWeekData()
+
     return (
         <div className="h-screen flex flex-col bg-background">
             <Header
@@ -313,6 +336,7 @@ export default function Home() {
                 onParkThought={handleParkThought}
                 onJustStart={handleJustStart}
                 completedToday={completedToday}
+                weekData={weekData}
             />
 
             <div className="flex flex-1 overflow-hidden">
