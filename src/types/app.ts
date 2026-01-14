@@ -149,30 +149,3 @@ export interface ScheduleTaskInput {
   mode: ScheduleMode;
 }
 
-// =============================================================================
-// Time Utilities Types
-// =============================================================================
-
-/** Represents a time slot on the calendar */
-export interface TimeSlot {
-  startTime: string;  // '09:00'
-  endTime: string;    // '09:15'
-  hour: number;       // 9
-  minute: number;     // 0
-}
-
-/** Calendar day boundaries */
-export interface DayBounds {
-  startHour: number;  // 0 (midnight)
-  endHour: number;    // 24 (midnight next day)
-  slotMinutes: number; // 15
-}
-
-export const DEFAULT_DAY_BOUNDS: DayBounds = {
-  startHour: 0,
-  endHour: 24,
-  slotMinutes: 15,
-};
-
-/** Where the calendar should scroll to on load */
-export const DEFAULT_SCROLL_HOUR = 9; // 9am
