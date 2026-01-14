@@ -142,20 +142,23 @@ export function FullCalendarView({
     }
   }, [onComplete, onUnschedule])
 
-  // Auto-scroll to current time
+  // Auto-scroll to current time on mount
   useEffect(() => {
     const scrollToCurrentTime = () => {
       if (!calendarRef.current) return
       
       const calendarApi = calendarRef.current.getApi()
       const now = new Date()
+      const currentHour = now.getHours()
+      const currentMinute = now.getMinutes()
       
-      // If before 8am, scroll to 8am
-      const targetTime = now.getHours() < 8 
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0)
-        : now
+      // Calculate scroll time with ~2 hour padding above current time
+      // so current time isn't at the very top
+      const paddingHours = 2
+      const scrollHour = Math.max(0, currentHour - paddingHours)
+      const scrollTime = `${scrollHour.toString().padStart(2, '0')}:00:00`
       
-      calendarApi.scrollToTime(targetTime.toTimeString().substring(0, 8))
+      calendarApi.scrollToTime(scrollTime)
     }
     
     // Delay to ensure calendar is rendered
