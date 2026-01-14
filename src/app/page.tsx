@@ -22,7 +22,8 @@ export default function Home() {
         uncompleteTask,
         moveToPurgatory,
         moveFromPurgatory,
-        spawnDailyTasksForToday
+        spawnDailyTasksForToday,
+        createParkedThought
     } = useTaskStore()
     const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
     const {scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask} = useScheduleStore()
@@ -135,6 +136,10 @@ export default function Home() {
         }
     }
 
+    const handleParkThought = async (title: string) => {
+        await createParkedThought(title)
+    }
+
     const handleUnschedule = async (taskId: string) => {
         // First unschedule from calendar
         await unscheduleTask(taskId)
@@ -164,6 +169,7 @@ export default function Home() {
                 panelMode={panelMode}
                 onViewChange={setCurrentView}
                 onPanelModeChange={setPanelMode}
+                onParkThought={handleParkThought}
             />
 
             <div className="flex flex-1 overflow-hidden">

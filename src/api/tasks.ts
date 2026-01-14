@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase'
-import { DEV_USER_ID, PURGATORY_LIST_ID } from '@/lib/constants'
+import { DEV_USER_ID, PURGATORY_LIST_ID, PARKED_LIST_ID } from '@/lib/constants'
 
 export async function getTasks() {
   const supabase = getSupabase()
@@ -189,6 +189,27 @@ export async function moveTaskToList(taskId: string, newListId: string | null) {
     .eq('id', taskId)
     .select()
     .single()
+  if (error) throw error
+  return data
+}
+
+export async function createParkedThought(title: string) {
+  const supabase = getSupabase()
+  
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert({
+      user_id: DEV_USER_ID,
+      list_id: PARKED_LIST_ID,
+      title,
+      duration_minutes: 15,
+      color_index: 0,
+      energy_level: 'medium',
+      position: Date.now(), // Simple ordering by creation time
+    })
+    .select()
+    .single()
+  
   if (error) throw error
   return data
 }

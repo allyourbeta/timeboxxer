@@ -1,27 +1,50 @@
 'use client'
 
+import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, List, Calendar, LayoutGrid } from 'lucide-react'
+import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
+import { Input } from '@/components/ui/input'
 
 interface HeaderProps {
   currentView: 'main' | 'completed'
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
+  onParkThought: (title: string) => void
 }
 
 export function Header({ 
   currentView, 
   panelMode, 
   onViewChange, 
-  onPanelModeChange 
+  onPanelModeChange,
+  onParkThought,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
+  const [showParkInput, setShowParkInput] = useState(false)
+  const [parkText, setParkText] = useState('')
   
   const handleThemeToggle = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
+  const handleParkSubmit = () => {
+    if (parkText.trim()) {
+      onParkThought(parkText.trim())
+      setParkText('')
+      setShowParkInput(false)
+    }
+  }
+
+  const handleParkKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleParkSubmit()
+    } else if (e.key === 'Escape') {
+      setShowParkInput(false)
+      setParkText('')
+    }
   }
 
   return (
@@ -29,6 +52,40 @@ export function Header({
       <h1 className="text-xl font-bold text-foreground">Timeboxxer</h1>
       
       <div className="flex items-center gap-3">
+        {/* Park a Thought quick capture */}
+        <div className="flex items-center gap-2">
+          {showParkInput ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={parkText}
+                onChange={(e) => setParkText(e.target.value)}
+                onKeyDown={handleParkKeyDown}
+                placeholder="Park a thought..."
+                className="w-48 h-9"
+                autoFocus
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { setShowParkInput(false); setParkText(''); }}
+                className="h-9 w-9"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowParkInput(true)}
+              className="h-9"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Park
+            </Button>
+          )}
+        </div>
+        
         {/* Panel Mode Controls - only show on main view */}
         {currentView === 'main' && (
           <div className="flex h-9 items-center bg-muted rounded-lg p-1 gap-1">
