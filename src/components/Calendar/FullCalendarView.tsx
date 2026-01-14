@@ -175,8 +175,8 @@ export function FullCalendarView({
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridDay"
           headerToolbar={false}
-          slotMinTime="06:00:00"
-          slotMaxTime="22:00:00"
+          slotMinTime="00:00:00"
+          slotMaxTime="24:00:00"
           slotDuration="00:15:00"
           snapDuration="00:15:00"
           slotLabelInterval="01:00:00"
