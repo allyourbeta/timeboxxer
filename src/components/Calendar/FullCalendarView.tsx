@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { EventInput, EventApi, EventDropArg } from '@fullcalendar/core'
+import { getColor } from '@/lib/palettes'
 
 interface Task {
   id: string
@@ -30,13 +31,6 @@ interface FullCalendarViewProps {
   onDurationChange: (taskId: string, newDuration: number) => void
 }
 
-// Color palettes - same as original
-const COLOR_PALETTES = {
-  sunset: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'],
-  forest: ['#27ae60', '#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#1abc9c', '#34495e'],
-  ocean: ['#3742fa', '#2f3542', '#ff3838', '#ff6348', '#ffdd59', '#c44569', '#f8b500', '#40739e'],
-  pastel: ['#fd79a8', '#fdcb6e', '#6c5ce7', '#a29bfe', '#ffeaa7', '#fab1a0', '#00b894', '#0984e3']
-} as const
 
 export function FullCalendarView({
   tasks,
@@ -63,8 +57,7 @@ export function FullCalendarView({
     const end = new Date(start)
     end.setMinutes(start.getMinutes() + task.duration_minutes)
     
-    const colors = COLOR_PALETTES[paletteId as keyof typeof COLOR_PALETTES] || COLOR_PALETTES.sunset
-    const backgroundColor = colors[task.color_index] || colors[0]
+    const backgroundColor = getColor(paletteId, task.color_index)
     
     return {
       id: scheduledTask.id,
