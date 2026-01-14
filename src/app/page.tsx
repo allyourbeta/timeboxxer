@@ -59,6 +59,9 @@ export default function Home() {
         )
     }
 
+    // Get list of scheduled task IDs
+    const scheduledTaskIds = scheduled.map(s => s.task_id)
+
     const handleExternalDrop = async (taskId: string, time: string) => {
         const today = new Date().toISOString().split('T')[0]
         await scheduleTask(taskId, today, time + ':00')
@@ -103,6 +106,7 @@ export default function Home() {
                                     duplicatingListId={duplicatingListId}
                                     showNewListInput={showNewListInput}
                                     expandedListByColumn={expandedListByColumn}
+                                    scheduledTaskIds={scheduledTaskIds}
                                     onShowNewListInput={setShowNewListInput}
                                     onCreateList={createList}
                                     onEditList={updateList}

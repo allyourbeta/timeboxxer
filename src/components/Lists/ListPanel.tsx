@@ -30,6 +30,7 @@ interface ListPanelProps {
   duplicatingListId: string | null
   showNewListInput: boolean
   expandedListByColumn: Record<number, string | null>
+  scheduledTaskIds: string[]
   onShowNewListInput: (show: boolean) => void
   onCreateList: (name: string) => void
   onEditList: (listId: string, name: string) => void
@@ -54,6 +55,7 @@ export function ListPanel({
   duplicatingListId,
   showNewListInput,
   expandedListByColumn,
+  scheduledTaskIds,
   onShowNewListInput,
   onCreateList,
   onEditList,
@@ -127,6 +129,7 @@ export function ListPanel({
               isEditing={editingListId === list.id}
               isDuplicating={duplicatingListId === list.id}
               isExpanded={isExpanded}
+              scheduledTaskIds={scheduledTaskIds}
               onToggleExpand={() => onToggleListExpanded(list.id, column)}
               onStartEdit={() => onSetEditingListId(list.id)}
               onFinishEdit={(name) => {

@@ -10,6 +10,7 @@ interface TaskCardProps {
   durationMinutes: number
   colorIndex: number
   isCompleted: boolean
+  isScheduled: boolean
   paletteId: string
   isColorPickerOpen: boolean
   onDurationClick: () => void
@@ -24,6 +25,7 @@ export function TaskCard({
   durationMinutes,
   colorIndex,
   isCompleted,
+  isScheduled,
   paletteId,
   isColorPickerOpen,
   onDurationClick,
@@ -35,8 +37,10 @@ export function TaskCard({
   
   return (
     <div
-      className={`fc-event p-3 rounded-lg cursor-grab active:cursor-grabbing transition-transform hover:scale-[1.02] group relative ${
-        isCompleted ? 'opacity-50 pointer-events-none' : ''
+      className={`fc-event p-3 rounded-lg transition-transform group relative ${
+        isCompleted ? 'opacity-50 pointer-events-none' : 
+        isScheduled ? 'opacity-60 cursor-default' : 
+        'cursor-grab active:cursor-grabbing hover:scale-[1.02]'
       }`}
       style={{ backgroundColor: bgColor }}
       data-task-id={id}
@@ -58,8 +62,15 @@ export function TaskCard({
         />
         
         <div className="flex-1 min-w-0">
-          <div className={`font-medium text-white ${isCompleted ? 'line-through' : ''}`}>
-            {title}
+          <div className="flex items-center gap-2">
+            <span className={`font-medium text-white ${isCompleted ? 'line-through' : ''}`}>
+              {title}
+            </span>
+            {isScheduled && (
+              <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded text-white/80">
+                scheduled
+              </span>
+            )}
           </div>
           <button
             onClick={(e) => {

@@ -24,6 +24,7 @@ interface ListCardProps {
   isEditing: boolean
   isDuplicating: boolean
   isExpanded: boolean
+  scheduledTaskIds: string[]
   onToggleExpand: () => void
   onStartEdit: () => void
   onFinishEdit: (newName: string) => void
@@ -49,6 +50,7 @@ export function ListCard({
   isEditing,
   isDuplicating,
   isExpanded,
+  scheduledTaskIds,
   onToggleExpand,
   onStartEdit,
   onFinishEdit,
@@ -173,6 +175,7 @@ export function ListCard({
               durationMinutes={task.duration_minutes}
               colorIndex={task.color_index}
               isCompleted={task.is_completed}
+              isScheduled={scheduledTaskIds.includes(task.id)}
               paletteId={paletteId}
               isColorPickerOpen={colorPickerTaskId === task.id}
               onDurationClick={() => onTaskDurationClick(task.id, task.duration_minutes)}
