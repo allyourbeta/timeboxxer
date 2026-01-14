@@ -26,6 +26,9 @@ interface Task {
   // Daily task fields
   is_daily: boolean
   daily_source_id: string | null
+  // Energy and highlight (NEW)
+  energy_level: 'high' | 'medium' | 'low'
+  is_daily_highlight: boolean
 }
 
 interface TaskStore {
