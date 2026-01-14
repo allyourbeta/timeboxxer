@@ -2,6 +2,7 @@ interface List {
   id: string
   name: string
   position: number
+  is_collapsed: boolean
   is_system: boolean
   system_type: 'purgatory' | 'parked' | 'date' | null
 }

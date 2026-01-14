@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, duplicateList as apiDuplicateList, ensureTodayList } from '@/api'
+import { sortListsForDisplay } from '@/lib/listSort'
 
 interface List {
   id: string
@@ -7,7 +8,7 @@ interface List {
   position: number
   is_collapsed: boolean
   is_system: boolean
-  system_type: 'purgatory' | 'date' | null
+  system_type: 'purgatory' | 'parked' | 'date' | null
 }
 
 interface ListStore {
@@ -30,7 +31,8 @@ export const useListStore = create<ListStore>((set, get) => ({
     await ensureTodayList()
     
     const data = await getLists()
-    set({ lists: data || [], loading: false })
+    const sortedLists = sortListsForDisplay(data || [])
+    set({ lists: sortedLists, loading: false })
   },
   
   createList: async (name) => {

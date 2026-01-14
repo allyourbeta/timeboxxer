@@ -30,7 +30,7 @@ interface List {
   position: number
   is_collapsed: boolean
   is_system: boolean
-  system_type: 'purgatory' | 'date' | null
+  system_type: 'purgatory' | 'parked' | 'date' | null
 }
 
 interface ListPanelProps {

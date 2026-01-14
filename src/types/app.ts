@@ -26,7 +26,7 @@ export interface List {
   is_collapsed: boolean;
   // System list fields
   is_system: boolean;
-  system_type: 'purgatory' | 'date' | null;
+  system_type: 'purgatory' | 'parked' | 'date' | null;
 }
 
 export interface Task {
