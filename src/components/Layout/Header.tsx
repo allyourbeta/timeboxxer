@@ -14,6 +14,7 @@ interface HeaderProps {
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
   onParkThought: (title: string) => void
   onJustStart: () => void
+  completedToday: number
 }
 
 export function Header({ 
@@ -23,6 +24,7 @@ export function Header({
   onPanelModeChange,
   onParkThought,
   onJustStart,
+  completedToday,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [showParkInput, setShowParkInput] = useState(false)
@@ -51,7 +53,17 @@ export function Header({
 
   return (
     <header className="h-14 px-4 border-b flex items-center justify-between bg-background">
-      <h1 className="text-xl font-bold text-foreground">Timeboxxer</h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-xl font-bold text-foreground">Timeboxxer</h1>
+        
+        {/* Streak counter */}
+        {completedToday > 0 && (
+          <div className="flex items-center gap-1 text-sm text-emerald-500 font-medium">
+            <span>✓</span>
+            <span>{completedToday} today</span>
+          </div>
+        )}
+      </div>
       
       <div className="flex items-center gap-3">
         {/* Park a Thought quick capture */}

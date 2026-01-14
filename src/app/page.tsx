@@ -295,6 +295,14 @@ export default function Home() {
         await loadSchedule()
     }
 
+    // Calculate completed tasks today
+    const completedToday = tasks.filter(t => {
+        if (!t.is_completed || !t.completed_at) return false
+        const completedDate = new Date(t.completed_at).toDateString()
+        const today = new Date().toDateString()
+        return completedDate === today
+    }).length
+
     return (
         <div className="h-screen flex flex-col bg-background">
             <Header
@@ -304,6 +312,7 @@ export default function Home() {
                 onPanelModeChange={setPanelMode}
                 onParkThought={handleParkThought}
                 onJustStart={handleJustStart}
+                completedToday={completedToday}
             />
 
             <div className="flex flex-1 overflow-hidden">
