@@ -40,9 +40,13 @@ export default function Home() {
         expandedListByColumn, toggleListExpanded,
     } = useUIStore()
 
-    // Toast state for undo functionality
-    const [toastMessage, setToastMessage] = useState<string | null>(null)
-    const [undoAction, setUndoAction] = useState<(() => void) | null>(null)
+    // State for pending deletion
+    const [pendingDelete, setPendingDelete] = useState<{
+        listId: string
+        listName: string
+        originalTasks: Array<{ id: string; originalListId: string }>
+        timeoutId: NodeJS.Timeout
+    } | null>(null)
 
     // Focus mode state
     const [focusTask, setFocusTask] = useState<string | null>(null)
@@ -93,6 +97,9 @@ export default function Home() {
     // Get list of scheduled task IDs
     const scheduledTaskIds = scheduled.map(s => s.task_id)
 
+    // Filter out the pending-delete list from display
+    const visibleLists = lists.filter(l => l.id !== pendingDelete?.listId)
+
     // Focus mode handlers
     const handleEnterFocus = (taskId: string) => {
         setFocusTask(taskId)
@@ -137,55 +144,62 @@ export default function Home() {
         })
     }
 
-    // Confirmed delete - perform the soft delete with undo
+    // Soft delete - hides list, moves tasks, shows toast with undo
     const handleDeleteListConfirm = async () => {
         if (!deleteConfirm) return
         
         const { listId, listName } = deleteConfirm
         
-        // Get all tasks from the list that we'll need to restore
-        const listTasks = tasks.filter(t => t.list_id === listId)
-        
-        // Move all tasks to Inbox first (so they don't get lost)
+        // Find Inbox
         const inboxList = lists.find(l => l.name === 'Inbox' && !l.is_system)
-        if (inboxList && listTasks.length > 0) {
-            // Move tasks to Inbox but track original list for undo
-            const taskMovePromises = listTasks.map(task => 
+        
+        // Get tasks in this list
+        const tasksInList = tasks.filter(t => t.list_id === listId)
+        const originalTasks = tasksInList.map(t => ({ 
+            id: t.id, 
+            originalListId: listId 
+        }))
+        
+        // Move tasks to Inbox immediately (but we can undo this)
+        if (inboxList) {
+            tasksInList.forEach(task => {
                 updateTask(task.id, { list_id: inboxList.id })
-            )
-            await Promise.all(taskMovePromises)
+            })
         }
         
-        // Delete the list
-        await deleteList(listId)
-        
-        // Show toast with undo option
-        setToastMessage(`"${listName}" deleted`)
-        setUndoAction(() => async () => {
-            // Recreate the list with same name
-            const recreatedList = await createList(listName)
-            
-            // Move tasks back to recreated list
-            if (listTasks.length > 0 && recreatedList) {
-                const restorePromises = listTasks.map(task =>
-                    updateTask(task.id, { list_id: recreatedList.id })
-                )
-                await Promise.all(restorePromises)
-            }
-            
-            // Clear toast
-            setToastMessage(null)
-            setUndoAction(null)
-        })
-        
-        // Auto-clear after 5 seconds if no undo
-        setTimeout(() => {
-            setToastMessage(null)
-            setUndoAction(null)
+        // Set timeout to actually delete the list
+        const timeoutId = setTimeout(async () => {
+            await deleteList(listId)
+            setPendingDelete(null)
         }, 5000)
+        
+        setPendingDelete({
+            listId,
+            listName,
+            originalTasks,
+            timeoutId,
+        })
         
         // Close confirmation dialog
         setDeleteConfirm(null)
+    }
+
+    // Undo delete - move tasks back, cancel deletion
+    const handleUndoDelete = async () => {
+        if (!pendingDelete) return
+        
+        // Cancel the pending deletion
+        clearTimeout(pendingDelete.timeoutId)
+        
+        // Move tasks back to original list
+        for (const task of pendingDelete.originalTasks) {
+            await updateTask(task.id, { list_id: task.originalListId })
+        }
+        
+        // Reload to refresh UI
+        await loadTasks()
+        
+        setPendingDelete(null)
     }
 
     const handleExternalDrop = async (taskId: string, time: string) => {
@@ -290,7 +304,7 @@ export default function Home() {
                         {(panelMode === 'both' || panelMode === 'lists-only') && (
                             <div className={panelMode === 'lists-only' ? 'flex-1' : 'w-1/2'}>
                                 <ListPanel
-                                    lists={lists}
+                                    lists={visibleLists}
                                     tasks={tasks}
                                     paletteId={PALETTE_ID}
                                     colorPickerTaskId={colorPickerTaskId}
@@ -372,17 +386,17 @@ export default function Home() {
             })()}
 
             {/* Toast for undo actions */}
-            {toastMessage && (
+            {pendingDelete && (
                 <Toast
-                    message={toastMessage}
-                    action={undoAction ? {
+                    message={`"${pendingDelete.listName}" deleted`}
+                    action={{
                         label: 'Undo',
-                        onClick: undoAction
-                    } : undefined}
+                        onClick: handleUndoDelete,
+                    }}
                     duration={5000}
                     onClose={() => {
-                        setToastMessage(null)
-                        setUndoAction(null)
+                        // Toast closed without undo - deletion already happened
+                        setPendingDelete(null)
                     }}
                 />
             )}
