@@ -20,27 +20,32 @@ export interface Profile {
 
 export interface List {
   id: string;
-  userId: string;
+  user_id: string;
   name: string;
-  isInbox: boolean;
   position: number;
-  createdAt: Date;
-  updatedAt: Date;
+  is_collapsed: boolean;
+  // System list fields
+  is_system: boolean;
+  system_type: 'purgatory' | 'date' | null;
 }
 
 export interface Task {
   id: string;
-  userId: string;
-  listId: string | null;  // null = moved to calendar, no list home
+  list_id: string | null;
   title: string;
+  duration_minutes: number;
+  color_index: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  position: number;
   notes: string | null;
-  durationMinutes: DurationMinutes;
-  colorIndex: ColorIndex;
-  position: number | null;  // null if not in a list
-  isCompleted: boolean;
-  completedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  // Purgatory fields
+  moved_to_purgatory_at: string | null;
+  original_list_id: string | null;
+  original_list_name: string | null;
+  // Daily task fields
+  is_daily: boolean;
+  daily_source_id: string | null;
 }
 
 export interface ScheduledTask {

@@ -18,7 +18,9 @@ interface List {
   id: string
   name: string
   position: number
-  is_inbox: boolean
+  is_collapsed: boolean
+  is_system: boolean
+  system_type: 'purgatory' | 'date' | null
 }
 
 interface ListPanelProps {
@@ -127,7 +129,7 @@ export function ListPanel({
               key={list.id}
               id={list.id}
               name={list.name}
-              isInbox={list.is_inbox}
+              isInbox={list.system_type === 'purgatory'}
               tasks={getTasksForList(list.id)}
               paletteId={paletteId}
               colorPickerTaskId={colorPickerTaskId}

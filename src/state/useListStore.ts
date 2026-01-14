@@ -5,7 +5,9 @@ interface List {
   id: string
   name: string
   position: number
-  is_inbox: boolean
+  is_collapsed: boolean
+  is_system: boolean
+  system_type: 'purgatory' | 'date' | null
 }
 
 interface ListStore {

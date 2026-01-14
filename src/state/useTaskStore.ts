@@ -9,6 +9,13 @@ interface Task {
   color_index: number
   is_completed: boolean
   completed_at: string | null
+  // Purgatory fields
+  moved_to_purgatory_at: string | null
+  original_list_id: string | null
+  original_list_name: string | null
+  // Daily task fields
+  is_daily: boolean
+  daily_source_id: string | null
 }
 
 interface TaskStore {
