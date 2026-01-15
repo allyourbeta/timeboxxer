@@ -34,7 +34,6 @@ export default function Home() {
         currentView, setCurrentView,
         panelMode, setPanelMode,
         draggedTaskId, setDraggedTaskId,
-        colorPickerTaskId, openColorPicker, closeColorPicker,
         editingListId, setEditingListId,
         duplicatingListId, setDuplicatingListId,
         showNewListInput, setShowNewListInput,
@@ -76,14 +75,6 @@ export default function Home() {
         }
     }, [listsLoading, lists, spawnDailyTasksForToday])
 
-    // Close color picker on outside click
-    useEffect(() => {
-        if (colorPickerTaskId) {
-            const handler = () => closeColorPicker()
-            document.addEventListener('click', handler)
-            return () => document.removeEventListener('click', handler)
-        }
-    }, [colorPickerTaskId, closeColorPicker])
 
     const loading = tasksLoading || listsLoading || scheduleLoading
 
@@ -228,10 +219,6 @@ export default function Home() {
         await updateTask(taskId, {duration_minutes: newDuration})
     }
 
-    const handleColorSelect = async (taskId: string, colorIndex: number) => {
-        await updateTask(taskId, {color_index: colorIndex})
-        closeColorPicker()
-    }
 
     const handleDailyToggle = async (taskId: string) => {
         const task = tasks.find(t => t.id === taskId)
@@ -362,7 +349,6 @@ export default function Home() {
                                     lists={visibleLists}
                                     tasks={tasks}
                                     paletteId={PALETTE_ID}
-                                    colorPickerTaskId={colorPickerTaskId}
                                     editingListId={editingListId}
                                     duplicatingListId={duplicatingListId}
                                     showNewListInput={showNewListInput}
@@ -377,8 +363,6 @@ export default function Home() {
                                     onSetDuplicatingListId={setDuplicatingListId}
                                     onToggleListExpanded={toggleListExpanded}
                                     onTaskDurationChange={handleDurationChange}
-                                    onTaskColorClick={openColorPicker}
-                                    onTaskColorSelect={handleColorSelect}
                                     onTaskDelete={deleteTask}
                                     onTaskCreate={createTask}
                                     onTaskDailyToggle={handleDailyToggle}

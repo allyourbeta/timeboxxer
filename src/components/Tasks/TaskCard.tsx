@@ -2,7 +2,6 @@
 
 import { Trash2 } from 'lucide-react'
 import { getColor } from '@/lib/palettes'
-import { Button } from '@/components/ui/button'
 
 interface TaskCardProps {
   id: string
@@ -13,23 +12,28 @@ interface TaskCardProps {
   isScheduled: boolean
   isDaily: boolean
   isInPurgatory: boolean
-  paletteId: string
-  isColorPickerOpen: boolean
-  energyLevel: 'high' | 'medium' | 'low'
   isHighlight: boolean
   canHighlight: boolean
-  // Purgatory info (optional)
-  purgatoryInfo?: {
-    movedAt: string
-    originalListName: string
-  }
+  energyLevel: 'high' | 'medium' | 'low'
+  paletteId: string
   onDurationClick: (reverse: boolean) => void
-  onColorClick: () => void
-  onColorSelect: (colorIndex: number) => void
-  onDelete: () => void
-  onDailyToggle: () => void
   onEnergyChange: (level: 'high' | 'medium' | 'low') => void
+  onDailyToggle: () => void
   onHighlightToggle: () => void
+  onDelete: () => void
+}
+
+// Energy cycle: medium -> high -> low -> medium
+const ENERGY_CYCLE: Record<string, 'high' | 'medium' | 'low'> = {
+  medium: 'high',
+  high: 'low',
+  low: 'medium',
+}
+
+const ENERGY_ICONS: Record<string, string> = {
+  high: '🔥',
+  medium: '⚡',
+  low: '🌙',
 }
 
 export function TaskCard({
@@ -41,30 +45,35 @@ export function TaskCard({
   isScheduled,
   isDaily,
   isInPurgatory,
-  paletteId,
-  isColorPickerOpen,
-  energyLevel,
   isHighlight,
   canHighlight,
-  purgatoryInfo,
+  energyLevel,
+  paletteId,
   onDurationClick,
-  onColorClick,
-  onColorSelect,
-  onDelete,
-  onDailyToggle,
   onEnergyChange,
+  onDailyToggle,
   onHighlightToggle,
+  onDelete,
 }: TaskCardProps) {
   const bgColor = getColor(paletteId, colorIndex)
   
+  const handleEnergyClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onEnergyChange(ENERGY_CYCLE[energyLevel])
+  }
+  
+  // Format duration compactly
+  const durationLabel = durationMinutes >= 60 
+    ? `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 > 0 ? durationMinutes % 60 : ''}`
+    : `${durationMinutes}m`
+  
   return (
     <div
-      className={`fc-event p-3 rounded-lg transition-transform group relative ${
-        isHighlight ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent' : ''
+      className={`fc-event px-3 py-2 rounded-lg group relative ${
+        isHighlight ? 'ring-2 ring-yellow-400' : ''
       } ${
-        isCompleted ? 'opacity-50 pointer-events-none' : 
-        isScheduled && !isInPurgatory ? 'opacity-60 cursor-default' : 
-        'cursor-grab active:cursor-grabbing hover:scale-[1.02]'
+        isCompleted ? 'opacity-50' : 
+        isScheduled && !isInPurgatory ? 'opacity-60' : ''
       }`}
       style={{ backgroundColor: bgColor }}
       data-task-id={id}
@@ -73,124 +82,81 @@ export function TaskCard({
       data-color-index={colorIndex}
       data-color={bgColor}
     >
-      <div className="flex items-start gap-2">
-        {/* Color dot */}
+      {/* Single horizontal line layout */}
+      <div className="flex items-center gap-2">
+        {/* Color dot - click to open color picker could be added later */}
+        <div
+          className="w-3 h-3 rounded-full border border-white/30 flex-shrink-0"
+          style={{ backgroundColor: bgColor }}
+        />
+        
+        {/* Title - takes remaining space */}
+        <span className={`flex-1 text-white font-medium truncate ${
+          isCompleted ? 'line-through' : ''
+        }`}>
+          {title}
+        </span>
+        
+        {/* Duration - tap to cycle */}
         <button
           onClick={(e) => {
             e.stopPropagation()
-            onColorClick()
+            onDurationClick(e.shiftKey)
           }}
-          className="w-4 h-4 rounded-full border-2 border-white/30 hover:border-white/60 flex-shrink-0 mt-1 transition-colors"
-          style={{ backgroundColor: bgColor }}
-          title="Change color"
-        />
+          className="text-white/80 hover:text-white text-sm font-medium min-w-[32px] text-right"
+          title="Click to change duration (Shift+click to decrease)"
+        >
+          {durationLabel}
+        </button>
         
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`font-medium text-white ${isCompleted ? 'line-through' : ''}`}>
-              {title}
-            </span>
-            {isScheduled && !isInPurgatory && (
-              <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded text-white/80">
-                scheduled
-              </span>
-            )}
-          </div>
-          {purgatoryInfo && (
-            <div className="text-xs text-white/60 mt-1">
-              From: {purgatoryInfo.originalListName} • {new Date(purgatoryInfo.movedAt).toLocaleDateString()}
-            </div>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDurationClick(e.shiftKey)
-            }}
-            className="text-sm text-white/70 hover:text-white cursor-pointer transition-colors"
-          >
-            {durationMinutes} min
-          </button>
-          {/* Energy level picker */}
-          <div className="flex gap-1 mt-1">
-            <button
-              onClick={(e) => { e.stopPropagation(); onEnergyChange('high'); }}
-              className={`text-xs px-1 rounded transition-opacity ${energyLevel === 'high' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
-              title="High energy"
-            >
-              🔥
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onEnergyChange('medium'); }}
-              className={`text-xs px-1 rounded transition-opacity ${energyLevel === 'medium' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
-              title="Medium energy"
-            >
-              ⚡
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onEnergyChange('low'); }}
-              className={`text-xs px-1 rounded transition-opacity ${energyLevel === 'low' ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
-              title="Low energy"
-            >
-              🌙
-            </button>
-          </div>
-          <label className="flex items-center gap-1 text-sm text-white/70 hover:text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isDaily}
-              onChange={(e) => {
-                e.stopPropagation()
-                onDailyToggle()
-              }}
-              className="w-3 h-3 rounded"
-            />
-            <span className="text-xs">Daily</span>
-          </label>
-        </div>
+        {/* Energy - tap to cycle */}
+        <button
+          onClick={handleEnergyClick}
+          className="text-sm hover:scale-110 transition-transform"
+          title={`Energy: ${energyLevel} (click to change)`}
+        >
+          {ENERGY_ICONS[energyLevel]}
+        </button>
         
-        {/* Highlight toggle - only for date lists */}
+        {/* Daily checkbox */}
+        <label 
+          className="flex items-center cursor-pointer"
+          title="Repeat daily"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            checked={isDaily}
+            onChange={onDailyToggle}
+            className="w-3.5 h-3.5 rounded border-white/50 bg-transparent checked:bg-white/30"
+          />
+        </label>
+        
+        {/* Highlight star - only for date lists */}
         {canHighlight && (
           <button
             onClick={(e) => { e.stopPropagation(); onHighlightToggle(); }}
-            className={`h-6 w-6 flex items-center justify-center rounded transition-opacity ${
-              isHighlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
+            className={`text-sm transition-opacity ${
+              isHighlight ? 'opacity-100' : 'opacity-40 hover:opacity-100'
             }`}
-            title={isHighlight ? 'Remove highlight' : 'Set as highlight (max 5)'}
+            title={isHighlight ? 'Remove highlight' : 'Set as highlight'}
           >
             {isHighlight ? '⭐' : '☆'}
           </button>
         )}
         
-        {/* Delete button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="opacity-0 group-hover:opacity-100 h-6 w-6 text-white/70 hover:text-white hover:bg-white/20"
+        {/* Delete - visible on hover */}
+        <button
           onClick={(e) => {
             e.stopPropagation()
             onDelete()
           }}
+          className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/80 hover:text-white transition-opacity"
+          title="Delete task"
         >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
-      
-      {/* Color picker popover */}
-      {isColorPickerOpen && (
-        <div
-          className="absolute top-full left-0 mt-1 p-2 bg-popover rounded-lg shadow-lg z-20 grid grid-cols-6 gap-1 border"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {Array.from({ length: 12 }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => onColorSelect(i)}
-              className="w-6 h-6 rounded-full hover:scale-110 transition-transform ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              style={{ backgroundColor: getColor(paletteId, i) }}
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }

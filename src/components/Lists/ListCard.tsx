@@ -32,7 +32,6 @@ interface ListCardProps {
   isDateList: boolean
   tasks: Task[]
   paletteId: string
-  colorPickerTaskId: string | null
   isEditing: boolean
   isDuplicating: boolean
   isExpanded: boolean
@@ -46,8 +45,6 @@ interface ListCardProps {
   onCancelDuplicate: () => void
   onDelete: () => void
   onTaskDurationClick: (taskId: string, currentDuration: number, reverse: boolean) => void
-  onTaskColorClick: (taskId: string) => void
-  onTaskColorSelect: (taskId: string, colorIndex: number) => void
   onTaskDelete: (taskId: string) => void
   onTaskAdd: (title: string) => void
   onTaskDailyToggle: (taskId: string) => void
@@ -63,7 +60,6 @@ export function ListCard({
   isDateList,
   tasks,
   paletteId,
-  colorPickerTaskId,
   isEditing,
   isDuplicating,
   isExpanded,
@@ -77,8 +73,6 @@ export function ListCard({
   onCancelDuplicate,
   onDelete,
   onTaskDurationClick,
-  onTaskColorClick,
-  onTaskColorSelect,
   onTaskDelete,
   onTaskAdd,
   onTaskDailyToggle,
@@ -275,21 +269,14 @@ export function ListCard({
               isDaily={task.is_daily}
               isInPurgatory={isInbox}
               paletteId={paletteId}
-              isColorPickerOpen={colorPickerTaskId === task.id}
               energyLevel={task.energy_level || 'medium'}
               isHighlight={task.is_daily_highlight || false}
               canHighlight={isDateList}
-              purgatoryInfo={task.moved_to_purgatory_at ? {
-                movedAt: task.moved_to_purgatory_at,
-                originalListName: task.original_list_name || 'Unknown'
-              } : undefined}
               onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
-              onColorClick={() => onTaskColorClick(task.id)}
-              onColorSelect={(colorIndex) => onTaskColorSelect(task.id, colorIndex)}
-              onDelete={() => onTaskDelete(task.id)}
-              onDailyToggle={() => onTaskDailyToggle(task.id)}
               onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
+              onDailyToggle={() => onTaskDailyToggle(task.id)}
               onHighlightToggle={() => onTaskHighlightToggle(task.id)}
+              onDelete={() => onTaskDelete(task.id)}
             />
           ))}
           

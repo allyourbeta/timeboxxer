@@ -37,7 +37,6 @@ interface ListPanelProps {
   lists: List[]
   tasks: Task[]
   paletteId: string
-  colorPickerTaskId: string | null
   editingListId: string | null
   duplicatingListId: string | null
   showNewListInput: boolean
@@ -52,8 +51,6 @@ interface ListPanelProps {
   onSetDuplicatingListId: (listId: string | null) => void
   onToggleListExpanded: (listId: string, column: number) => void
   onTaskDurationChange: (taskId: string, duration: number) => void
-  onTaskColorClick: (taskId: string) => void
-  onTaskColorSelect: (taskId: string, colorIndex: number) => void
   onTaskDelete: (taskId: string) => void
   onTaskCreate: (listId: string, title: string) => void
   onTaskDailyToggle: (taskId: string) => void
@@ -65,7 +62,6 @@ export function ListPanel({
   lists,
   tasks,
   paletteId,
-  colorPickerTaskId,
   editingListId,
   duplicatingListId,
   showNewListInput,
@@ -80,8 +76,6 @@ export function ListPanel({
   onSetDuplicatingListId,
   onToggleListExpanded,
   onTaskDurationChange,
-  onTaskColorClick,
-  onTaskColorSelect,
   onTaskDelete,
   onTaskCreate,
   onTaskDailyToggle,
@@ -150,7 +144,6 @@ export function ListPanel({
               isDateList={list.system_type === 'date'}
               tasks={getTasksForList(list.id)}
               paletteId={paletteId}
-              colorPickerTaskId={colorPickerTaskId}
               isEditing={editingListId === list.id}
               isDuplicating={duplicatingListId === list.id}
               isExpanded={isExpanded}
@@ -172,8 +165,6 @@ export function ListPanel({
               onTaskDurationClick={(taskId, duration, reverse) => 
                 onTaskDurationChange(taskId, cycleDuration(duration, reverse))
               }
-              onTaskColorClick={onTaskColorClick}
-              onTaskColorSelect={onTaskColorSelect}
               onTaskDelete={onTaskDelete}
               onTaskAdd={(title) => onTaskCreate(list.id, title)}
               onTaskDailyToggle={onTaskDailyToggle}
