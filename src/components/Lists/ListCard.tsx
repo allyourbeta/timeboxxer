@@ -5,12 +5,14 @@ import { ChevronDown, ChevronUp, MoreVertical, Trash2, Copy, Edit2 } from 'lucid
 import { TaskCard, AddTaskInput } from '@/components/Tasks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 
 interface Task {
   id: string
   title: string
   duration_minutes: number
   color_index: number
+  position: number
   is_completed: boolean
   // Purgatory fields
   moved_to_purgatory_at: string | null
@@ -50,6 +52,7 @@ interface ListCardProps {
   onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskHighlightToggle: (taskId: string) => void
+  onReorderTasks: (taskIds: string[]) => void
 }
 
 export function ListCard({
@@ -78,6 +81,7 @@ export function ListCard({
   onTaskDailyToggle,
   onTaskEnergyChange,
   onTaskHighlightToggle,
+  onReorderTasks,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
@@ -85,6 +89,37 @@ export function ListCard({
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const handleDragEnd = (result: DropResult) => {
+    console.log('Drag ended:', result)
+    
+    // Dropped outside the list
+    if (!result.destination) {
+      return
+    }
+    
+    // Didn't move
+    if (result.destination.index === result.source.index) {
+      return
+    }
+    
+    // Get tasks for this list (not completed)
+    const listTasks = tasks
+      .filter(t => !t.is_completed)
+      .sort((a, b) => a.position - b.position)
+    
+    // Reorder the array
+    const reordered = Array.from(listTasks)
+    const [removed] = reordered.splice(result.source.index, 1)
+    reordered.splice(result.destination.index, 0, removed)
+    
+    // Get new order of IDs
+    const newTaskIds = reordered.map(t => t.id)
+    console.log('New order:', newTaskIds)
+    
+    // Call the handler
+    onReorderTasks(newTaskIds)
+  }
 
   // Handle menu toggle with position calculation
   const handleMenuToggle = (e: React.MouseEvent) => {
@@ -256,30 +291,60 @@ export function ListCard({
       
       {/* Expanded content with animation */}
       {isExpanded && (
-        <div className="px-4 pb-4 space-y-2 animate-in slide-in-from-top-2">
-          {tasks.map(task => (
-            <TaskCard
-              key={task.id}
-              id={task.id}
-              title={task.title}
-              durationMinutes={task.duration_minutes}
-              colorIndex={task.color_index}
-              isCompleted={task.is_completed}
-              isScheduled={scheduledTaskIds.includes(task.id)}
-              isDaily={task.is_daily}
-              isInPurgatory={isInbox}
-              paletteId={paletteId}
-              energyLevel={task.energy_level || 'medium'}
-              isHighlight={task.is_daily_highlight || false}
-              canHighlight={isDateList}
-              onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
-              onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
-              onDailyToggle={() => onTaskDailyToggle(task.id)}
-              onHighlightToggle={() => onTaskHighlightToggle(task.id)}
-              onDelete={() => onTaskDelete(task.id)}
-            />
-          ))}
+        <div className="px-4 pb-4">
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId={id}>
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="space-y-2"
+                >
+                  {tasks
+                    .filter(t => !t.is_completed)
+                    .sort((a, b) => a.position - b.position)
+                    .map((task, index) => (
+                      <Draggable key={task.id} draggableId={task.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            style={{
+                              ...provided.draggableProps.style,
+                              opacity: snapshot.isDragging ? 0.8 : 1,
+                            }}
+                          >
+                            <TaskCard
+                              id={task.id}
+                              title={task.title}
+                              durationMinutes={task.duration_minutes}
+                              colorIndex={task.color_index}
+                              isCompleted={task.is_completed}
+                              isScheduled={scheduledTaskIds.includes(task.id)}
+                              isDaily={task.is_daily}
+                              isInPurgatory={isInbox}
+                              isHighlight={task.is_daily_highlight || false}
+                              canHighlight={isDateList}
+                              energyLevel={task.energy_level || 'medium'}
+                              paletteId={paletteId}
+                              onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
+                              onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
+                              onDailyToggle={() => onTaskDailyToggle(task.id)}
+                              onHighlightToggle={() => onTaskHighlightToggle(task.id)}
+                              onDelete={() => onTaskDelete(task.id)}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
           
+          {/* Add task input */}
           <AddTaskInput onAdd={onTaskAdd} />
         </div>
       )}
