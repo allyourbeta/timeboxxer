@@ -128,7 +128,7 @@ export function TaskCard({
             type="checkbox"
             checked={isDaily}
             onChange={onDailyToggle}
-            className="w-3.5 h-3.5 rounded border-white/50 bg-transparent checked:bg-white/30"
+            className="w-3.5 h-3.5 rounded border-white/50 accent-white"
           />
         </label>
         
@@ -154,7 +154,7 @@ export function TaskCard({
           className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/80 hover:text-white transition-opacity"
           title="Delete task"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4 text-white/60 hover:text-white" />
         </button>
       </div>
     </div>
