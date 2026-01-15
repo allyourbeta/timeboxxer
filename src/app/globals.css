@@ -195,25 +195,28 @@
   opacity: 0.3;
 }
 
-/* Time slot background - override default calendar background */
+/* Time slot background - business hours styling */
 .fc-timegrid-slot {
-  background: hsl(var(--background)) !important;
+  background: #DBEAFE; /* Misty blue for non-business hours */
+}
+
+/* Business hours background */
+.fc-business-container,
+.fc-timegrid-slot.fc-timegrid-slot-business {
+  background: #FFFBEB !important; /* Warm cream/legal pad for business hours */
+}
+
+.fc-non-business,
+.fc-timegrid-slot.fc-timegrid-slot-non-business {
+  background: #DBEAFE !important; /* Misty blue for non-business hours */
 }
 
 .fc-timegrid-col {
-  background: hsl(var(--background)) !important;
+  background: transparent !important;
 }
 
 .fc-bg-event {
   background: transparent !important;
-}
-
-/* Ensure entire calendar background matches app background */
-.fc-view-harness,
-.fc-scrollgrid,
-.fc-scrollgrid-section,
-.fc-scrollgrid-section > td {
-  background: hsl(var(--background)) !important;
 }
 
 /* Time slot hover */
