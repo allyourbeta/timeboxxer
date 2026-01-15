@@ -243,7 +243,7 @@ export function ListCard({
               
               {showMenu && menuPosition && (
                 <div 
-                  className="fixed w-44 bg-popover border border-border rounded-lg shadow-xl z-50 py-1"
+                  className="fixed w-44 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl z-50 py-1"
                   style={{
                     top: menuPosition.top,
                     left: menuPosition.left,
@@ -258,7 +258,7 @@ export function ListCard({
                           setMenuPosition(null)
                           onStartDuplicate()
                         }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-sm text-popover-foreground hover:bg-accent flex items-center gap-2"
                       >
                         <Copy className="h-4 w-4" />
                         Duplicate
@@ -270,7 +270,7 @@ export function ListCard({
                           setMenuPosition(null)
                           onDelete()
                         }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-destructive hover:text-destructive-foreground text-destructive flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete List
