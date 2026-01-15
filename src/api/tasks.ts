@@ -250,3 +250,17 @@ export async function createCalendarTask(title: string, startTime: string, date:
   
   return task
 }
+
+export async function reorderTasks(taskIds: string[]): Promise<void> {
+  const supabase = getSupabase()
+  
+  // Update each task's position based on array index
+  const updates = taskIds.map((id, index) => 
+    supabase
+      .from('tasks')
+      .update({ position: index })
+      .eq('id', id)
+  )
+  
+  await Promise.all(updates)
+}
