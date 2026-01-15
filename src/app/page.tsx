@@ -204,7 +204,7 @@ export default function Home() {
 
         {/* Calendar Panel */}
         {(panelMode === 'both' || panelMode === 'calendar-only') && (
-          <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border overflow-hidden`}>
+          <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border flex flex-col`}>
             <FullCalendarView
               tasks={tasks}
               scheduled={scheduled}
