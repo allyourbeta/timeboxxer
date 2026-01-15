@@ -11,6 +11,7 @@ interface Task {
   title: string
   duration_minutes: number
   color_index: number
+  position: number
   is_completed: boolean
   // Purgatory fields
   moved_to_purgatory_at: string | null
@@ -56,6 +57,7 @@ interface ListPanelProps {
   onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskHighlightToggle: (taskId: string) => void
+  onReorderTasks: (taskIds: string[]) => void
 }
 
 export function ListPanel({
@@ -81,6 +83,7 @@ export function ListPanel({
   onTaskDailyToggle,
   onTaskEnergyChange,
   onTaskHighlightToggle,
+  onReorderTasks,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -170,6 +173,7 @@ export function ListPanel({
               onTaskDailyToggle={onTaskDailyToggle}
               onTaskEnergyChange={onTaskEnergyChange}
               onTaskHighlightToggle={onTaskHighlightToggle}
+              onReorderTasks={onReorderTasks}
             />
           )
         })}
