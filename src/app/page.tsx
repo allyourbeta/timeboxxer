@@ -10,7 +10,7 @@ import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
 import { PURGATORY_LIST_ID } from '@/lib/constants'
 
-const PALETTE_ID = 'ocean-bold'
+const PALETTE_ID = 'rainbow-bright'
 
 export default function Home() {
   // Stores (data only)

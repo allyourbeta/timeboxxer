@@ -29,6 +29,18 @@ export const PALETTES: Palette[] = [
     ]
   },
   {
+    id: 'rainbow-bright',
+    name: 'Rainbow Bright',
+    category: 'vibrant',
+    background: '#FFFFFF',
+    border: '#E74C3C',
+    colors: [
+      '#E74C3C', '#3498DB', '#2ECC71', '#F39C12',
+      '#9B59B6', '#1ABC9C', '#E91E63', '#00BCD4',
+      '#FF5722', '#673AB7', '#4CAF50', '#FFC107'
+    ]
+  },
+  {
     id: 'sunset',
     name: 'Sunset',
     category: 'vibrant',
