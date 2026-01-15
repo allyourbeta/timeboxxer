@@ -165,10 +165,10 @@ export function ListCard({
   
   return (
     <div className={`
-      rounded-xl overflow-hidden border-2 shadow-lg bg-white dark:bg-slate-800 transition-all duration-200
+      rounded-xl overflow-hidden border-2 border-border shadow-lg bg-card transition-all duration-200
       ${isExpanded 
-        ? 'border-slate-300 dark:border-slate-600 shadow-xl' 
-        : 'border-slate-300 dark:border-slate-600 hover:shadow-xl'
+        ? 'shadow-xl' 
+        : 'hover:shadow-xl'
       }
     `}>
       {/* Header - always visible */}
@@ -189,7 +189,7 @@ export function ListCard({
       ) : (
         <button
           onClick={onToggleExpand}
-          className="w-full p-4 flex items-center justify-between group hover:bg-muted/30 transition-colors border-b border-border/30"
+          className="w-full p-4 flex items-center justify-between group hover:bg-muted/30 transition-colors border-b border-border"
         >
           <div className="flex items-center gap-3">
             {/* Colored accent bar */}
@@ -199,7 +199,7 @@ export function ListCard({
             />
             <div className="text-left">
               <h3 
-                className="font-semibold text-white"
+                className="font-semibold text-card-foreground"
                 onDoubleClick={(e) => {
                   e.stopPropagation()
                   if (!isSystemList) {
@@ -209,7 +209,7 @@ export function ListCard({
               >
                 {name}
               </h3>
-              <p className="text-sm text-white/70">{tasks.length} tasks</p>
+              <p className="text-sm text-muted-foreground">{tasks.length} tasks</p>
             </div>
           </div>
           
