@@ -76,9 +76,9 @@ export function FocusMode({
   const progress = ((task.duration_minutes * 60 - timeLeft) / (task.duration_minutes * 60)) * 100
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 flex items-center justify-center">
       {/* Background overlay with subtle pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background to-muted/20" />
+      <div className="absolute inset-0" />
       
       {/* Close button */}
       <Button
@@ -98,15 +98,15 @@ export function FocusMode({
             className="w-16 h-2 rounded-full mx-auto"
             style={{ backgroundColor: getTaskColor() }}
           />
-          <h1 className="text-3xl font-semibold text-foreground leading-tight">
+          <h1 className="text-3xl font-semibold text-white leading-tight">
             {task.title}
           </h1>
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 text-sm text-white/70">
             <span className="capitalize">{task.energy_level} energy</span>
             {task.is_daily_highlight && (
               <>
                 <span>•</span>
-                <span className="text-yellow-600 dark:text-yellow-400">Daily highlight</span>
+                <span className="text-yellow-300">Daily highlight</span>
               </>
             )}
           </div>
@@ -114,7 +114,7 @@ export function FocusMode({
 
         {/* Timer display */}
         <div className="space-y-6">
-          <div className="text-8xl font-mono font-light text-foreground tracking-wider">
+          <div className="text-8xl font-mono font-light text-white tracking-wider">
             {formatTime(timeLeft)}
           </div>
           
@@ -127,9 +127,8 @@ export function FocusMode({
                 cy="64"
                 r="56"
                 fill="none"
-                stroke="currentColor"
+                stroke="rgba(255,255,255,0.2)"
                 strokeWidth="8"
-                className="text-muted/20"
               />
               {/* Progress circle */}
               <circle
@@ -184,9 +183,9 @@ export function FocusMode({
         {/* Time's up message */}
         {timeLeft === 0 && (
           <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-                         bg-card border border-border rounded-lg px-4 py-2 shadow-lg
+                         bg-white border border-gray-200 rounded-lg px-4 py-2 shadow-lg
                          animate-in slide-in-from-top-4">
-            <p className="text-sm text-foreground font-medium">Time's up! 🎉</p>
+            <p className="text-sm text-gray-900 font-medium">Time's up! 🎉</p>
           </div>
         )}
       </div>
