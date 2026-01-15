@@ -17,6 +17,7 @@ interface TaskCardProps {
   isColorPickerOpen: boolean
   energyLevel: 'high' | 'medium' | 'low'
   isHighlight: boolean
+  canHighlight: boolean
   // Purgatory info (optional)
   purgatoryInfo?: {
     movedAt: string
@@ -44,6 +45,7 @@ export function TaskCard({
   isColorPickerOpen,
   energyLevel,
   isHighlight,
+  canHighlight,
   purgatoryInfo,
   onDurationClick,
   onColorClick,
@@ -146,16 +148,18 @@ export function TaskCard({
           </label>
         </div>
         
-        {/* Highlight toggle */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onHighlightToggle(); }}
-          className={`h-6 w-6 flex items-center justify-center rounded transition-opacity ${
-            isHighlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
-          }`}
-          title={isHighlight ? 'Remove highlight' : 'Set as daily highlight'}
-        >
-          {isHighlight ? '⭐' : '☆'}
-        </button>
+        {/* Highlight toggle - only for date lists */}
+        {canHighlight && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onHighlightToggle(); }}
+            className={`h-6 w-6 flex items-center justify-center rounded transition-opacity ${
+              isHighlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-50 hover:!opacity-100'
+            }`}
+            title={isHighlight ? 'Remove highlight' : 'Set as highlight (max 5)'}
+          >
+            {isHighlight ? '⭐' : '☆'}
+          </button>
+        )}
         
         {/* Delete button */}
         <Button

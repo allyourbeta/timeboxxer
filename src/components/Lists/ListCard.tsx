@@ -29,6 +29,7 @@ interface ListCardProps {
   name: string
   isInbox: boolean
   isSystemList: boolean
+  isDateList: boolean
   tasks: Task[]
   paletteId: string
   colorPickerTaskId: string | null
@@ -59,6 +60,7 @@ export function ListCard({
   name,
   isInbox,
   isSystemList,
+  isDateList,
   tasks,
   paletteId,
   colorPickerTaskId,
@@ -276,6 +278,7 @@ export function ListCard({
               isColorPickerOpen={colorPickerTaskId === task.id}
               energyLevel={task.energy_level || 'medium'}
               isHighlight={task.is_daily_highlight || false}
+              canHighlight={isDateList}
               purgatoryInfo={task.moved_to_purgatory_at ? {
                 movedAt: task.moved_to_purgatory_at,
                 originalListName: task.original_list_name || 'Unknown'

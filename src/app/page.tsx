@@ -248,16 +248,30 @@ export default function Home() {
         const task = tasks.find(t => t.id === taskId)
         if (!task) return
         
+        // Check if this task is in a date list
+        const taskList = lists.find(l => l.id === task.list_id)
+        if (!taskList || taskList.system_type !== 'date') {
+            // Only date lists can have highlights
+            console.warn('Highlights only available for date lists (Today/Tomorrow)')
+            return
+        }
+        
         if (task.is_daily_highlight) {
             // Just remove highlight
             await updateTask(taskId, { is_daily_highlight: false })
         } else {
-            // Clear any existing highlight first
-            const currentHighlight = tasks.find(t => t.is_daily_highlight)
-            if (currentHighlight) {
-                await updateTask(currentHighlight.id, { is_daily_highlight: false })
+            // Check how many highlights already exist in this list
+            const highlightsInList = tasks.filter(t => 
+                t.list_id === task.list_id && t.is_daily_highlight
+            ).length
+            
+            if (highlightsInList >= 5) {
+                // Show alert or toast - max 5 highlights
+                alert('Maximum 5 highlights per day. Remove one first.')
+                return
             }
-            // Set new highlight
+            
+            // Add highlight
             await updateTask(taskId, { is_daily_highlight: true })
         }
     }
