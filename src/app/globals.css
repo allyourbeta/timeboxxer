@@ -205,36 +205,20 @@
   opacity: 0.5;
 }
 
-/* Business hours background */
-.fc-business-container,
-.fc-timegrid-slot.fc-timegrid-slot-business {
-  background: #FFFBEB !important; /* Warm cream/legal pad for business hours */
-}
-
-.fc-non-business,
-.fc-timegrid-slot.fc-timegrid-slot-non-business {
-  background: #DBEAFE !important; /* Misty blue for non-business hours */
-}
-
-.fc-timegrid-col {
-  background: #DBEAFE !important; /* Default misty blue for non-business hours */
-}
-
-.fc-bg-event {
-  background: #FFFBEB !important;
-  opacity: 1 !important;
-}
-
-/* Nuclear option - force business hours background */
-.fc-timegrid-col.fc-day-today {
-  background: #FFFBEB !important;
-}
-
+/* Calendar background - unified color based on theme */
+.fc-timegrid-slot,
+.fc-timegrid-slot-lane,
+.fc-timegrid-axis,
+.fc-timegrid-col,
 .fc-timegrid-bg-harness {
   background: #FFFBEB !important;
 }
 
-.fc-non-business {
+.dark .fc-timegrid-slot,
+.dark .fc-timegrid-slot-lane,
+.dark .fc-timegrid-axis,
+.dark .fc-timegrid-col,
+.dark .fc-timegrid-bg-harness {
   background: #DBEAFE !important;
 }
 

@@ -222,11 +222,6 @@ export function FullCalendarView({
           dayMaxEvents={true}
           nowIndicator={true}
           height="100%"
-          businessHours={{
-            daysOfWeek: [1, 2, 3, 4, 5], // Monday-Friday
-            startTime: '09:00',
-            endTime: '17:00'
-          }}
           events={events}
           eventDrop={handleEventDrop}
           eventResize={handleEventResize}
