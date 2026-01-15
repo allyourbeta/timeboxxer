@@ -19,7 +19,7 @@ const SYSTEM_LIST_ORDER: Record<string, number> = {
 
 /**
  * Sort lists for display:
- * 1. System lists first (date → parked → purgatory)
+ * 1. System lists first (date lists by date, then parked, then purgatory)
  * 2. User lists by position
  */
 export function sortListsForDisplay<T extends List>(lists: T[]): T[] {
@@ -28,10 +28,24 @@ export function sortListsForDisplay<T extends List>(lists: T[]): T[] {
     if (a.is_system && !b.is_system) return -1
     if (!a.is_system && b.is_system) return 1
     
-    // Both system lists: sort by system_type order
+    // Both system lists
     if (a.is_system && b.is_system) {
-      const orderA = SYSTEM_LIST_ORDER[a.system_type || ''] ?? 99
-      const orderB = SYSTEM_LIST_ORDER[b.system_type || ''] ?? 99
+      // Date lists come first, sorted by name (which is the date)
+      if (a.system_type === 'date' && b.system_type !== 'date') return -1
+      if (a.system_type !== 'date' && b.system_type === 'date') return 1
+      
+      // Both date lists - sort by date (today before tomorrow)
+      if (a.system_type === 'date' && b.system_type === 'date') {
+        // Parse the date from the name and compare
+        const dateA = new Date(a.name)
+        const dateB = new Date(b.name)
+        return dateA.getTime() - dateB.getTime()
+      }
+      
+      // Other system lists: parked before purgatory
+      const order: Record<string, number> = { parked: 1, purgatory: 2 }
+      const orderA = order[a.system_type || ''] ?? 99
+      const orderB = order[b.system_type || ''] ?? 99
       return orderA - orderB
     }
     

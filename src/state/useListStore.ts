@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, duplicateList as apiDuplicateList, ensureTodayList } from '@/api'
+import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, duplicateList as apiDuplicateList, ensureTodayList, ensureTomorrowList } from '@/api'
 import { sortListsForDisplay } from '@/lib/listSort'
 
 interface List {
@@ -27,8 +27,9 @@ export const useListStore = create<ListStore>((set, get) => ({
   loading: true,
   
   loadLists: async () => {
-    // Ensure today's date list exists
+    // Ensure today's and tomorrow's date lists exist
     await ensureTodayList()
+    await ensureTomorrowList()
     
     const data = await getLists()
     const sortedLists = sortListsForDisplay(data || [])

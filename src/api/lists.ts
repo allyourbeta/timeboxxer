@@ -1,6 +1,6 @@
 import { getSupabase } from '@/lib/supabase'
 import { DEV_USER_ID } from '@/lib/constants'
-import { getTodayListName, getTodayISO } from '@/lib/dateList'
+import { getTodayListName, getTodayISO, getTomorrowListName } from '@/lib/dateList'
 
 export async function getLists() {
   const supabase = getSupabase()
@@ -160,6 +160,50 @@ export async function ensureTodayList() {
         .select('*')
         .eq('system_type', 'date')
         .eq('name', todayName)
+        .single()
+      return refetched
+    }
+    throw error
+  }
+  
+  return data
+}
+
+export async function ensureTomorrowList() {
+  const supabase = getSupabase()
+  const tomorrowName = getTomorrowListName()
+  
+  // Check if tomorrow's list already exists
+  const { data: existing } = await supabase
+    .from('lists')
+    .select('*')
+    .eq('system_type', 'date')
+    .eq('name', tomorrowName)
+    .maybeSingle()
+  
+  if (existing) return existing
+  
+  // Create tomorrow's list
+  const { data, error } = await supabase
+    .from('lists')
+    .insert({
+      user_id: DEV_USER_ID,
+      name: tomorrowName,
+      position: 0,
+      is_system: true,
+      system_type: 'date',
+    })
+    .select()
+    .single()
+  
+  if (error) {
+    // If conflict, fetch it
+    if (error.code === '23505') {
+      const { data: refetched } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('system_type', 'date')
+        .eq('name', tomorrowName)
         .single()
       return refetched
     }
