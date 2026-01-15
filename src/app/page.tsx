@@ -1,452 +1,262 @@
 'use client'
 
-import {useEffect, useState} from 'react'
-import {useTaskStore, useListStore, useScheduleStore, useUIStore} from '@/state'
-import {Header, CompletedView} from '@/components/Layout'
-import {ListPanel} from '@/components/Lists'
-import {FullCalendarView} from '@/components/Calendar'
-import {Toast, ConfirmDialog} from '@/components/ui'
-import {FocusMode} from '@/components/Focus'
+import { useEffect } from 'react'
+import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
+import { useAppHandlers } from '@/hooks'
+import { Header, CompletedView } from '@/components/Layout'
+import { ListPanel } from '@/components/Lists'
+import { FullCalendarView } from '@/components/Calendar'
+import { Toast, ConfirmDialog } from '@/components/ui'
+import { FocusMode } from '@/components/Focus'
 import { PURGATORY_LIST_ID } from '@/lib/constants'
 
 const PALETTE_ID = 'ocean-bold'
 
 export default function Home() {
-    // Stores
-    const {
-        tasks,
-        loading: tasksLoading,
-        loadTasks,
-        createTask,
-        updateTask,
-        deleteTask,
-        completeTask,
-        uncompleteTask,
-        moveToPurgatory,
-        moveFromPurgatory,
-        spawnDailyTasksForToday,
-        createParkedThought,
-        createCalendarTask,
-        reorderTasks
-    } = useTaskStore()
-    const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
-    const {scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask} = useScheduleStore()
-    const {
-        currentView, setCurrentView,
-        panelMode, setPanelMode,
-        draggedTaskId, setDraggedTaskId,
-        editingListId, setEditingListId,
-        duplicatingListId, setDuplicatingListId,
-        showNewListInput, setShowNewListInput,
-        expandedListByColumn, toggleListExpanded,
-    } = useUIStore()
+  // Stores (data only)
+  const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForToday } = useTaskStore()
+  const { lists, loading: listsLoading, loadLists } = useListStore()
+  const { scheduled, loading: scheduleLoading, loadSchedule } = useScheduleStore()
+  const {
+    currentView, setCurrentView,
+    panelMode, setPanelMode,
+    editingListId, setEditingListId,
+    duplicatingListId, setDuplicatingListId,
+    showNewListInput, setShowNewListInput,
+    expandedListByColumn, toggleListExpanded,
+  } = useUIStore()
 
-    // State for pending deletion
-    const [pendingDelete, setPendingDelete] = useState<{
-        listId: string
-        listName: string
-        originalTasks: Array<{ id: string; originalListId: string }>
-        timeoutId: NodeJS.Timeout
-    } | null>(null)
+  // All handlers from custom hook
+  const {
+    pendingDelete,
+    setPendingDelete,
+    deleteConfirm,
+    setDeleteConfirm,
+    focusTaskId,
+    handleTaskAdd,
+    handleTaskDelete,
+    handleTaskDurationClick,
+    handleTaskComplete,
+    handleTaskUncomplete,
+    handleTaskDailyToggle,
+    handleTaskEnergyChange,
+    handleTaskHighlightToggle,
+    handleReorderTasks,
+    handleExternalDrop,
+    handleEventMove,
+    handleUnschedule,
+    handleCreateCalendarTask,
+    handleListCreate,
+    handleListEdit,
+    handleListDuplicate,
+    handleDeleteListClick,
+    handleDeleteListConfirm,
+    handleUndoDelete,
+    handleStartFocus,
+    handleExitFocus,
+    handleFocusComplete,
+    handleParkThought,
+  } = useAppHandlers()
 
-    // Focus mode state
-    const [focusTask, setFocusTask] = useState<string | null>(null)
+  // Load data on mount
+  useEffect(() => {
+    loadLists()
+    loadTasks()
+    loadSchedule()
+  }, [loadLists, loadTasks, loadSchedule])
 
-    // Delete confirmation state
-    const [deleteConfirm, setDeleteConfirm] = useState<{
-        listId: string
-        listName: string
-        taskCount: number
-    } | null>(null)
-
-    // Load data on mount
-    useEffect(() => {
-        loadTasks()
-        loadLists()
-        loadSchedule()
-    }, [loadTasks, loadLists, loadSchedule])
-
-    // Separate effect for spawning daily tasks after lists are loaded
-    useEffect(() => {
-        if (!listsLoading && lists.length > 0) {
-            const todayList = lists.find(l => l.system_type === 'date')
-            if (todayList) {
-                spawnDailyTasksForToday(todayList.id)
-            }
-        }
-    }, [listsLoading, lists, spawnDailyTasksForToday])
-
-
-    const loading = tasksLoading || listsLoading || scheduleLoading
-
-    if (loading) {
-        return (
-            <div className="h-screen flex items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
-            </div>
-        )
+  // Spawn daily tasks after data loads
+  useEffect(() => {
+    if (!tasksLoading && !listsLoading && tasks.length > 0) {
+      // Find today's date list
+      const todayListName = new Date().toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+      const todayList = lists.find(l => l.system_type === 'date' && l.name === todayListName)
+      if (todayList) {
+        spawnDailyTasksForToday(todayList.id)
+      }
     }
+  }, [tasksLoading, listsLoading, tasks.length, lists, spawnDailyTasksForToday])
 
-    // Get list of scheduled task IDs
-    const scheduledTaskIds = scheduled.map(s => s.task_id)
+  // Computed values
+  const loading = tasksLoading || listsLoading || scheduleLoading
+  const scheduledTaskIds = scheduled.map(s => s.task_id)
+  const visibleLists = lists.filter(l => l.id !== pendingDelete?.listId)
+  
+  const completedToday = tasks.filter(t => {
+    if (!t.is_completed || !t.completed_at) return false
+    const completedDate = new Date(t.completed_at).toDateString()
+    const today = new Date().toDateString()
+    return completedDate === today
+  }).length
 
-    // Filter out the pending-delete list from display
-    const visibleLists = lists.filter(l => l.id !== pendingDelete?.listId)
-
-    // Focus mode handlers
-    const handleEnterFocus = (taskId: string) => {
-        setFocusTask(taskId)
-    }
-
-    const handleExitFocus = () => {
-        setFocusTask(null)
-    }
-
-    const handleFocusComplete = async (taskId: string) => {
-        await completeTask(taskId)
-        setFocusTask(null)
-    }
-
-    const handleJustStart = () => {
-        // Get unscheduled tasks that aren't completed
-        const unscheduledTasks = tasks.filter(task => 
-            !task.is_completed &&
-            !scheduledTaskIds.includes(task.id) &&
-            task.list_id !== PURGATORY_LIST_ID
-        )
-        
-        if (unscheduledTasks.length > 0) {
-            // Randomly select a task
-            const randomIndex = Math.floor(Math.random() * unscheduledTasks.length)
-            const randomTask = unscheduledTasks[randomIndex]
-            handleEnterFocus(randomTask.id)
-        }
-    }
-
-    // Handle delete list click - shows confirmation first
-    const handleDeleteListClick = (listId: string) => {
-        const list = lists.find(l => l.id === listId)
-        if (!list || list.is_system) return
-        
-        const taskCount = tasks.filter(t => t.list_id === listId).length
-        
-        setDeleteConfirm({
-            listId,
-            listName: list.name,
-            taskCount,
-        })
-    }
-
-    // Soft delete - hides list, moves tasks, shows toast with undo
-    const handleDeleteListConfirm = async () => {
-        if (!deleteConfirm) return
-        
-        const { listId, listName } = deleteConfirm
-        
-        // Find Inbox
-        const inboxList = lists.find(l => l.name === 'Inbox' && !l.is_system)
-        
-        // Get tasks in this list
-        const tasksInList = tasks.filter(t => t.list_id === listId)
-        const originalTasks = tasksInList.map(t => ({ 
-            id: t.id, 
-            originalListId: listId 
-        }))
-        
-        // Move tasks to Inbox immediately (but we can undo this)
-        if (inboxList) {
-            tasksInList.forEach(task => {
-                updateTask(task.id, { list_id: inboxList.id })
-            })
-        }
-        
-        // Set timeout to actually delete the list
-        const timeoutId = setTimeout(async () => {
-            await deleteList(listId)
-            setPendingDelete(null)
-        }, 5000)
-        
-        setPendingDelete({
-            listId,
-            listName,
-            originalTasks,
-            timeoutId,
-        })
-        
-        // Close confirmation dialog
-        setDeleteConfirm(null)
-    }
-
-    // Undo delete - move tasks back, cancel deletion
-    const handleUndoDelete = async () => {
-        if (!pendingDelete) return
-        
-        // Cancel the pending deletion
-        clearTimeout(pendingDelete.timeoutId)
-        
-        // Move tasks back to original list
-        for (const task of pendingDelete.originalTasks) {
-            await updateTask(task.id, { list_id: task.originalListId })
-        }
-        
-        // Reload to refresh UI
-        await loadTasks()
-        
-        setPendingDelete(null)
-    }
-
-    const handleExternalDrop = async (taskId: string, time: string) => {
-        const task = tasks.find(t => t.id === taskId)
-        if (!task) return
-        
-        const today = new Date().toISOString().split('T')[0]
-        await scheduleTask(taskId, today, time + ':00')
-        
-        // Move task to Purgatory if not already there
-        if (task.list_id !== PURGATORY_LIST_ID) {
-            const originalList = lists.find(l => l.id === task.list_id)
-            await moveToPurgatory(taskId, task.list_id || '', originalList?.name || 'Unknown')
-        }
-    }
-
-    const handleEventMove = async (taskId: string, time: string) => {
-        const today = new Date().toISOString().split('T')[0]
-        // First unschedule, then reschedule at new time
-        await unscheduleTask(taskId)
-        await scheduleTask(taskId, today, time + ':00')
-    }
-
-    const handleDurationChange = async (taskId: string, newDuration: number) => {
-        await updateTask(taskId, {duration_minutes: newDuration})
-    }
-
-
-    const handleDailyToggle = async (taskId: string) => {
-        const task = tasks.find(t => t.id === taskId)
-        if (task) {
-            await updateTask(taskId, { is_daily: !task.is_daily })
-        }
-    }
-
-    const handleEnergyChange = async (taskId: string, level: 'high' | 'medium' | 'low') => {
-        await updateTask(taskId, { energy_level: level })
-    }
-
-    const handleHighlightToggle = async (taskId: string) => {
-        const task = tasks.find(t => t.id === taskId)
-        if (!task) return
-        
-        // Check if this task is in a date list
-        const taskList = lists.find(l => l.id === task.list_id)
-        if (!taskList || taskList.system_type !== 'date') {
-            // Only date lists can have highlights
-            console.warn('Highlights only available for date lists (Today/Tomorrow)')
-            return
-        }
-        
-        if (task.is_daily_highlight) {
-            // Just remove highlight
-            await updateTask(taskId, { is_daily_highlight: false })
-        } else {
-            // Check how many highlights already exist in this list
-            const highlightsInList = tasks.filter(t => 
-                t.list_id === task.list_id && t.is_daily_highlight
-            ).length
-            
-            if (highlightsInList >= 5) {
-                // Show alert or toast - max 5 highlights
-                alert('Maximum 5 highlights per day. Remove one first.')
-                return
-            }
-            
-            // Add highlight
-            await updateTask(taskId, { is_daily_highlight: true })
-        }
-    }
-
-    const handleParkThought = async (title: string) => {
-        await createParkedThought(title)
-    }
-
-    const handleReorderTasks = async (taskIds: string[]) => {
-        console.log('Reordering tasks:', taskIds)
-        await reorderTasks(taskIds)
-    }
-
-    const handleUnschedule = async (taskId: string) => {
-        // First unschedule from calendar
-        await unscheduleTask(taskId)
-        
-        // Then move back to original list (or Inbox if original was deleted)
-        const task = tasks.find(t => t.id === taskId)
-        if (task && task.list_id === PURGATORY_LIST_ID) {
-            // Check if original list still exists
-            const originalListExists = task.original_list_id && lists.some(l => l.id === task.original_list_id)
-            
-            // Find Inbox as fallback
-            const inboxList = lists.find(l => l.name === 'Inbox' && !l.is_system)
-            const targetListId = originalListExists 
-                ? task.original_list_id! 
-                : inboxList?.id || lists.find(l => !l.is_system)?.id
-            
-            if (targetListId) {
-                await moveFromPurgatory(taskId, targetListId)
-            }
-        }
-    }
-
-    const handleCreateCalendarTask = async (title: string, time: string) => {
-        const today = new Date().toISOString().split('T')[0]
-        await createCalendarTask(title, time, today)
-        // Reload schedule to show the new event
-        await loadSchedule()
-    }
-
-    // Calculate completed tasks today
-    const completedToday = tasks.filter(t => {
+  const getWeekData = (): number[] => {
+    const result: number[] = []
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toDateString()
+      const count = tasks.filter(t => {
         if (!t.is_completed || !t.completed_at) return false
-        const completedDate = new Date(t.completed_at).toDateString()
-        const today = new Date().toDateString()
-        return completedDate === today
-    }).length
-
-    // Calculate completions for last 7 days
-    const getWeekData = (): number[] => {
-        const result: number[] = []
-        
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date()
-            date.setDate(date.getDate() - i)
-            const dateStr = date.toDateString()
-            
-            const count = tasks.filter(t => {
-                if (!t.is_completed || !t.completed_at) return false
-                const completedDate = new Date(t.completed_at).toDateString()
-                return completedDate === dateStr
-            }).length
-            
-            result.push(count)
-        }
-        
-        return result
+        return new Date(t.completed_at).toDateString() === dateStr
+      }).length
+      result.push(count)
     }
+    return result
+  }
 
-    const weekData = getWeekData()
+  const scheduledTasks = tasks.filter(t => 
+    scheduled.some(s => s.task_id === t.id) && !t.is_completed
+  )
+  
+  const focusTask = focusTaskId ? tasks.find(t => t.id === focusTaskId) : null
 
+  if (loading) {
     return (
-        <div className="h-screen flex flex-col bg-background">
-            <Header
-                currentView={currentView}
-                panelMode={panelMode}
-                onViewChange={setCurrentView}
-                onPanelModeChange={setPanelMode}
-                onParkThought={handleParkThought}
-                onJustStart={handleJustStart}
-                completedToday={completedToday}
-                weekData={weekData}
-            />
-
-            <div className="flex flex-1 overflow-hidden">
-                {currentView === 'main' ? (
-                    <>
-                        {(panelMode === 'both' || panelMode === 'lists-only') && (
-                            <div className={panelMode === 'lists-only' ? 'flex-1' : 'w-1/2'}>
-                                <ListPanel
-                                    lists={visibleLists}
-                                    tasks={tasks}
-                                    paletteId={PALETTE_ID}
-                                    editingListId={editingListId}
-                                    duplicatingListId={duplicatingListId}
-                                    showNewListInput={showNewListInput}
-                                    expandedListByColumn={expandedListByColumn}
-                                    scheduledTaskIds={scheduledTaskIds}
-                                    onShowNewListInput={setShowNewListInput}
-                                    onCreateList={createList}
-                                    onEditList={updateList}
-                                    onDeleteList={handleDeleteListClick}
-                                    onDuplicateList={duplicateList}
-                                    onSetEditingListId={setEditingListId}
-                                    onSetDuplicatingListId={setDuplicatingListId}
-                                    onToggleListExpanded={toggleListExpanded}
-                                    onTaskDurationChange={handleDurationChange}
-                                    onTaskDelete={deleteTask}
-                                    onTaskCreate={createTask}
-                                    onTaskDailyToggle={handleDailyToggle}
-                                    onTaskEnergyChange={handleEnergyChange}
-                                    onTaskHighlightToggle={handleHighlightToggle}
-                                    onReorderTasks={handleReorderTasks}
-                                />
-                            </div>
-                        )}
-
-                        {(panelMode === 'both' || panelMode === 'calendar-only') && (
-                            <div className="flex-1 flex flex-col"><FullCalendarView
-                                tasks={tasks}
-                                scheduled={scheduled}
-                                paletteId={PALETTE_ID}
-                                onExternalDrop={handleExternalDrop}
-                                onEventMove={handleEventMove}
-                                onUnschedule={handleUnschedule}
-                                onComplete={completeTask}
-                                onCreateTask={handleCreateCalendarTask}
-                                onDurationChange={handleDurationChange}
-                            />
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <CompletedView
-                        tasks={tasks}
-                        lists={lists}
-                        paletteId={PALETTE_ID}
-                        onRestore={uncompleteTask}
-                    />
-                )}
-            </div>
-
-            {/* Delete Confirmation Dialog */}
-            {deleteConfirm && (
-                <ConfirmDialog
-                    title="Delete List"
-                    message={`Delete "${deleteConfirm.listName}"${deleteConfirm.taskCount > 0 ? ` and move ${deleteConfirm.taskCount} task${deleteConfirm.taskCount > 1 ? 's' : ''} to Inbox` : ''}?`}
-                    confirmLabel="Delete"
-                    cancelLabel="Cancel"
-                    onConfirm={handleDeleteListConfirm}
-                    onCancel={() => setDeleteConfirm(null)}
-                    isDestructive
-                />
-            )}
-
-            {/* Focus Mode Overlay */}
-            {focusTask && (() => {
-                const task = tasks.find(t => t.id === focusTask)
-                if (!task) return null
-                
-                return (
-                    <FocusMode
-                        task={task}
-                        paletteId={PALETTE_ID}
-                        onExit={handleExitFocus}
-                        onComplete={handleFocusComplete}
-                    />
-                )
-            })()}
-
-            {/* Toast for undo actions */}
-            {pendingDelete && (
-                <Toast
-                    message={`"${pendingDelete.listName}" deleted`}
-                    action={{
-                        label: 'Undo',
-                        onClick: handleUndoDelete,
-                    }}
-                    duration={5000}
-                    onClose={() => {
-                        // Toast closed without undo - deletion already happened
-                        setPendingDelete(null)
-                    }}
-                />
-            )}
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
     )
+  }
+
+  if (currentView === 'completed') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header
+          currentView={currentView}
+          panelMode={panelMode}
+          onViewChange={setCurrentView}
+          onPanelModeChange={setPanelMode}
+          onParkThought={handleParkThought}
+          onJustStart={() => {
+            if (scheduledTasks.length > 0) {
+              const randomIndex = Math.floor(Math.random() * scheduledTasks.length)
+              handleStartFocus(scheduledTasks[randomIndex].id)
+            }
+          }}
+          completedToday={completedToday}
+          weekData={getWeekData()}
+        />
+        <CompletedView
+          tasks={tasks.filter(t => t.is_completed)}
+          lists={lists}
+          paletteId={PALETTE_ID}
+          onRestore={handleTaskUncomplete}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header
+        currentView={currentView}
+        panelMode={panelMode}
+        onViewChange={setCurrentView}
+        onPanelModeChange={setPanelMode}
+        onParkThought={handleParkThought}
+        onJustStart={() => {
+          if (scheduledTasks.length > 0) {
+            const randomIndex = Math.floor(Math.random() * scheduledTasks.length)
+            handleStartFocus(scheduledTasks[randomIndex].id)
+          }
+        }}
+        completedToday={completedToday}
+        weekData={getWeekData()}
+      />
+
+      <div className="flex h-[calc(100vh-3.5rem)]">
+        {/* Lists Panel */}
+        {(panelMode === 'both' || panelMode === 'lists-only') && (
+          <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} overflow-auto p-4`}>
+            <ListPanel
+              lists={visibleLists}
+              tasks={tasks}
+              paletteId={PALETTE_ID}
+              editingListId={editingListId}
+              duplicatingListId={duplicatingListId}
+              showNewListInput={showNewListInput}
+              expandedListByColumn={expandedListByColumn}
+              scheduledTaskIds={scheduledTaskIds}
+              onShowNewListInput={() => setShowNewListInput(true)}
+              onCreateList={handleListCreate}
+              onEditList={handleListEdit}
+              onDeleteList={handleDeleteListClick}
+              onDuplicateList={handleListDuplicate}
+              onSetEditingListId={setEditingListId}
+              onSetDuplicatingListId={setDuplicatingListId}
+              onToggleListExpanded={toggleListExpanded}
+              onTaskDurationChange={(taskId, newDuration) => 
+                handleTaskDurationClick(taskId, newDuration, false)
+              }
+              onTaskDelete={handleTaskDelete}
+              onTaskCreate={handleTaskAdd}
+              onTaskDailyToggle={handleTaskDailyToggle}
+              onTaskEnergyChange={handleTaskEnergyChange}
+              onTaskHighlightToggle={handleTaskHighlightToggle}
+              onReorderTasks={handleReorderTasks}
+            />
+          </div>
+        )}
+
+        {/* Calendar Panel */}
+        {(panelMode === 'both' || panelMode === 'calendar-only') && (
+          <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border overflow-hidden`}>
+            <FullCalendarView
+              tasks={tasks}
+              scheduled={scheduled}
+              paletteId={PALETTE_ID}
+              onExternalDrop={handleExternalDrop}
+              onEventMove={handleEventMove}
+              onUnschedule={handleUnschedule}
+              onComplete={handleTaskComplete}
+              onDurationChange={(taskId, newDuration) => 
+                handleTaskDurationClick(taskId, newDuration, false)
+              }
+              onCreateTask={handleCreateCalendarTask}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Focus Mode */}
+      {focusTask && (
+        <FocusMode
+          task={focusTask}
+          paletteId={PALETTE_ID}
+          onExit={handleExitFocus}
+          onComplete={handleFocusComplete}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <ConfirmDialog
+          title="Delete List"
+          message={`Delete "${deleteConfirm.listName}"${deleteConfirm.taskCount > 0 ? ` and move ${deleteConfirm.taskCount} task${deleteConfirm.taskCount > 1 ? 's' : ''} to Inbox` : ''}?`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteListConfirm}
+          onCancel={() => setDeleteConfirm(null)}
+          isDestructive
+        />
+      )}
+
+      {/* Undo Toast */}
+      {pendingDelete && (
+        <Toast
+          message={`"${pendingDelete.listName}" deleted`}
+          action={{
+            label: 'Undo',
+            onClick: handleUndoDelete,
+          }}
+          duration={5000}
+          onClose={() => setPendingDelete(null)}
+        />
+      )}
+    </div>
+  )
 }
