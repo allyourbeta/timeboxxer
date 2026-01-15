@@ -26,7 +26,8 @@ export default function Home() {
         moveFromPurgatory,
         spawnDailyTasksForToday,
         createParkedThought,
-        createCalendarTask
+        createCalendarTask,
+        reorderTasks
     } = useTaskStore()
     const {lists, loading: listsLoading, loadLists, createList, updateList, deleteList, duplicateList} = useListStore()
     const {scheduled, loading: scheduleLoading, loadSchedule, scheduleTask, unscheduleTask} = useScheduleStore()
@@ -267,6 +268,11 @@ export default function Home() {
         await createParkedThought(title)
     }
 
+    const handleReorderTasks = async (taskIds: string[]) => {
+        console.log('Reordering tasks:', taskIds)
+        await reorderTasks(taskIds)
+    }
+
     const handleUnschedule = async (taskId: string) => {
         // First unschedule from calendar
         await unscheduleTask(taskId)
@@ -368,6 +374,7 @@ export default function Home() {
                                     onTaskDailyToggle={handleDailyToggle}
                                     onTaskEnergyChange={handleEnergyChange}
                                     onTaskHighlightToggle={handleHighlightToggle}
+                                    onReorderTasks={handleReorderTasks}
                                 />
                             </div>
                         )}
