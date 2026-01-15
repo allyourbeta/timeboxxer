@@ -203,9 +203,12 @@ export async function createParkedThought(title: string) {
       list_id: PARKED_LIST_ID,
       title,
       duration_minutes: 15,
-      color_index: 0,
+      color_index: Math.floor(Math.random() * 12),
+      position: Date.now(),
+      is_completed: false,
+      is_daily: false,
+      is_daily_highlight: false,
       energy_level: 'medium',
-      position: Date.now(), // Simple ordering by creation time
     })
     .select()
     .single()
