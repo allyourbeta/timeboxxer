@@ -223,7 +223,7 @@ export function FullCalendarView({
           nowIndicator={true}
           height="100%"
           businessHours={{
-            daysOfWeek: [1, 2, 3, 4, 5, 6, 0], // All days
+            daysOfWeek: [1, 2, 3, 4, 5], // Monday-Friday
             startTime: '09:00',
             endTime: '17:00'
           }}
