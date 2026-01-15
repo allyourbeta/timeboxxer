@@ -170,7 +170,7 @@ export function ListCard({
             />
             <div className="text-left">
               <h3 
-                className="font-semibold text-foreground"
+                className="font-semibold text-white"
                 onDoubleClick={(e) => {
                   e.stopPropagation()
                   if (!isSystemList) {
@@ -180,7 +180,7 @@ export function ListCard({
               >
                 {name}
               </h3>
-              <p className="text-sm text-muted-foreground">{tasks.length} tasks</p>
+              <p className="text-sm text-white/70">{tasks.length} tasks</p>
             </div>
           </div>
           
