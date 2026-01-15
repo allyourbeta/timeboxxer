@@ -197,7 +197,6 @@
 
 /* Time slot background - business hours styling */
 .fc-timegrid-slot {
-  background: #DBEAFE; /* Misty blue for non-business hours */
   border-bottom: 1px solid hsl(var(--border)) !important;
 }
 
@@ -218,12 +217,25 @@
 }
 
 .fc-timegrid-col {
-  background: transparent !important;
+  background: #DBEAFE !important; /* Default misty blue for non-business hours */
 }
 
 .fc-bg-event {
   background: #FFFBEB !important;
   opacity: 1 !important;
+}
+
+/* Nuclear option - force business hours background */
+.fc-timegrid-col.fc-day-today {
+  background: #FFFBEB !important;
+}
+
+.fc-timegrid-bg-harness {
+  background: #FFFBEB !important;
+}
+
+.fc-non-business {
+  background: #DBEAFE !important;
 }
 
 /* Time slot hover */
