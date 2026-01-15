@@ -11,6 +11,7 @@ import {
   createCalendarTask as apiCreateCalendarTask,
   spawnDailyTasks,
   createParkedThought as apiCreateParkedThought,
+  reorderTasks as apiReorderTasks,
 } from '@/api'
 
 interface Task {
@@ -19,6 +20,7 @@ interface Task {
   title: string
   duration_minutes: number
   color_index: number
+  position: number
   is_completed: boolean
   completed_at: string | null
   // Purgatory fields
@@ -49,6 +51,7 @@ interface TaskStore {
   spawnDailyTasksForToday: (todayListId: string) => Promise<void>
   createParkedThought: (title: string) => Promise<void>
   createCalendarTask: (title: string, time: string, date: string) => Promise<void>
+  reorderTasks: (taskIds: string[]) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -128,5 +131,28 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   createCalendarTask: async (title, time, date) => {
     const newTask = await apiCreateCalendarTask(title, time, date)
     set({ tasks: [...get().tasks, newTask] })
+  },
+
+  reorderTasks: async (taskIds: string[]) => {
+    // Get current tasks
+    const currentTasks = get().tasks
+    
+    // Create new array with updated positions
+    const updatedTasks = currentTasks.map(task => {
+      const newPosition = taskIds.indexOf(task.id)
+      if (newPosition !== -1) {
+        return { ...task, position: newPosition }
+      }
+      return task
+    })
+    
+    // Sort by position
+    updatedTasks.sort((a, b) => a.position - b.position)
+    
+    // Update state immediately (optimistic)
+    set({ tasks: updatedTasks })
+    
+    // Persist to database
+    await apiReorderTasks(taskIds)
   },
 }))
