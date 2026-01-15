@@ -76,7 +76,7 @@ export function FocusMode({
   const progress = ((task.duration_minutes * 60 - timeLeft) / (task.duration_minutes * 60)) * 100
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-orange-600 via-red-600 to-orange-700">
       {/* Background overlay with subtle pattern */}
       <div className="absolute inset-0" />
       
@@ -91,7 +91,7 @@ export function FocusMode({
       </Button>
 
       {/* Main content */}
-      <div className="relative max-w-lg w-full mx-4 text-center space-y-8">
+      <div className="relative max-w-lg w-full text-center space-y-8">
         {/* Task title with color accent */}
         <div className="space-y-2">
           <div 
