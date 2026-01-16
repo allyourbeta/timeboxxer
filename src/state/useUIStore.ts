@@ -26,9 +26,9 @@ interface UIStore {
   duplicatingListId: string | null
   setDuplicatingListId: (listId: string | null) => void
   
-  // Collapsible lists (multi-column layout)
-  expandedListByColumn: Record<number, string | null>
-  toggleListExpanded: (listId: string, column: number) => void
+  // Collapsible lists
+  expandedListIds: Set<string>
+  toggleListExpanded: (listId: string) => void
   collapseAllLists: () => void
   
   // Panel focus modes
@@ -56,16 +56,19 @@ export const useUIStore = create<UIStore>((set) => ({
   duplicatingListId: null,
   setDuplicatingListId: (listId) => set({ duplicatingListId: listId }),
   
-  expandedListByColumn: { 0: null, 1: null, 2: null },
-  toggleListExpanded: (listId, column) => set((state) => ({
-    expandedListByColumn: {
-      ...state.expandedListByColumn,
-      [column]: state.expandedListByColumn[column] === listId ? null : listId
+  expandedListIds: new Set<string>(),
+  toggleListExpanded: (listId) => set((state) => {
+    const newSet = new Set(state.expandedListIds)
+    if (newSet.has(listId)) {
+      newSet.delete(listId)
+    } else {
+      newSet.add(listId)
     }
-  })),
+    return { expandedListIds: newSet }
+  }),
   
   collapseAllLists: () => set({
-    expandedListByColumn: { 0: null, 1: null, 2: null }
+    expandedListIds: new Set<string>()
   }),
   
   panelMode: 'both',

@@ -23,7 +23,7 @@ export default function Home() {
     editingListId, setEditingListId,
     duplicatingListId, setDuplicatingListId,
     showNewListInput, setShowNewListInput,
-    expandedListByColumn, toggleListExpanded,
+    expandedListIds, toggleListExpanded,
     collapseAllLists,
   } = useUIStore()
 
@@ -179,7 +179,7 @@ export default function Home() {
               editingListId={editingListId}
               duplicatingListId={duplicatingListId}
               showNewListInput={showNewListInput}
-              expandedListByColumn={expandedListByColumn}
+              expandedListIds={expandedListIds}
               scheduledTaskIds={scheduledTaskIds}
               onShowNewListInput={() => setShowNewListInput(true)}
               onCreateList={handleListCreate}
@@ -189,9 +189,10 @@ export default function Home() {
               onSetEditingListId={setEditingListId}
               onSetDuplicatingListId={setDuplicatingListId}
               onToggleListExpanded={toggleListExpanded}
-              onTaskDurationChange={(taskId, newDuration) => 
-                handleTaskDurationClick(taskId, newDuration, false)
-              }
+              onTaskDurationChange={async (taskId, newDuration) => {
+                const { updateTask } = useTaskStore.getState()
+                await updateTask(taskId, { duration_minutes: newDuration })
+              }}
               onTaskDelete={handleTaskDelete}
               onTaskCreate={handleTaskAdd}
               onTaskDailyToggle={handleTaskDailyToggle}
@@ -213,9 +214,10 @@ export default function Home() {
               onEventMove={handleEventMove}
               onUnschedule={handleUnschedule}
               onComplete={handleTaskComplete}
-              onDurationChange={(taskId, newDuration) => 
-                handleTaskDurationClick(taskId, newDuration, false)
-              }
+              onDurationChange={async (taskId, newDuration) => {
+                const { updateTask } = useTaskStore.getState()
+                await updateTask(taskId, { duration_minutes: newDuration })
+              }}
               onCreateTask={handleCreateCalendarTask}
             />
           </div>

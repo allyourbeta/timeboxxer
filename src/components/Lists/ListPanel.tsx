@@ -41,7 +41,7 @@ interface ListPanelProps {
   editingListId: string | null
   duplicatingListId: string | null
   showNewListInput: boolean
-  expandedListByColumn: Record<number, string | null>
+  expandedListIds: Set<string>
   scheduledTaskIds: string[]
   onShowNewListInput: (show: boolean) => void
   onCreateList: (name: string) => void
@@ -50,7 +50,7 @@ interface ListPanelProps {
   onDuplicateList: (listId: string, newName: string) => void
   onSetEditingListId: (listId: string | null) => void
   onSetDuplicatingListId: (listId: string | null) => void
-  onToggleListExpanded: (listId: string, column: number) => void
+  onToggleListExpanded: (listId: string) => void
   onTaskDurationChange: (taskId: string, duration: number) => void
   onTaskDelete: (taskId: string) => void
   onTaskCreate: (listId: string, title: string) => void
@@ -67,7 +67,7 @@ export function ListPanel({
   editingListId,
   duplicatingListId,
   showNewListInput,
-  expandedListByColumn,
+  expandedListIds,
   scheduledTaskIds,
   onShowNewListInput,
   onCreateList,
@@ -136,12 +136,12 @@ export function ListPanel({
         return taskCount > 0
       })
       
-      // If found and nothing is currently expanded in this column, expand it
-      if (firstWithTasks && expandedListByColumn[column] === null) {
-        onToggleListExpanded(firstWithTasks.id, column)
+      // If found and it's not already expanded, expand it
+      if (firstWithTasks && !expandedListIds.has(firstWithTasks.id)) {
+        onToggleListExpanded(firstWithTasks.id)
       }
     })
-  }, [lists, tasks, expandedListByColumn, onToggleListExpanded])
+  }, [lists, tasks, expandedListIds, onToggleListExpanded])
   
   const getTasksForList = (listId: string) =>
     tasks.filter(t => t.list_id === listId && !t.is_completed)
@@ -162,7 +162,7 @@ export function ListPanel({
       <div className="grid grid-cols-2 gap-4 p-4">
         {lists.map((list, index) => {
           const column = index % 2
-          const isExpanded = expandedListByColumn[column] === list.id
+          const isExpanded = expandedListIds.has(list.id)
           return (
             <ListCard
               key={list.id}
@@ -177,7 +177,7 @@ export function ListPanel({
               isDuplicating={duplicatingListId === list.id}
               isExpanded={isExpanded}
               scheduledTaskIds={scheduledTaskIds}
-              onToggleExpand={() => onToggleListExpanded(list.id, column)}
+              onToggleExpand={() => onToggleListExpanded(list.id)}
               onStartEdit={() => onSetEditingListId(list.id)}
               onFinishEdit={(name) => {
                 onEditList(list.id, name)
