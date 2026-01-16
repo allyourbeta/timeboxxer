@@ -29,6 +29,7 @@ interface UIStore {
   // Collapsible lists (multi-column layout)
   expandedListByColumn: Record<number, string | null>
   toggleListExpanded: (listId: string, column: number) => void
+  collapseAllLists: () => void
   
   // Panel focus modes
   panelMode: 'both' | 'lists-only' | 'calendar-only'
@@ -62,6 +63,10 @@ export const useUIStore = create<UIStore>((set) => ({
       [column]: state.expandedListByColumn[column] === listId ? null : listId
     }
   })),
+  
+  collapseAllLists: () => set({
+    expandedListByColumn: { 0: null, 1: null, 2: null }
+  }),
   
   panelMode: 'both',
   setPanelMode: (mode) => set({ panelMode: mode }),

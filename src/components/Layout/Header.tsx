@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle } from 'lucide-react'
+import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ interface HeaderProps {
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
   onParkThought: (title: string) => void
+  onCollapseAll: () => void
   onJustStart: () => void
   completedToday: number
   weekData: number[]
@@ -25,6 +26,7 @@ export function Header({
   onViewChange, 
   onPanelModeChange,
   onParkThought,
+  onCollapseAll,
   onJustStart,
   completedToday,
   weekData,
@@ -106,6 +108,19 @@ export function Header({
           )}
         </div>
         
+        {/* Collapse All button - only show on main view */}
+        {currentView === 'main' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCollapseAll}
+            className="h-9"
+            title="Collapse all lists"
+          >
+            <ChevronsDownUp className="h-4 w-4" />
+          </Button>
+        )}
+
         {/* Panel Mode Controls - only show on main view */}
         {currentView === 'main' && (
           <div className="flex h-9 items-center bg-muted rounded-lg p-1 gap-1">

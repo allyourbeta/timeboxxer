@@ -24,6 +24,7 @@ export default function Home() {
     duplicatingListId, setDuplicatingListId,
     showNewListInput, setShowNewListInput,
     expandedListByColumn, toggleListExpanded,
+    collapseAllLists,
   } = useUIStore()
 
   // All handlers from custom hook
@@ -128,6 +129,7 @@ export default function Home() {
           onViewChange={setCurrentView}
           onPanelModeChange={setPanelMode}
           onParkThought={handleParkThought}
+          onCollapseAll={collapseAllLists}
           onJustStart={() => {
             if (scheduledTasks.length > 0) {
               const randomIndex = Math.floor(Math.random() * scheduledTasks.length)
@@ -155,6 +157,7 @@ export default function Home() {
         onViewChange={setCurrentView}
         onPanelModeChange={setPanelMode}
         onParkThought={handleParkThought}
+        onCollapseAll={collapseAllLists}
         onJustStart={() => {
           if (scheduledTasks.length > 0) {
             const randomIndex = Math.floor(Math.random() * scheduledTasks.length)
