@@ -197,7 +197,7 @@ export function ListPanel({
         
         {/* Add new list */}
         {showNewListInput ? (
-          <div className="bg-theme-secondary rounded-lg p-3">
+          <div className="bg-theme-secondary rounded-lg p-3" style={{ breakInside: 'avoid', marginBottom: '1rem' }}>
             <input
               type="text"
               placeholder="List name..."
@@ -227,6 +227,7 @@ export function ListPanel({
           <button
             onClick={() => onShowNewListInput(true)}
             className="w-full p-3 text-left text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary rounded-lg transition-colors border border-dashed border-theme"
+            style={{ breakInside: 'avoid', marginBottom: '1rem' }}
           >
             + Add List
           </button>
