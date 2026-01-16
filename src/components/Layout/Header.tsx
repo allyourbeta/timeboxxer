@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp } from 'lucide-react'
+import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp, Rows3, Columns2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,8 @@ interface HeaderProps {
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   onViewChange: (view: 'main' | 'completed') => void
   onPanelModeChange: (mode: 'both' | 'lists-only' | 'calendar-only') => void
+  listColumnCount: 1 | 2
+  onListColumnCountChange: (count: 1 | 2) => void
   onParkThought: (title: string) => void
   onCollapseAll: () => void
   onJustStart: () => void
@@ -25,6 +27,8 @@ export function Header({
   panelMode, 
   onViewChange, 
   onPanelModeChange,
+  listColumnCount,
+  onListColumnCountChange,
   onParkThought,
   onCollapseAll,
   onJustStart,
@@ -120,6 +124,30 @@ export function Header({
           >
             <ChevronsDownUp className="h-4 w-4" />
           </Button>
+        )}
+
+        {/* Column toggle - only show on main view when lists are visible */}
+        {currentView === 'main' && (panelMode === 'both' || panelMode === 'lists-only') && (
+          <div className="flex h-9 items-center bg-muted rounded-lg p-1">
+            <Button
+              variant={listColumnCount === 1 ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onListColumnCountChange(1)}
+              className="h-7 px-2"
+              title="Single column"
+            >
+              <Rows3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={listColumnCount === 2 ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onListColumnCountChange(2)}
+              className="h-7 px-2"
+              title="Two columns"
+            >
+              <Columns2 className="h-4 w-4" />
+            </Button>
+          </div>
         )}
 
         {/* Panel Mode Controls - only show on main view */}

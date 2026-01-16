@@ -34,6 +34,10 @@ interface UIStore {
   // Panel focus modes
   panelMode: 'both' | 'lists-only' | 'calendar-only'
   setPanelMode: (mode: 'both' | 'lists-only' | 'calendar-only') => void
+  
+  // List column layout
+  listColumnCount: 1 | 2
+  setListColumnCount: (count: 1 | 2) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -73,4 +77,7 @@ export const useUIStore = create<UIStore>((set) => ({
   
   panelMode: 'both',
   setPanelMode: (mode) => set({ panelMode: mode }),
+  
+  listColumnCount: 2,
+  setListColumnCount: (count) => set({ listColumnCount: count }),
 }))

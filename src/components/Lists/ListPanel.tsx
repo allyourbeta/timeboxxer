@@ -59,6 +59,7 @@ interface ListPanelProps {
   onTaskHighlightToggle: (taskId: string) => void
   onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
+  columnCount: 1 | 2
 }
 
 export function ListPanel({
@@ -86,6 +87,7 @@ export function ListPanel({
   onTaskHighlightToggle,
   onTaskComplete,
   onReorderTasks,
+  columnCount,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -153,7 +155,7 @@ export function ListPanel({
   
   return (
     <div ref={containerRef} className="border-r border-theme overflow-y-auto">
-      <div className="p-4" style={{ columnCount: 2, columnGap: '1rem' }}>
+      <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
         {lists.map((list) => {
           const isExpanded = expandedListIds.has(list.id)
           return (

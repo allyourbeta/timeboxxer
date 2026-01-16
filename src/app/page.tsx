@@ -25,6 +25,7 @@ export default function Home() {
     showNewListInput, setShowNewListInput,
     expandedListIds, toggleListExpanded,
     collapseAllLists,
+    listColumnCount, setListColumnCount,
   } = useUIStore()
 
   // All handlers from custom hook
@@ -140,6 +141,8 @@ export default function Home() {
               handleStartFocus(scheduledTasks[randomIndex].id)
             }
           }}
+          listColumnCount={listColumnCount}
+          onListColumnCountChange={setListColumnCount}
           completedToday={completedToday}
           weekData={getWeekData()}
         />
@@ -168,6 +171,8 @@ export default function Home() {
             handleStartFocus(scheduledTasks[randomIndex].id)
           }
         }}
+        listColumnCount={listColumnCount}
+        onListColumnCountChange={setListColumnCount}
         completedToday={completedToday}
         weekData={getWeekData()}
       />
@@ -204,6 +209,7 @@ export default function Home() {
               onTaskHighlightToggle={handleTaskHighlightToggle}
               onTaskComplete={handleTaskComplete}
               onReorderTasks={handleReorderTasks}
+              columnCount={listColumnCount}
             />
           </div>
         )}
