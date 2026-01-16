@@ -87,6 +87,7 @@ export function ListPanel({
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
+  const hasInitializedExpansion = useRef(false)
 
   // Initialize FullCalendar Draggable for external drag
   useEffect(() => {
@@ -116,6 +117,31 @@ export function ListPanel({
     
     return () => draggable.destroy()
   }, [])
+
+  // Initialize expansion state for lists with tasks
+  useEffect(() => {
+    // Only run once when lists are first loaded
+    if (hasInitializedExpansion.current || lists.length === 0) return
+    hasInitializedExpansion.current = true
+    
+    // For each column, expand the first list that has tasks
+    const columnsToInit = [0, 1]
+    columnsToInit.forEach(column => {
+      // Get lists in this column
+      const listsInColumn = lists.filter((_, index) => index % 2 === column)
+      
+      // Find first list with tasks
+      const firstWithTasks = listsInColumn.find(list => {
+        const taskCount = tasks.filter(t => t.list_id === list.id && !t.is_completed).length
+        return taskCount > 0
+      })
+      
+      // If found and nothing is currently expanded in this column, expand it
+      if (firstWithTasks && expandedListByColumn[column] === null) {
+        onToggleListExpanded(firstWithTasks.id, column)
+      }
+    })
+  }, [lists, tasks, expandedListByColumn, onToggleListExpanded])
   
   const getTasksForList = (listId: string) =>
     tasks.filter(t => t.list_id === listId && !t.is_completed)
