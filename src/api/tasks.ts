@@ -328,3 +328,28 @@ export async function cleanupExpiredScheduledTasks(): Promise<number> {
   
   return count
 }
+
+export async function rollOverTasks(fromListId: string, toListId: string): Promise<number> {
+  const supabase = getSupabase()
+  
+  // Get all incomplete tasks from the source list
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('list_id', fromListId)
+    .eq('is_completed', false)
+  
+  if (fetchError) throw fetchError
+  if (!tasks || tasks.length === 0) return 0
+  
+  // Move them to the destination list
+  const taskIds = tasks.map((t: { id: string }) => t.id)
+  const { error: updateError } = await supabase
+    .from('tasks')
+    .update({ list_id: toListId })
+    .in('id', taskIds)
+  
+  if (updateError) throw updateError
+  
+  return taskIds.length
+}
