@@ -35,6 +35,10 @@ export function useAppHandlers() {
   // Local state for deletion flow
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const [focusTaskId, setFocusTaskId] = useState<string | null>(null)
+  const [discardConfirm, setDiscardConfirm] = useState<{
+    taskId: string
+    taskTitle: string
+  } | null>(null)
 
   // === TASK HANDLERS ===
   
@@ -44,6 +48,21 @@ export function useAppHandlers() {
 
   const handleTaskDelete = async (taskId: string) => {
     await deleteTask(taskId)
+  }
+
+  const handleTaskDiscardClick = (taskId: string, taskTitle: string) => {
+    setDiscardConfirm({ taskId, taskTitle })
+  }
+
+  const handleTaskDiscardConfirm = async () => {
+    if (!discardConfirm) return
+    
+    await deleteTask(discardConfirm.taskId)
+    setDiscardConfirm(null)
+  }
+
+  const handleTaskDiscardCancel = () => {
+    setDiscardConfirm(null)
   }
 
   const handleTaskDurationClick = async (taskId: string, currentDuration: number, reverse: boolean) => {
@@ -266,6 +285,12 @@ export function useAppHandlers() {
     handleStartFocus,
     handleExitFocus,
     handleFocusComplete,
+    
+    // Discard confirmation
+    discardConfirm,
+    handleTaskDiscardClick,
+    handleTaskDiscardConfirm,
+    handleTaskDiscardCancel,
     
     // Park handler
     handleParkThought,

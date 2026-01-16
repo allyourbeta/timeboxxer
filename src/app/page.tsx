@@ -6,7 +6,7 @@ import { useAppHandlers } from '@/hooks'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { FullCalendarView } from '@/components/Calendar'
-import { Toast } from '@/components/ui'
+import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
 import { LIMBO_LIST_ID } from '@/lib/constants'
 
@@ -54,6 +54,10 @@ export default function Home() {
     handleExitFocus,
     handleFocusComplete,
     handleParkThought,
+    discardConfirm,
+    handleTaskDiscardClick,
+    handleTaskDiscardConfirm,
+    handleTaskDiscardCancel,
   } = useAppHandlers()
 
   // Load data on mount
@@ -198,6 +202,7 @@ export default function Home() {
               onTaskDailyToggle={handleTaskDailyToggle}
               onTaskEnergyChange={handleTaskEnergyChange}
               onTaskHighlightToggle={handleTaskHighlightToggle}
+              onTaskComplete={handleTaskComplete}
               onReorderTasks={handleReorderTasks}
             />
           </div>
@@ -247,6 +252,18 @@ export default function Home() {
           onClose={() => setPendingDelete(null)}
         />
       )}
+      
+      {/* Discard Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!discardConfirm}
+        title="Discard this task?"
+        message={`"${discardConfirm?.taskTitle}" will be permanently deleted.`}
+        confirmLabel="Discard"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        onConfirm={handleTaskDiscardConfirm}
+        onCancel={handleTaskDiscardCancel}
+      />
     </div>
   )
 }

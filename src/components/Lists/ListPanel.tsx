@@ -57,6 +57,7 @@ interface ListPanelProps {
   onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskHighlightToggle: (taskId: string) => void
+  onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
 }
 
@@ -83,6 +84,7 @@ export function ListPanel({
   onTaskDailyToggle,
   onTaskEnergyChange,
   onTaskHighlightToggle,
+  onTaskComplete,
   onReorderTasks,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
@@ -190,7 +192,7 @@ export function ListPanel({
               onTaskDailyToggle={onTaskDailyToggle}
               onTaskEnergyChange={onTaskEnergyChange}
               onTaskHighlightToggle={onTaskHighlightToggle}
-              onTaskComplete={() => {/* TODO: Wire up in Section 11 */}}
+              onTaskComplete={onTaskComplete}
               onReorderTasks={onReorderTasks}
             />
           )
