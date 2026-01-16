@@ -55,6 +55,7 @@ interface ListCardProps {
   onTaskHighlightToggle: (taskId: string) => void
   onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
+  onRollOver?: () => void
 }
 
 export function ListCard({
@@ -85,6 +86,7 @@ export function ListCard({
   onTaskHighlightToggle,
   onTaskComplete,
   onReorderTasks,
+  onRollOver,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
   const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
@@ -291,6 +293,17 @@ export function ListCard({
             </Droppable>
           </DragDropContext>
           
+          {/* Roll Over button - only for date lists with incomplete tasks */}
+          {isDateList && !isInbox && tasks.filter(t => !t.is_completed).length > 0 && onRollOver && (
+            <button
+              onClick={onRollOver}
+              className="w-full mt-2 mb-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md border border-dashed border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>→</span>
+              <span>Roll over to tomorrow</span>
+            </button>
+          )}
+
           {/* Add task input */}
           <AddTaskInput onAdd={onTaskAdd} />
         </div>
