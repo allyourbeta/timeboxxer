@@ -3,24 +3,28 @@
 import { Button } from './button'
 
 interface ConfirmDialogProps {
+  isOpen: boolean
   title: string
   message: string
   confirmLabel?: string
   cancelLabel?: string
+  confirmVariant?: 'default' | 'destructive'
   onConfirm: () => void
   onCancel: () => void
-  isDestructive?: boolean
 }
 
 export function ConfirmDialog({
+  isOpen,
   title,
   message,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
+  confirmVariant = 'default',
   onConfirm,
   onCancel,
-  isDestructive = false,
 }: ConfirmDialogProps) {
+  if (!isOpen) return null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -42,7 +46,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </Button>
           <Button
-            variant={isDestructive ? 'destructive' : 'default'}
+            variant={confirmVariant === 'destructive' ? 'destructive' : 'default'}
             onClick={onConfirm}
           >
             {confirmLabel}
