@@ -56,6 +56,7 @@ export default function Home() {
     handleExitFocus,
     handleFocusComplete,
     handleParkThought,
+    handleRollOverTasks,
     discardConfirm,
     handleTaskDiscardClick,
     handleTaskDiscardConfirm,
@@ -217,6 +218,7 @@ export default function Home() {
               onTaskHighlightToggle={handleTaskHighlightToggle}
               onTaskComplete={handleTaskComplete}
               onReorderTasks={handleReorderTasks}
+              onRollOverTasks={handleRollOverTasks}
               columnCount={listColumnCount}
             />
           </div>

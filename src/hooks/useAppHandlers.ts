@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
 import { LIMBO_LIST_ID } from '@/lib/constants'
+import { rollOverTasks } from '@/api'
 
 interface PendingDelete {
   listId: string
@@ -251,6 +252,37 @@ export function useAppHandlers() {
     await createParkedThought(title)
   }
 
+  // === ROLL OVER HANDLER ===
+
+  const handleRollOverTasks = async (fromListId: string) => {
+    // Find tomorrow's list
+    const tomorrowList = lists.find(l => {
+      if (l.system_type !== 'date') return false
+      // Check if this is tomorrow's date
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const tomorrowName = tomorrow.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+      return l.name === tomorrowName
+    })
+    
+    if (!tomorrowList) {
+      console.error('Tomorrow list not found')
+      return
+    }
+    
+    const count = await rollOverTasks(fromListId, tomorrowList.id)
+    
+    if (count > 0) {
+      // Reload tasks to reflect the move
+      const { loadTasks } = useTaskStore.getState()
+      await loadTasks()
+    }
+  }
+
   return {
     // State
     pendingDelete,
@@ -294,5 +326,8 @@ export function useAppHandlers() {
     
     // Park handler
     handleParkThought,
+    
+    // Roll over handler
+    handleRollOverTasks,
   }
 }

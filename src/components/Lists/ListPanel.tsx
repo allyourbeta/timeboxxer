@@ -59,6 +59,7 @@ interface ListPanelProps {
   onTaskHighlightToggle: (taskId: string) => void
   onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
+  onRollOverTasks: (fromListId: string) => void
   columnCount: 1 | 2
 }
 
@@ -87,6 +88,7 @@ export function ListPanel({
   onTaskHighlightToggle,
   onTaskComplete,
   onReorderTasks,
+  onRollOverTasks,
   columnCount,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
@@ -196,6 +198,11 @@ export function ListPanel({
               onTaskHighlightToggle={onTaskHighlightToggle}
               onTaskComplete={onTaskComplete}
               onReorderTasks={onReorderTasks}
+              onRollOver={
+                list.system_type === 'date' 
+                  ? () => onRollOverTasks(list.id)
+                  : undefined
+              }
             />
           )
         })}
