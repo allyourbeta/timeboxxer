@@ -118,29 +118,21 @@ export function ListPanel({
     return () => draggable.destroy()
   }, [])
 
-  // Initialize expansion state for lists with tasks
+  // Initialize expansion state - expand first list with tasks
   useEffect(() => {
     // Only run once when lists are first loaded
     if (hasInitializedExpansion.current || lists.length === 0) return
     hasInitializedExpansion.current = true
     
-    // For each column, expand the first list that has tasks
-    const columnsToInit = [0, 1]
-    columnsToInit.forEach(column => {
-      // Get lists in this column
-      const listsInColumn = lists.filter((_, index) => index % 2 === column)
-      
-      // Find first list with tasks
-      const firstWithTasks = listsInColumn.find(list => {
-        const taskCount = tasks.filter(t => t.list_id === list.id && !t.is_completed).length
-        return taskCount > 0
-      })
-      
-      // If found and it's not already expanded, expand it
-      if (firstWithTasks && !expandedListIds.has(firstWithTasks.id)) {
-        onToggleListExpanded(firstWithTasks.id)
-      }
+    // Find first list with tasks and expand it
+    const firstWithTasks = lists.find(list => {
+      const taskCount = tasks.filter(t => t.list_id === list.id && !t.is_completed).length
+      return taskCount > 0
     })
+    
+    if (firstWithTasks && expandedListIds.size === 0) {
+      onToggleListExpanded(firstWithTasks.id)
+    }
   }, [lists, tasks, expandedListIds, onToggleListExpanded])
   
   const getTasksForList = (listId: string) =>
@@ -159,9 +151,8 @@ export function ListPanel({
   
   return (
     <div ref={containerRef} className="border-r border-theme overflow-y-auto">
-      <div className="grid grid-cols-2 gap-4 p-4">
-        {lists.map((list, index) => {
-          const column = index % 2
+      <div className="p-4" style={{ columnCount: 2, columnGap: '1rem' }}>
+        {lists.map((list) => {
           const isExpanded = expandedListIds.has(list.id)
           return (
             <ListCard
