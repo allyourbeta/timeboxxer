@@ -53,6 +53,7 @@ interface ListCardProps {
   onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskHighlightToggle: (taskId: string) => void
+  onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
 }
 
@@ -82,6 +83,7 @@ export function ListCard({
   onTaskDailyToggle,
   onTaskEnergyChange,
   onTaskHighlightToggle,
+  onTaskComplete,
   onReorderTasks,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
@@ -269,7 +271,7 @@ export function ListCard({
                               onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
                               onDailyToggle={() => onTaskDailyToggle(task.id)}
                               onHighlightToggle={() => onTaskHighlightToggle(task.id)}
-                              onComplete={() => {/* TODO: Wire up in Section 5 */}}
+                              onComplete={() => onTaskComplete(task.id)}
                               onDelete={() => onTaskDelete(task.id)}
                             />
                           </div>

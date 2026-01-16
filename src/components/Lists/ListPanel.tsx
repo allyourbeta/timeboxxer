@@ -190,6 +190,7 @@ export function ListPanel({
               onTaskDailyToggle={onTaskDailyToggle}
               onTaskEnergyChange={onTaskEnergyChange}
               onTaskHighlightToggle={onTaskHighlightToggle}
+              onTaskComplete={() => {/* TODO: Wire up in Section 11 */}}
               onReorderTasks={onReorderTasks}
             />
           )
