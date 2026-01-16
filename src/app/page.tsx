@@ -3,6 +3,8 @@
 import { useEffect } from 'react'
 import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
 import { useAppHandlers } from '@/hooks'
+import { useAuth } from '@/lib/auth'
+import { LoginPage } from '@/components/Auth'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { FullCalendarView } from '@/components/Calendar'
@@ -14,6 +16,22 @@ import { cleanupExpiredScheduledTasks } from '@/api'
 const PALETTE_ID = 'rainbow-bright'
 
 export default function Home() {
+  // Auth check
+  const { user, loading: authLoading } = useAuth()
+  
+  // Show login page if not authenticated
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+  
+  if (!user) {
+    return <LoginPage />
+  }
+
   // Stores (data only)
   const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForToday } = useTaskStore()
   const { lists, loading: listsLoading, loadLists } = useListStore()
