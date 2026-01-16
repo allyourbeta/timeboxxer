@@ -175,17 +175,18 @@ export function ListCard({
           />
         </div>
       ) : (
-        <button
-          onClick={onToggleExpand}
-          className="w-full p-4 flex items-center justify-between group hover:bg-muted/30 transition-colors border-b border-border"
-        >
-          <div className="flex items-center gap-3">
+        <div className="p-4 flex items-center justify-between border-b border-border">
+          {/* Left side - clickable to toggle expand */}
+          <button
+            onClick={onToggleExpand}
+            className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity"
+          >
             {/* Colored accent bar */}
             <div 
-              className="w-1 h-8 rounded-full"
+              className="w-1 h-8 rounded-full flex-shrink-0"
               style={{ backgroundColor: getFirstTaskColor() }}
             />
-            <div className="text-left">
+            <div>
               <h3 
                 className="font-semibold text-card-foreground"
                 onDoubleClick={(e) => {
@@ -197,33 +198,30 @@ export function ListCard({
               >
                 {name}
               </h3>
-              <p className="text-sm text-muted-foreground">{tasks.length} tasks</p>
+              <p className="text-sm text-muted-foreground">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
             </div>
-          </div>
+          </button>
           
-          {/* Expand/collapse icon - animated */}
-          <div className={`
-            w-8 h-8 rounded-full bg-muted/50 
-            flex items-center justify-center
-            transition-transform duration-200
-            ${isExpanded ? 'rotate-180' : ''}
-          `}>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          </div>
-        </button>
-      )}
-      
-      {/* Action buttons - only when expanded and not editing */}
-      {!isEditing && isExpanded && (
-        <div className="px-4 pb-2">
-          <div className="flex justify-end gap-2">
-            <ListCardMenu
-              isSystemList={isSystemList}
-              canDelete={canDeleteList()}
-              onEdit={onStartEdit}
-              onDuplicate={onStartDuplicate}
-              onDelete={onDelete}
-            />
+          {/* Right side - menu and chevron */}
+          <div className="flex items-center gap-2">
+            {/* Three dots menu - only when expanded */}
+            {isExpanded && !isEditing && (
+              <ListCardMenu
+                isSystemList={isSystemList}
+                canDelete={canDeleteList()}
+                onEdit={onStartEdit}
+                onDuplicate={onStartDuplicate}
+                onDelete={onDelete}
+              />
+            )}
+            
+            {/* Expand/collapse icon */}
+            <button
+              onClick={onToggleExpand}
+              className={`w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            >
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </button>
           </div>
         </div>
       )}
