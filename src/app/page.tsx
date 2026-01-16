@@ -8,7 +8,7 @@ import { ListPanel } from '@/components/Lists'
 import { FullCalendarView } from '@/components/Calendar'
 import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
-import { LIMBO_LIST_ID } from '@/lib/constants'
+// LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { cleanupExpiredScheduledTasks } from '@/api'
 
 const PALETTE_ID = 'rainbow-bright'

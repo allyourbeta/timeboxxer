@@ -1,5 +1,3 @@
-import { DEV_USER_ID } from './constants'
-
 /**
  * Format today's date as a list name
  * e.g., "13 Jan 2026"

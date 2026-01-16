@@ -1,6 +1,11 @@
 import { getSupabase } from '@/lib/supabase'
 
-const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
+async function getCurrentUserId(): Promise<string> {
+  const supabase = getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  return user.id
+}
 
 export async function getScheduledTasks(date?: string) {
   const supabase = getSupabase()
@@ -17,6 +22,7 @@ export async function getScheduledTasks(date?: string) {
 
 export async function scheduleTask(taskId: string, date: string, startTime: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   // Remove existing schedule for this task if any
   await supabase
@@ -27,7 +33,7 @@ export async function scheduleTask(taskId: string, date: string, startTime: stri
   const { data, error } = await supabase
     .from('scheduled_tasks')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       task_id: taskId,
       scheduled_date: date,
       start_time: startTime,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
-import { LIMBO_LIST_ID } from '@/lib/constants'
+// LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { rollOverTasks } from '@/api'
 
 interface PendingDelete {
@@ -139,8 +139,9 @@ export function useAppHandlers() {
 
     const today = new Date().toISOString().split('T')[0]
     
-    // Move to limbo if not already there
-    if (task.list_id !== LIMBO_LIST_ID) {
+    // Move to purgatory if not already there
+    const purgatoryList = lists.find(l => l.system_type === 'purgatory')
+    if (task.list_id !== purgatoryList?.id) {
       const originalList = lists.find(l => l.id === task.list_id)
       const originalListName = originalList ? originalList.name : 'Unknown'
       const originalListId = task.list_id || ''

@@ -1,5 +1,11 @@
 import { getSupabase } from '@/lib/supabase'
-import { DEV_USER_ID, LIMBO_LIST_ID, PARKED_LIST_ID } from '@/lib/constants'
+
+async function getCurrentUserId(): Promise<string> {
+  const supabase = getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  return user.id
+}
 
 export async function getTasks() {
   const supabase = getSupabase()
@@ -13,6 +19,7 @@ export async function getTasks() {
 
 export async function createTask(listId: string, title: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   // Get next position
   const { data: existing } = await supabase
@@ -27,7 +34,7 @@ export async function createTask(listId: string, title: string) {
   const { data, error } = await supabase
     .from('tasks')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       list_id: listId,
       title,
       duration_minutes: 15,
@@ -99,10 +106,22 @@ export async function deleteTask(taskId: string) {
 
 export async function moveToPurgatory(taskId: string, originalListId: string, originalListName: string) {
   const supabase = getSupabase()
+  
+  // Get purgatory list ID dynamically
+  const { data: purgatoryList, error: listError } = await supabase
+    .from('lists')
+    .select('id')
+    .eq('system_type', 'purgatory')
+    .single()
+  
+  if (listError || !purgatoryList) {
+    throw new Error('Purgatory list not found')
+  }
+  
   const { data, error } = await supabase
     .from('tasks')
     .update({
-      list_id: LIMBO_LIST_ID,
+      list_id: purgatoryList.id,
       moved_to_purgatory_at: new Date().toISOString(),
       original_list_id: originalListId,
       original_list_name: originalListName,
@@ -137,6 +156,7 @@ export async function moveFromPurgatory(taskId: string, newListId: string) {
 
 export async function spawnDailyTasks(todayListId: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   // Get all daily tasks that haven't been spawned today
   const { data: dailyTasks } = await supabase
@@ -162,7 +182,7 @@ export async function spawnDailyTasks(todayListId: string) {
   if (toSpawn.length === 0) return []
   
   const newTasks = toSpawn.map((task: any) => ({
-    user_id: DEV_USER_ID,
+    user_id: userId,
     list_id: todayListId,
     title: task.title,
     duration_minutes: task.duration_minutes,
@@ -195,6 +215,7 @@ export async function moveTaskToList(taskId: string, newListId: string | null) {
 
 export async function createParkedThought(title: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   // Fetch the parked list ID dynamically (system_type = 'parked')
   const { data: parkedList, error: listError } = await supabase
@@ -221,7 +242,7 @@ export async function createParkedThought(title: string) {
   const { data, error } = await supabase
     .from('tasks')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       list_id: parkedList.id,
       title,
       duration_minutes: 15,
@@ -241,11 +262,12 @@ export async function createParkedThought(title: string) {
 
 export async function createCalendarTask(title: string, startTime: string, date: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   const { data: task, error: taskError } = await supabase
     .from('tasks')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       list_id: null,  // No list - created directly on calendar
       title,
       duration_minutes: 30,  // Default duration
@@ -262,7 +284,7 @@ export async function createCalendarTask(title: string, startTime: string, date:
   const { error: scheduleError } = await supabase
     .from('scheduled_tasks')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       task_id: task.id,
       scheduled_date: date,
       start_time: startTime + ':00',

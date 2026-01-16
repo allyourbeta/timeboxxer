@@ -1,6 +1,12 @@
 import { getSupabase } from '@/lib/supabase'
-import { DEV_USER_ID } from '@/lib/constants'
 import { getTodayListName, getTodayISO, getTomorrowListName } from '@/lib/dateList'
+
+async function getCurrentUserId(): Promise<string> {
+  const supabase = getSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  return user.id
+}
 
 export async function getLists() {
   const supabase = getSupabase()
@@ -14,6 +20,7 @@ export async function getLists() {
 
 export async function createList(name: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   const { data: existing } = await supabase
     .from('lists')
@@ -26,7 +33,7 @@ export async function createList(name: string) {
   const { data, error } = await supabase
     .from('lists')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name,
       position: nextPosition,
     })
@@ -61,6 +68,7 @@ export async function deleteList(listId: string) {
 
 export async function duplicateList(listId: string, newName: string) {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   
   // 1. Get the original list
   const { data: originalList, error: listError } = await supabase
@@ -84,7 +92,7 @@ export async function duplicateList(listId: string, newName: string) {
   const { data: newList, error: createError } = await supabase
     .from('lists')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: newName,
       position: nextPosition,
       is_inbox: false, // Duplicated lists are never inbox
@@ -105,7 +113,7 @@ export async function duplicateList(listId: string, newName: string) {
   // 5. Duplicate tasks to new list (if any exist)
   if (tasks && tasks.length > 0) {
     const newTasks = tasks.map((task: any, index: number) => ({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       list_id: newList.id,
       title: task.title,
       duration_minutes: task.duration_minutes,
@@ -127,6 +135,7 @@ export async function duplicateList(listId: string, newName: string) {
 
 export async function ensureTodayList() {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   const todayName = getTodayListName()
   
   // Check if today's list already exists
@@ -143,7 +152,7 @@ export async function ensureTodayList() {
   const { data, error } = await supabase
     .from('lists')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: todayName,
       position: 0,
       is_system: true,
@@ -171,6 +180,7 @@ export async function ensureTodayList() {
 
 export async function ensureTomorrowList() {
   const supabase = getSupabase()
+  const userId = await getCurrentUserId()
   const tomorrowName = getTomorrowListName()
   
   // Check if tomorrow's list already exists
@@ -187,7 +197,7 @@ export async function ensureTomorrowList() {
   const { data, error } = await supabase
     .from('lists')
     .insert({
-      user_id: DEV_USER_ID,
+      user_id: userId,
       name: tomorrowName,
       position: 0,
       is_system: true,
