@@ -148,16 +148,16 @@ export function TaskCard({
           </button>
         )}
         
-        {/* Complete - visible on hover */}
+        {/* Complete - always visible, more prominent */}
         <button
           onClick={(e) => {
             e.stopPropagation()
             onComplete()
           }}
-          className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/80 hover:text-white transition-opacity"
+          className="opacity-40 hover:opacity-100 transition-all hover:scale-110"
           title="Mark as complete"
         >
-          <CheckCircle className="h-4 w-4 text-white/60 hover:text-green-400" />
+          <CheckCircle className="h-5 w-5 text-white hover:text-green-400 hover:drop-shadow-[0_0_4px_rgba(74,222,128,0.8)]" />
         </button>
 
         {/* Delete - visible on hover */}

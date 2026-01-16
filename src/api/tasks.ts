@@ -196,15 +196,37 @@ export async function moveTaskToList(taskId: string, newListId: string | null) {
 export async function createParkedThought(title: string) {
   const supabase = getSupabase()
   
+  // Fetch the parked list ID dynamically (system_type = 'parked')
+  const { data: parkedList, error: listError } = await supabase
+    .from('lists')
+    .select('id')
+    .eq('system_type', 'parked')
+    .single()
+  
+  if (listError || !parkedList) {
+    console.error('Could not find TBD Grab Bag list:', listError)
+    throw new Error('TBD Grab Bag list not found')
+  }
+  
+  // Get max position in the parked list
+  const { data: maxPosData } = await supabase
+    .from('tasks')
+    .select('position')
+    .eq('list_id', parkedList.id)
+    .order('position', { ascending: false })
+    .limit(1)
+  
+  const nextPosition = (maxPosData?.[0]?.position ?? -1) + 1
+  
   const { data, error } = await supabase
     .from('tasks')
     .insert({
       user_id: DEV_USER_ID,
-      list_id: PARKED_LIST_ID,
+      list_id: parkedList.id,
       title,
       duration_minutes: 15,
-      color_index: Math.floor(Math.random() * 12),
-      position: Date.now(),
+      color_index: Math.floor(Math.random() * 8),
+      position: nextPosition,
       is_completed: false,
       is_daily: false,
       is_daily_highlight: false,

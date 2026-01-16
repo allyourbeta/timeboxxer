@@ -38,15 +38,15 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
   return (
     <div className="flex-1 overflow-y-auto p-4">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold">Completed Tasks</h2>
-        <p className="text-sm text-gray-400">Tasks you've finished</p>
+        <h2 className="text-lg font-semibold text-foreground">Completed Tasks</h2>
+        <p className="text-sm text-muted-foreground">Tasks you've finished</p>
       </div>
       
       <div className="space-y-2">
         {completedTasks.map(task => (
           <div
             key={task.id}
-            className="p-3 rounded-lg bg-gray-800 flex items-center justify-between"
+            className="p-3 rounded-lg bg-card border border-border flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
               <div
@@ -54,8 +54,8 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
                 style={{ backgroundColor: getColor(paletteId, task.color_index) }}
               />
               <div>
-                <div className="font-medium text-white">{task.title}</div>
-                <div className="text-xs text-gray-400">
+                <div className="font-medium text-card-foreground">{task.title}</div>
+                <div className="text-xs text-muted-foreground">
                   From: {getListName(task.list_id)} • {task.duration_minutes} min • 
                   Completed {new Date(task.completed_at!).toLocaleString()}
                 </div>
@@ -63,7 +63,7 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
             </div>
             <button
               onClick={() => onRestore(task.id)}
-              className="px-2 py-1 text-xs bg-blue-500/80 hover:bg-blue-500 text-white rounded"
+              className="px-2 py-1 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded"
             >
               Restore
             </button>
@@ -71,7 +71,7 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
         ))}
         
         {completedTasks.length === 0 && (
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-muted-foreground py-8">
             <p>No completed tasks yet.</p>
           </div>
         )}

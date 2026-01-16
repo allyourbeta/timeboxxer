@@ -128,21 +128,19 @@ export function FullCalendarView({
     onExternalDrop(taskId, timeString)
   }, [onExternalDrop])
 
-  // Handle event click (for context menu actions)
+  // State for task action modal
+  const [selectedTask, setSelectedTask] = useState<{
+    taskId: string
+    title: string
+  } | null>(null)
+
+  // Handle event click (show action modal)
   const handleEventClick = useCallback((clickInfo: any) => {
     const taskId = clickInfo.event.extendedProps.taskId
+    const title = clickInfo.event.title
     
-    // Simple context menu simulation - in a real app you'd use a proper context menu
-    const action = window.confirm(
-      `Task: ${clickInfo.event.title}\n\nClick OK to complete, Cancel to unschedule`
-    )
-    
-    if (action) {
-      onComplete(taskId)
-    } else {
-      onUnschedule(taskId)
-    }
-  }, [onComplete, onUnschedule])
+    setSelectedTask({ taskId, title })
+  }, [])
 
   // Handle date click for inline task creation
   const handleDateClick = useCallback((info: any) => {
@@ -244,40 +242,97 @@ export function FullCalendarView({
 
       {/* Inline task creation UI */}
       {newTaskSlot && (
-        <div 
-          className="fixed z-50 bg-popover border rounded-lg shadow-xl p-3"
-          style={{
-            // Position near the click - we'll refine this
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <div className="text-sm text-muted-foreground mb-2">
-            New task at {newTaskSlot.time}
-          </div>
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={handleCreateKeyDown}
-            placeholder="Task name..."
-            className="w-64 px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            autoFocus
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              setNewTaskSlot(null)
+              setNewTaskTitle('')
+            }}
           />
-          <div className="flex justify-end gap-2 mt-3">
+          
+          {/* Modal - always light for readability */}
+          <div className="relative bg-white border-2 border-slate-300 rounded-lg shadow-2xl p-4 max-w-sm w-full mx-4">
+            <div className="text-sm text-slate-500 mb-2">
+              New task at {newTaskSlot.time}
+            </div>
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={handleCreateKeyDown}
+              placeholder="Task name..."
+              className="w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2 mt-3">
+              <button
+                onClick={() => {
+                  setNewTaskSlot(null)
+                  setNewTaskTitle('')
+                }}
+                className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateSubmit}
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task action modal */}
+      {selectedTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setSelectedTask(null)}
+          />
+          
+          {/* Modal - always light for readability */}
+          <div className="relative bg-white border-2 border-slate-300 rounded-lg shadow-2xl p-4 max-w-sm w-full mx-4">
+            {/* Close X button */}
             <button
-              onClick={() => setNewTaskSlot(null)}
-              className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+              onClick={() => setSelectedTask(null)}
+              className="absolute top-3 right-3 text-slate-400 hover:text-slate-600"
+              aria-label="Close"
             >
-              Cancel
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
-            <button
-              onClick={handleCreateSubmit}
-              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-            >
-              Create
-            </button>
+            
+            <h3 className="font-semibold text-slate-900 mb-1 pr-8">{selectedTask.title}</h3>
+            <p className="text-sm text-slate-500 mb-4">What do you want to do?</p>
+            
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  onComplete(selectedTask.taskId)
+                  setSelectedTask(null)
+                }}
+                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium"
+              >
+                ✓ Complete
+              </button>
+              <button
+                onClick={() => {
+                  onUnschedule(selectedTask.taskId)
+                  setSelectedTask(null)
+                }}
+                className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-sm font-medium"
+              >
+                Return to list
+              </button>
+            </div>
           </div>
         </div>
       )}
