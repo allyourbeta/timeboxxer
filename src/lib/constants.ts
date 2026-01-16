@@ -1,6 +1,3 @@
-// System list IDs
-export const LIMBO_LIST_ID = '00000000-0000-0000-0000-000000000001'
-export const PARKED_LIST_ID = '00000000-0000-0000-0000-000000000002'
-
-// Dev user ID
-export const DEV_USER_ID = '11111111-1111-1111-1111-111111111111'
+// Constants file
+// Note: DEV_USER_ID has been removed - we now use authenticated user IDs
+// Note: LIMBO_LIST_ID and PARKED_LIST_ID removed - lists are fetched dynamically
