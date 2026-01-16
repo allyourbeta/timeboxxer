@@ -147,13 +147,16 @@ export function ListCard({
   }
   
   return (
-    <div className={`
-      rounded-xl overflow-hidden border-2 border-border shadow-lg bg-card transition-all duration-200
-      ${isExpanded 
-        ? 'shadow-xl' 
-        : 'hover:shadow-xl'
-      }
-    `}>
+    <div 
+      className={`
+        rounded-xl overflow-hidden border-2 border-border shadow-lg bg-card transition-all duration-200
+        ${isExpanded 
+          ? 'shadow-xl' 
+          : 'hover:shadow-xl'
+        }
+      `}
+      style={{ breakInside: 'avoid', marginBottom: '1rem' }}
+    >
       {/* Header - always visible */}
       {isEditing ? (
         <div className="p-4">
