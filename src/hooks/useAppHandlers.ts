@@ -167,10 +167,10 @@ export function useAppHandlers() {
       if (originalList) {
         await moveFromPurgatory(taskId, task.original_list_id)
       } else {
-        // Move to inbox if original list is gone
-        const inbox = lists.find(l => l.name === 'Inbox')
-        if (inbox) {
-          await moveFromPurgatory(taskId, inbox.id)
+        // Move to TBD Grab Bag if original list is gone
+        const parkedList = lists.find(l => l.system_type === 'parked')
+        if (parkedList) {
+          await moveFromPurgatory(taskId, parkedList.id)
         }
       }
     }
