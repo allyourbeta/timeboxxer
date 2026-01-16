@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp, Rows3, Columns2 } from 'lucide-react'
+import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp, Rows3, Columns2, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/lib/auth'
 import { WeekStreak } from './WeekStreak'
 
 interface HeaderProps {
@@ -36,6 +37,7 @@ export function Header({
   weekData,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
+  const { signOut } = useAuth()
   const [showParkInput, setShowParkInput] = useState(false)
   const [parkText, setParkText] = useState('')
   
@@ -211,6 +213,17 @@ export function Header({
           ) : (
             <Moon className="h-4 w-4" />
           )}
+        </Button>
+        
+        {/* Sign Out Button */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={signOut}
+          className="h-9 w-9"
+          title="Sign out"
+        >
+          <LogOut className="h-4 w-4" />
         </Button>
         
         {/* View Controls */}
