@@ -82,7 +82,7 @@ export function Header({
                 value={parkText}
                 onChange={(e) => setParkText(e.target.value)}
                 onKeyDown={handleParkKeyDown}
-                placeholder="Park a thought..."
+                placeholder="Quick save a thought..."
                 className="w-48 h-9"
                 autoFocus
               />
@@ -101,9 +101,10 @@ export function Header({
               size="sm"
               onClick={() => setShowParkInput(true)}
               className="h-9"
+              title="Quickly save a thought to TBD Grab Bag"
             >
               <Plus className="h-4 w-4 mr-1" />
-              Park
+              Quick Save
             </Button>
           )}
         </div>
