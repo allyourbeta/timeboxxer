@@ -232,7 +232,7 @@ export function ListCard({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"
+                  className="space-y-2"
                 >
                   {tasks
                     .filter(t => !t.is_completed)

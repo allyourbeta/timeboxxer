@@ -76,7 +76,6 @@ export function TaskCard({
         isScheduled && !isInPurgatory ? 'opacity-60' : ''
       }`}
       style={{ backgroundColor: bgColor }}
-      title={title}
       data-task-id={id}
       data-title={title}
       data-duration={durationMinutes}
