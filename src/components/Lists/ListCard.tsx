@@ -269,6 +269,7 @@ export function ListCard({
                               onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
                               onDailyToggle={() => onTaskDailyToggle(task.id)}
                               onHighlightToggle={() => onTaskHighlightToggle(task.id)}
+                              onComplete={() => {/* TODO: Wire up in Section 5 */}}
                               onDelete={() => onTaskDelete(task.id)}
                             />
                           </div>

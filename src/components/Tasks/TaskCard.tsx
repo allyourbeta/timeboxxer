@@ -1,6 +1,6 @@
 'use client'
 
-import { Trash2 } from 'lucide-react'
+import { Trash2, CheckCircle } from 'lucide-react'
 import { getColor } from '@/lib/palettes'
 
 interface TaskCardProps {
@@ -20,6 +20,7 @@ interface TaskCardProps {
   onEnergyChange: (level: 'high' | 'medium' | 'low') => void
   onDailyToggle: () => void
   onHighlightToggle: () => void
+  onComplete: () => void
   onDelete: () => void
 }
 
@@ -53,6 +54,7 @@ export function TaskCard({
   onEnergyChange,
   onDailyToggle,
   onHighlightToggle,
+  onComplete,
   onDelete,
 }: TaskCardProps) {
   const bgColor = getColor(paletteId, colorIndex)
@@ -146,6 +148,18 @@ export function TaskCard({
           </button>
         )}
         
+        {/* Complete - visible on hover */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onComplete()
+          }}
+          className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/80 hover:text-white transition-opacity"
+          title="Mark as complete"
+        >
+          <CheckCircle className="h-4 w-4 text-white/60 hover:text-green-400" />
+        </button>
+
         {/* Delete - visible on hover */}
         <button
           onClick={(e) => {
