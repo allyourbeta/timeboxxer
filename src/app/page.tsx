@@ -9,6 +9,7 @@ import { FullCalendarView } from '@/components/Calendar'
 import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
 import { LIMBO_LIST_ID } from '@/lib/constants'
+import { cleanupExpiredScheduledTasks } from '@/api'
 
 const PALETTE_ID = 'rainbow-bright'
 
@@ -63,9 +64,16 @@ export default function Home() {
 
   // Load data on mount
   useEffect(() => {
-    loadLists()
-    loadTasks()
-    loadSchedule()
+    const init = async () => {
+      // Clean up expired tasks first
+      await cleanupExpiredScheduledTasks()
+      
+      // Then load fresh data
+      loadLists()
+      loadTasks()
+      loadSchedule()
+    }
+    init()
   }, [loadLists, loadTasks, loadSchedule])
 
   // Spawn daily tasks after data loads

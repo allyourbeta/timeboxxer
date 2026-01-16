@@ -286,3 +286,45 @@ export async function reorderTasks(taskIds: string[]): Promise<void> {
   
   await Promise.all(updates)
 }
+
+export async function cleanupExpiredScheduledTasks(): Promise<number> {
+  const supabase = getSupabase()
+  
+  // Calculate the date 7 days ago
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const cutoffDate = sevenDaysAgo.toISOString()
+  
+  // First, get the Scheduled list ID (system_type = 'purgatory')
+  const { data: scheduledList, error: listError } = await supabase
+    .from('lists')
+    .select('id')
+    .eq('system_type', 'purgatory')
+    .single()
+  
+  if (listError || !scheduledList) {
+    console.log('No Scheduled list found, skipping cleanup')
+    return 0
+  }
+  
+  // Delete tasks that have been in the Scheduled list for more than 7 days
+  // We use moved_to_purgatory_at to track when they entered
+  const { data: deletedTasks, error: deleteError } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('list_id', scheduledList.id)
+    .lt('moved_to_purgatory_at', cutoffDate)
+    .select('id')
+  
+  if (deleteError) {
+    console.error('Error cleaning up expired tasks:', deleteError)
+    return 0
+  }
+  
+  const count = deletedTasks?.length || 0
+  if (count > 0) {
+    console.log(`Cleaned up ${count} expired task(s) from Scheduled list`)
+  }
+  
+  return count
+}
