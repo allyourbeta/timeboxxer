@@ -27,6 +27,7 @@ export interface List {
   // System list fields
   is_system: boolean;
   system_type: 'purgatory' | 'parked' | 'date' | null;
+  list_date: string | null;  // ISO date string for date lists
 }
 
 export interface Task {

@@ -2,9 +2,7 @@
 
 import { useEffect } from 'react'
 import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
-import { useAppHandlers } from '@/hooks'
-import { useAuth } from '@/lib/auth'
-import { LoginPage } from '@/components/Auth'
+import { useAppHandlers, useAuth } from '@/hooks'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { FullCalendarView } from '@/components/Calendar'
@@ -12,26 +10,14 @@ import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
 // LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { cleanupExpiredScheduledTasks } from '@/api'
+import { TOAST_DURATION_MS } from '@/lib/constants'
+import { getTodayListName, getTodayISO } from '@/lib/dateList'
 
 const PALETTE_ID = 'rainbow-bright'
 
 export default function Home() {
-  // Auth check
   const { user, loading: authLoading } = useAuth()
   
-  // Show login page if not authenticated
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    )
-  }
-  
-  if (!user) {
-    return <LoginPage />
-  }
-
   // Stores (data only)
   const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForToday } = useTaskStore()
   const { lists, loading: listsLoading, loadLists } = useListStore()
@@ -81,35 +67,70 @@ export default function Home() {
     handleTaskDiscardCancel,
   } = useAppHandlers()
 
-  // Load data on mount
+  // Load data on mount (only when authenticated)
   useEffect(() => {
-    const init = async () => {
-      // Clean up expired tasks first
-      await cleanupExpiredScheduledTasks()
-      
-      // Then load fresh data
-      loadLists()
-      loadTasks()
-      loadSchedule()
+    console.log('🔄 [page.tsx] Data loading useEffect triggered', { 
+      hasUser: !!user, 
+      userId: user?.id 
+    })
+    
+    if (!user) {
+      console.log('⏭️ [page.tsx] Skipping data load - no user')
+      return
     }
+    
+    console.log('📊 [page.tsx] Starting data initialization...')
+    
+    const init = async () => {
+      try {
+        console.log('🧹 [page.tsx] Cleaning up expired tasks...')
+        await cleanupExpiredScheduledTasks()
+        
+        console.log('📚 [page.tsx] Loading fresh data...')
+        await Promise.all([
+          loadLists(),
+          loadTasks(),
+          loadSchedule()
+        ])
+        console.log('✅ [page.tsx] All data loaded successfully')
+      } catch (err) {
+        console.error('💥 [page.tsx] Data loading failed:', err)
+      }
+    }
+    
     init()
-  }, [loadLists, loadTasks, loadSchedule])
+  }, [user, loadLists, loadTasks, loadSchedule])
 
   // Spawn daily tasks after data loads
   useEffect(() => {
+    if (!user) return  // Don't run if not logged in
     if (!tasksLoading && !listsLoading && tasks.length > 0) {
       // Find today's date list
-      const todayListName = new Date().toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      })
-      const todayList = lists.find(l => l.system_type === 'date' && l.name === todayListName)
+      const todayList = lists.find(l => l.list_date === getTodayISO())
       if (todayList) {
         spawnDailyTasksForToday(todayList.id)
       }
     }
-  }, [tasksLoading, listsLoading, tasks.length, lists, spawnDailyTasksForToday])
+  }, [user, tasksLoading, listsLoading, tasks.length, lists, spawnDailyTasksForToday])
+
+  // NOW we can have conditional returns (after all hooks)
+  
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return null
+  }
 
   // Computed values
   const loading = tasksLoading || listsLoading || scheduleLoading
@@ -282,7 +303,7 @@ export default function Home() {
             label: 'Undo',
             onClick: handleUndoDelete,
           }}
-          duration={5000}
+          duration={TOAST_DURATION_MS}
           onClose={() => setPendingDelete(null)}
         />
       )}

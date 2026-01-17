@@ -1,24 +1,33 @@
-import { getSupabase } from '@/lib/supabase'
-
-async function getCurrentUserId(): Promise<string> {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
-}
+import { createClient } from '@/utils/supabase/client'
+import { getCurrentUserId } from '@/utils/supabase/auth'
+import { DEFAULT_TASK_DURATION, DEFAULT_CALENDAR_TASK_DURATION, getRandomColorIndex, PURGATORY_EXPIRY_DAYS } from '@/lib/constants'
 
 export async function getTasks() {
-  const supabase = getSupabase()
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .order('position')
-  if (error) throw error
-  return data
+  console.log('📋 [tasks.ts] getTasks called')
+  try {
+    const supabase = createClient()
+    console.log('📋 [tasks.ts] Querying tasks from database...')
+    
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('position')
+      
+    if (error) {
+      console.error('❌ [tasks.ts] Database query error:', error)
+      throw error
+    }
+    
+    console.log('✅ [tasks.ts] Tasks loaded successfully:', { count: data?.length || 0 })
+    return data
+  } catch (err) {
+    console.error('💥 [tasks.ts] getTasks exception:', err)
+    throw err
+  }
 }
 
 export async function createTask(listId: string, title: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   // Get next position
@@ -29,7 +38,7 @@ export async function createTask(listId: string, title: string) {
     .order('position', { ascending: false })
     .limit(1)
   
-  const nextPosition = existing?.[0]?.position ?? -1 + 1
+  const nextPosition = (existing?.[0]?.position ?? -1) + 1
   
   const { data, error } = await supabase
     .from('tasks')
@@ -37,7 +46,7 @@ export async function createTask(listId: string, title: string) {
       user_id: userId,
       list_id: listId,
       title,
-      duration_minutes: 15,
+      duration_minutes: DEFAULT_TASK_DURATION,
       color_index: 0,
       position: nextPosition,
     })
@@ -54,7 +63,7 @@ export async function updateTask(taskId: string, updates: {
   color_index?: number
   notes?: string
 }) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('tasks')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -66,7 +75,7 @@ export async function updateTask(taskId: string, updates: {
 }
 
 export async function completeTask(taskId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   
   // Mark complete
   const { error: taskError } = await supabase
@@ -87,7 +96,7 @@ export async function completeTask(taskId: string) {
 }
 
 export async function uncompleteTask(taskId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { error } = await supabase
     .from('tasks')
     .update({ is_completed: false, completed_at: null })
@@ -96,7 +105,7 @@ export async function uncompleteTask(taskId: string) {
 }
 
 export async function deleteTask(taskId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { error } = await supabase
     .from('tasks')
     .delete()
@@ -105,13 +114,15 @@ export async function deleteTask(taskId: string) {
 }
 
 export async function moveToPurgatory(taskId: string, originalListId: string, originalListName: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
+  const userId = await getCurrentUserId()
   
   // Get purgatory list ID dynamically
   const { data: purgatoryList, error: listError } = await supabase
     .from('lists')
     .select('id')
     .eq('system_type', 'purgatory')
+    .eq('user_id', userId)
     .single()
   
   if (listError || !purgatoryList) {
@@ -136,7 +147,7 @@ export async function moveToPurgatory(taskId: string, originalListId: string, or
 }
 
 export async function moveFromPurgatory(taskId: string, newListId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('tasks')
     .update({
@@ -155,7 +166,7 @@ export async function moveFromPurgatory(taskId: string, newListId: string) {
 }
 
 export async function spawnDailyTasks(todayListId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   // Get all daily tasks that haven't been spawned today
@@ -202,7 +213,7 @@ export async function spawnDailyTasks(todayListId: string) {
 }
 
 export async function moveTaskToList(taskId: string, newListId: string | null) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('tasks')
     .update({ list_id: newListId })
@@ -214,7 +225,7 @@ export async function moveTaskToList(taskId: string, newListId: string | null) {
 }
 
 export async function createParkedThought(title: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   // Fetch the parked list ID dynamically (system_type = 'parked')
@@ -222,6 +233,7 @@ export async function createParkedThought(title: string) {
     .from('lists')
     .select('id')
     .eq('system_type', 'parked')
+    .eq('user_id', userId)
     .single()
   
   if (listError || !parkedList) {
@@ -245,8 +257,8 @@ export async function createParkedThought(title: string) {
       user_id: userId,
       list_id: parkedList.id,
       title,
-      duration_minutes: 15,
-      color_index: Math.floor(Math.random() * 8),
+      duration_minutes: DEFAULT_TASK_DURATION,
+      color_index: getRandomColorIndex(),
       position: nextPosition,
       is_completed: false,
       is_daily: false,
@@ -261,7 +273,7 @@ export async function createParkedThought(title: string) {
 }
 
 export async function createCalendarTask(title: string, startTime: string, date: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   const { data: task, error: taskError } = await supabase
@@ -270,8 +282,8 @@ export async function createCalendarTask(title: string, startTime: string, date:
       user_id: userId,
       list_id: null,  // No list - created directly on calendar
       title,
-      duration_minutes: 30,  // Default duration
-      color_index: Math.floor(Math.random() * 12),  // Random color
+      duration_minutes: DEFAULT_CALENDAR_TASK_DURATION,  // Default duration
+      color_index: getRandomColorIndex(),  // Random color
       energy_level: 'medium',
       position: 0,
     })
@@ -296,7 +308,7 @@ export async function createCalendarTask(title: string, startTime: string, date:
 }
 
 export async function reorderTasks(taskIds: string[]): Promise<void> {
-  const supabase = getSupabase()
+  const supabase = createClient()
   
   // Update each task's position based on array index
   const updates = taskIds.map((id, index) => 
@@ -310,49 +322,71 @@ export async function reorderTasks(taskIds: string[]): Promise<void> {
 }
 
 export async function cleanupExpiredScheduledTasks(): Promise<number> {
-  const supabase = getSupabase()
+  console.log('🧹 [tasks.ts] cleanupExpiredScheduledTasks called')
   
-  // Calculate the date 7 days ago
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-  const cutoffDate = sevenDaysAgo.toISOString()
-  
-  // First, get the Scheduled list ID (system_type = 'purgatory')
-  const { data: scheduledList, error: listError } = await supabase
-    .from('lists')
-    .select('id')
-    .eq('system_type', 'purgatory')
-    .single()
-  
-  if (listError || !scheduledList) {
-    console.log('No Scheduled list found, skipping cleanup')
+  try {
+    const supabase = createClient()
+    
+    console.log('🧹 [tasks.ts] Getting current user for cleanup...')
+    const userId = await getCurrentUserId()
+    console.log('✅ [tasks.ts] User ID for cleanup:', userId)
+    
+    // Calculate the date 7 days ago
+    console.log('📅 [tasks.ts] Calculating cutoff date...')
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - PURGATORY_EXPIRY_DAYS)
+    const cutoffDate = sevenDaysAgo.toISOString()
+    console.log('📅 [tasks.ts] Cutoff date:', cutoffDate)
+    
+    // First, get the Scheduled list ID (system_type = 'purgatory')
+    console.log('🔍 [tasks.ts] Looking for purgatory list...')
+    const { data: scheduledList, error: listError } = await supabase
+      .from('lists')
+      .select('id')
+      .eq('system_type', 'purgatory')
+      .eq('user_id', userId)  // Add user filter for RLS
+      .single()
+    
+    if (listError) {
+      console.error('❌ [tasks.ts] Error finding purgatory list:', listError)
+      return 0
+    }
+    
+    if (!scheduledList) {
+      console.log('⚠️ [tasks.ts] No Scheduled list found, skipping cleanup')
+      return 0
+    }
+    
+    console.log('✅ [tasks.ts] Found purgatory list:', scheduledList.id)
+    
+    // Delete tasks that have been in the Scheduled list for more than 7 days
+    // We use moved_to_purgatory_at to track when they entered
+    console.log('🗑️ [tasks.ts] Deleting expired tasks...')
+    const { data: deletedTasks, error: deleteError } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('list_id', scheduledList.id)
+      .eq('user_id', userId)  // Add user filter for RLS
+      .lt('moved_to_purgatory_at', cutoffDate)
+      .select('id')
+    
+    if (deleteError) {
+      console.error('❌ [tasks.ts] Error cleaning up expired tasks:', deleteError)
+      return 0
+    }
+    
+    const count = deletedTasks?.length || 0
+    console.log(`✅ [tasks.ts] Cleanup completed: ${count} expired task(s) removed`)
+    
+    return count
+  } catch (err) {
+    console.error('💥 [tasks.ts] cleanupExpiredScheduledTasks failed:', err)
     return 0
   }
-  
-  // Delete tasks that have been in the Scheduled list for more than 7 days
-  // We use moved_to_purgatory_at to track when they entered
-  const { data: deletedTasks, error: deleteError } = await supabase
-    .from('tasks')
-    .delete()
-    .eq('list_id', scheduledList.id)
-    .lt('moved_to_purgatory_at', cutoffDate)
-    .select('id')
-  
-  if (deleteError) {
-    console.error('Error cleaning up expired tasks:', deleteError)
-    return 0
-  }
-  
-  const count = deletedTasks?.length || 0
-  if (count > 0) {
-    console.log(`Cleaned up ${count} expired task(s) from Scheduled list`)
-  }
-  
-  return count
 }
 
 export async function rollOverTasks(fromListId: string, toListId: string): Promise<number> {
-  const supabase = getSupabase()
+  const supabase = createClient()
   
   // Get all incomplete tasks from the source list
   const { data: tasks, error: fetchError } = await supabase

@@ -1,14 +1,8 @@
-import { getSupabase } from '@/lib/supabase'
-
-async function getCurrentUserId(): Promise<string> {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
-}
+import { createClient } from '@/utils/supabase/client'
+import { getCurrentUserId } from '@/utils/supabase/auth'
 
 export async function getScheduledTasks(date?: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const targetDate = date || new Date().toISOString().split('T')[0]
   
   const { data, error } = await supabase
@@ -21,7 +15,7 @@ export async function getScheduledTasks(date?: string) {
 }
 
 export async function scheduleTask(taskId: string, date: string, startTime: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   // Remove existing schedule for this task if any
@@ -46,7 +40,7 @@ export async function scheduleTask(taskId: string, date: string, startTime: stri
 }
 
 export async function unscheduleTask(taskId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { error } = await supabase
     .from('scheduled_tasks')
     .delete()
@@ -55,7 +49,7 @@ export async function unscheduleTask(taskId: string) {
 }
 
 export async function updateScheduleTime(scheduleId: string, startTime: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('scheduled_tasks')
     .update({ start_time: startTime })

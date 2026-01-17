@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
 // LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { rollOverTasks } from '@/api'
+import { DURATION_OPTIONS } from '@/lib/constants'
+import { getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
 
 interface PendingDelete {
   listId: string
@@ -67,7 +69,7 @@ export function useAppHandlers() {
   }
 
   const handleTaskDurationClick = async (taskId: string, currentDuration: number, reverse: boolean) => {
-    const durations = [15, 30, 45, 60, 90, 120]
+    const durations = [...DURATION_OPTIONS] as number[]
     const currentIndex = durations.indexOf(currentDuration)
     let newIndex: number
     
@@ -257,18 +259,9 @@ export function useAppHandlers() {
 
   const handleRollOverTasks = async (fromListId: string) => {
     // Find tomorrow's list
-    const tomorrowList = lists.find(l => {
-      if (l.system_type !== 'date') return false
-      // Check if this is tomorrow's date
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      const tomorrowName = tomorrow.toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      })
-      return l.name === tomorrowName
-    })
+    const tomorrowList = lists.find(l => 
+      l.list_date === getTomorrowISO()
+    )
     
     if (!tomorrowList) {
       console.error('Tomorrow list not found')

@@ -6,7 +6,7 @@ import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/lib/auth'
+import { createClient } from '@/utils/supabase/client'
 import { WeekStreak } from './WeekStreak'
 
 interface HeaderProps {
@@ -37,9 +37,14 @@ export function Header({
   weekData,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
-  const { signOut } = useAuth()
   const [showParkInput, setShowParkInput] = useState(false)
   const [parkText, setParkText] = useState('')
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
   
   const handleThemeToggle = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -219,7 +224,7 @@ export function Header({
         <Button
           variant="outline"
           size="icon"
-          onClick={signOut}
+          onClick={handleSignOut}
           className="h-9 w-9"
           title="Sign out"
         >

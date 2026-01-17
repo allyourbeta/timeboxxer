@@ -1,25 +1,33 @@
-import { getSupabase } from '@/lib/supabase'
-import { getTodayListName, getTodayISO, getTomorrowListName } from '@/lib/dateList'
-
-async function getCurrentUserId(): Promise<string> {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  return user.id
-}
+import { createClient } from '@/utils/supabase/client'
+import { getCurrentUserId } from '@/utils/supabase/auth'
+import { getTodayListName, getTodayISO, getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
 
 export async function getLists() {
-  const supabase = getSupabase()
-  const { data, error } = await supabase
-    .from('lists')
-    .select('*')
-    .order('position')
-  if (error) throw error
-  return data
+  console.log('📋 [lists.ts] getLists called')
+  try {
+    const supabase = createClient()
+    console.log('📋 [lists.ts] Querying lists from database...')
+    
+    const { data, error } = await supabase
+      .from('lists')
+      .select('*')
+      .order('position')
+      
+    if (error) {
+      console.error('❌ [lists.ts] Database query error:', error)
+      throw error
+    }
+    
+    console.log('✅ [lists.ts] Lists loaded successfully:', { count: data?.length || 0 })
+    return data
+  } catch (err) {
+    console.error('💥 [lists.ts] getLists exception:', err)
+    throw err
+  }
 }
 
 export async function createList(name: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   const { data: existing } = await supabase
@@ -45,7 +53,7 @@ export async function createList(name: string) {
 }
 
 export async function updateList(listId: string, name: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from('lists')
     .update({ name })
@@ -57,7 +65,7 @@ export async function updateList(listId: string, name: string) {
 }
 
 export async function deleteList(listId: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   // Tasks will have list_id set to NULL due to ON DELETE SET NULL
   const { error } = await supabase
     .from('lists')
@@ -67,7 +75,7 @@ export async function deleteList(listId: string) {
 }
 
 export async function duplicateList(listId: string, newName: string) {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   
   // 1. Get the original list
@@ -134,7 +142,7 @@ export async function duplicateList(listId: string, newName: string) {
 }
 
 export async function ensureTodayList() {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   const todayName = getTodayListName()
   
@@ -143,7 +151,8 @@ export async function ensureTodayList() {
     .from('lists')
     .select('*')
     .eq('system_type', 'date')
-    .eq('name', todayName)
+    .eq('list_date', getTodayISO())
+    .eq('user_id', userId)
     .maybeSingle()
   
   if (existing) return existing
@@ -157,6 +166,7 @@ export async function ensureTodayList() {
       position: 0,
       is_system: true,
       system_type: 'date',
+      list_date: getTodayISO(),
     })
     .select()
     .single()
@@ -168,7 +178,8 @@ export async function ensureTodayList() {
         .from('lists')
         .select('*')
         .eq('system_type', 'date')
-        .eq('name', todayName)
+        .eq('list_date', getTodayISO())
+        .eq('user_id', userId)
         .single()
       return refetched
     }
@@ -179,7 +190,7 @@ export async function ensureTodayList() {
 }
 
 export async function ensureTomorrowList() {
-  const supabase = getSupabase()
+  const supabase = createClient()
   const userId = await getCurrentUserId()
   const tomorrowName = getTomorrowListName()
   
@@ -188,7 +199,8 @@ export async function ensureTomorrowList() {
     .from('lists')
     .select('*')
     .eq('system_type', 'date')
-    .eq('name', tomorrowName)
+    .eq('list_date', getTomorrowISO())
+    .eq('user_id', userId)
     .maybeSingle()
   
   if (existing) return existing
@@ -202,6 +214,7 @@ export async function ensureTomorrowList() {
       position: 0,
       is_system: true,
       system_type: 'date',
+      list_date: getTomorrowISO(),
     })
     .select()
     .single()
@@ -213,7 +226,8 @@ export async function ensureTomorrowList() {
         .from('lists')
         .select('*')
         .eq('system_type', 'date')
-        .eq('name', tomorrowName)
+        .eq('list_date', getTomorrowISO())
+        .eq('user_id', userId)
         .single()
       return refetched
     }

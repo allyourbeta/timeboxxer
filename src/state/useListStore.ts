@@ -1,15 +1,7 @@
 import { create } from 'zustand'
 import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, duplicateList as apiDuplicateList, ensureTodayList, ensureTomorrowList } from '@/api'
 import { sortListsForDisplay } from '@/lib/listSort'
-
-interface List {
-  id: string
-  name: string
-  position: number
-  is_collapsed: boolean
-  is_system: boolean
-  system_type: 'purgatory' | 'parked' | 'date' | null
-}
+import { List } from '@/types/app'
 
 interface ListStore {
   lists: List[]
@@ -27,13 +19,27 @@ export const useListStore = create<ListStore>((set, get) => ({
   loading: true,
   
   loadLists: async () => {
-    // Ensure today's and tomorrow's date lists exist
-    await ensureTodayList()
-    await ensureTomorrowList()
-    
-    const data = await getLists()
-    const sortedLists = sortListsForDisplay(data || [])
-    set({ lists: sortedLists, loading: false })
+    console.log('📚 [useListStore] loadLists called')
+    try {
+      set({ loading: true })
+      
+      console.log('📅 [useListStore] Ensuring today and tomorrow lists exist...')
+      await ensureTodayList()
+      await ensureTomorrowList()
+      
+      console.log('📋 [useListStore] Fetching all lists...')
+      const data = await getLists()
+      
+      console.log('🔄 [useListStore] Sorting lists for display...')
+      const sortedLists = sortListsForDisplay(data || [])
+      
+      console.log('✅ [useListStore] Lists loaded and sorted:', { count: sortedLists.length })
+      set({ lists: sortedLists, loading: false })
+    } catch (err) {
+      console.error('💥 [useListStore] loadLists failed:', err)
+      set({ loading: false })
+      throw err
+    }
   },
   
   createList: async (name) => {
