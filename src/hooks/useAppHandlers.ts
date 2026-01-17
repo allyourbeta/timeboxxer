@@ -5,7 +5,7 @@ import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/stat
 // LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { rollOverTasks } from '@/api'
 import { DURATION_OPTIONS } from '@/lib/constants'
-import { getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
+import { getTomorrowListName, getLocalTomorrowISO } from '@/lib/dateList'
 
 interface PendingDelete {
   listId: string
@@ -260,7 +260,7 @@ export function useAppHandlers() {
   const handleRollOverTasks = async (fromListId: string) => {
     // Find tomorrow's list
     const tomorrowList = lists.find(l => 
-      l.list_date === getTomorrowISO()
+      l.list_date === getLocalTomorrowISO()
     )
     
     if (!tomorrowList) {

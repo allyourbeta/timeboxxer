@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Draggable } from '@fullcalendar/interaction'
 import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
+import { formatDateForDisplay } from '@/lib/dateList'
+import { List } from '@/types/app'
 
 interface Task {
   id: string
@@ -25,14 +27,6 @@ interface Task {
   is_daily_highlight: boolean
 }
 
-interface List {
-  id: string
-  name: string
-  position: number
-  is_collapsed: boolean
-  is_system: boolean
-  system_type: 'purgatory' | 'parked' | 'date' | null
-}
 
 interface ListPanelProps {
   lists: List[]
@@ -160,11 +154,14 @@ export function ListPanel({
       <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
         {lists.map((list) => {
           const isExpanded = expandedListIds.has(list.id)
+          const displayName = list.system_type === 'date' && list.list_date
+            ? formatDateForDisplay(list.list_date)
+            : list.name
           return (
             <ListCard
               key={list.id}
               id={list.id}
-              name={list.name}
+              name={displayName}
               isInbox={list.system_type === 'purgatory'}
               isSystemList={list.is_system}
               isDateList={list.system_type === 'date'}

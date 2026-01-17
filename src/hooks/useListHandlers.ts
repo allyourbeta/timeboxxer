@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { rollOverTasks } from '@/api'
-import { getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
+import { getTomorrowListName, getLocalTomorrowISO } from '@/lib/dateList'
 
 interface PendingDelete {
   listId: string
@@ -65,7 +65,7 @@ export function useListHandlers() {
 
   const handleRollOverTasks = async (fromListId: string) => {
     const tomorrowList = lists.find(l => 
-      l.list_date === getTomorrowISO()
+      l.list_date === getLocalTomorrowISO()
     )
     
     if (!tomorrowList) {

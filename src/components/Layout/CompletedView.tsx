@@ -1,6 +1,8 @@
 'use client'
 
 import { getColor } from '@/lib/palettes'
+import { formatDateForDisplay } from '@/lib/dateList'
+import { List } from '@/types/app'
 
 interface Task {
   id: string
@@ -11,10 +13,6 @@ interface Task {
   completed_at: string | null
 }
 
-interface List {
-  id: string
-  name: string
-}
 
 interface CompletedViewProps {
   tasks: Task[]
@@ -32,7 +30,12 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
   
   const getListName = (listId: string | null) => {
     if (!listId) return 'Unknown list'
-    return lists.find(l => l.id === listId)?.name || 'Unknown list'
+    const list = lists.find(l => l.id === listId)
+    if (!list) return 'Unknown list'
+    
+    return list.system_type === 'date' && list.list_date
+      ? formatDateForDisplay(list.list_date)
+      : list.name
   }
   
   return (

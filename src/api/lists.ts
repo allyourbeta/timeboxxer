@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
-import { getTodayListName, getTodayISO, getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
+import { formatDateForDisplay, getTodayListName, getTodayISO, getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
 
 export async function getLists() {
   console.log('📋 [lists.ts] getLists called')
@@ -141,44 +141,48 @@ export async function duplicateList(listId: string, newName: string) {
   return newList.id
 }
 
-export async function ensureTodayList() {
+/**
+ * Ensure a date list exists for the given date
+ * @param dateISO - The date in YYYY-MM-DD format (from client's local timezone)
+ */
+export async function ensureDateList(dateISO: string) {
   const supabase = createClient()
   const userId = await getCurrentUserId()
-  const todayName = getTodayListName()
+  const displayName = formatDateForDisplay(dateISO)
   
-  // Check if today's list already exists
+  // Check if list exists for this date
   const { data: existing } = await supabase
     .from('lists')
     .select('*')
     .eq('system_type', 'date')
-    .eq('list_date', getTodayISO())
+    .eq('list_date', dateISO)
     .eq('user_id', userId)
     .maybeSingle()
   
   if (existing) return existing
   
-  // Create today's list with position 0 (system lists don't use position for sorting)
+  // Create new date list
   const { data, error } = await supabase
     .from('lists')
     .insert({
       user_id: userId,
-      name: todayName,
+      name: displayName,
+      list_date: dateISO,
       position: 0,
       is_system: true,
       system_type: 'date',
-      list_date: getTodayISO(),
     })
     .select()
     .single()
   
   if (error) {
-    // If conflict, the list was created by another request - fetch it
+    // Handle race condition - another request created it
     if (error.code === '23505') {
       const { data: refetched } = await supabase
         .from('lists')
         .select('*')
         .eq('system_type', 'date')
-        .eq('list_date', getTodayISO())
+        .eq('list_date', dateISO)
         .eq('user_id', userId)
         .single()
       return refetched
@@ -189,50 +193,14 @@ export async function ensureTodayList() {
   return data
 }
 
+// Convenience wrappers that call ensureDateList
+// These should ONLY be called from client-side code
+export async function ensureTodayList() {
+  const { getLocalTodayISO } = await import('@/lib/dateList')
+  return ensureDateList(getLocalTodayISO())
+}
+
 export async function ensureTomorrowList() {
-  const supabase = createClient()
-  const userId = await getCurrentUserId()
-  const tomorrowName = getTomorrowListName()
-  
-  // Check if tomorrow's list already exists
-  const { data: existing } = await supabase
-    .from('lists')
-    .select('*')
-    .eq('system_type', 'date')
-    .eq('list_date', getTomorrowISO())
-    .eq('user_id', userId)
-    .maybeSingle()
-  
-  if (existing) return existing
-  
-  // Create tomorrow's list
-  const { data, error } = await supabase
-    .from('lists')
-    .insert({
-      user_id: userId,
-      name: tomorrowName,
-      position: 0,
-      is_system: true,
-      system_type: 'date',
-      list_date: getTomorrowISO(),
-    })
-    .select()
-    .single()
-  
-  if (error) {
-    // If conflict, fetch it
-    if (error.code === '23505') {
-      const { data: refetched } = await supabase
-        .from('lists')
-        .select('*')
-        .eq('system_type', 'date')
-        .eq('list_date', getTomorrowISO())
-        .eq('user_id', userId)
-        .single()
-      return refetched
-    }
-    throw error
-  }
-  
-  return data
+  const { getLocalTomorrowISO } = await import('@/lib/dateList')
+  return ensureDateList(getLocalTomorrowISO())
 }

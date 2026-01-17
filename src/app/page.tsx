@@ -11,7 +11,7 @@ import { FocusMode } from '@/components/Focus'
 // LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { cleanupExpiredScheduledTasks } from '@/api'
 import { TOAST_DURATION_MS } from '@/lib/constants'
-import { getTodayListName, getTodayISO } from '@/lib/dateList'
+import { getTodayListName, getLocalTodayISO } from '@/lib/dateList'
 
 const PALETTE_ID = 'rainbow-bright'
 
@@ -106,7 +106,7 @@ export default function Home() {
     if (!user) return  // Don't run if not logged in
     if (!tasksLoading && !listsLoading && tasks.length > 0) {
       // Find today's date list
-      const todayList = lists.find(l => l.list_date === getTodayISO())
+      const todayList = lists.find(l => l.list_date === getLocalTodayISO())
       if (todayList) {
         spawnDailyTasksForToday(todayList.id)
       }
