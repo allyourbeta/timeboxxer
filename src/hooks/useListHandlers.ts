@@ -57,7 +57,7 @@ export function useListHandlers() {
     clearTimeout(pendingDelete.timeoutId)
     
     for (const task of pendingDelete.originalTasks) {
-      await updateTask(task.id, { list_id: task.originalListId })
+      await updateTask(task.id, { home_list_id: task.originalListId })
     }
     
     setPendingDelete(null)

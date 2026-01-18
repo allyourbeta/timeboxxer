@@ -8,25 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { PURGATORY_EXPIRY_DAYS } from '@/lib/constants'
-
-interface Task {
-  id: string
-  title: string
-  duration_minutes: number
-  color_index: number
-  position: number
-  is_completed: boolean
-  // Limbo fields
-  moved_to_purgatory_at: string | null
-  original_list_id: string | null
-  original_list_name: string | null
-  // Daily task fields
-  is_daily: boolean
-  daily_source_id: string | null
-  // Energy and highlight
-  energy_level: 'high' | 'medium' | 'low'
-  is_daily_highlight: boolean
-}
+import { Task } from '@/types/app'
 
 interface ListCardProps {
   id: string
@@ -273,7 +255,7 @@ export function ListCard({
                               isScheduled={scheduledTaskIds.includes(task.id)}
                               isDaily={task.is_daily}
                               isInPurgatory={isInbox}
-                              isHighlight={task.is_daily_highlight || false}
+                              isHighlight={task.highlight_date !== null}
                               canHighlight={isDateList}
                               energyLevel={task.energy_level || 'medium'}
                               paletteId={paletteId}

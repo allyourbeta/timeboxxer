@@ -5,27 +5,7 @@ import { Draggable } from '@fullcalendar/interaction'
 import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
 import { formatDateForDisplay } from '@/lib/dateList'
-import { List } from '@/types/app'
-
-interface Task {
-  id: string
-  list_id: string | null
-  title: string
-  duration_minutes: number
-  color_index: number
-  position: number
-  is_completed: boolean
-  // Limbo fields
-  moved_to_purgatory_at: string | null
-  original_list_id: string | null
-  original_list_name: string | null
-  // Daily task fields
-  is_daily: boolean
-  daily_source_id: string | null
-  // Energy and highlight
-  energy_level: 'high' | 'medium' | 'low'
-  is_daily_highlight: boolean
-}
+import { List, Task } from '@/types/app'
 
 
 interface ListPanelProps {
@@ -126,7 +106,7 @@ export function ListPanel({
     
     // Find first list with tasks and expand it
     const firstWithTasks = lists.find(list => {
-      const taskCount = tasks.filter(t => t.list_id === list.id && !t.is_completed).length
+      const taskCount = tasks.filter(t => t.home_list_id === list.id && !t.is_completed).length
       return taskCount > 0
     })
     
@@ -136,7 +116,7 @@ export function ListPanel({
   }, [lists, tasks, expandedListIds, onToggleListExpanded])
   
   const getTasksForList = (listId: string) =>
-    tasks.filter(t => t.list_id === listId && !t.is_completed)
+    tasks.filter(t => t.home_list_id === listId && !t.is_completed)
   
   const cycleDuration = (current: number, reverse: boolean) => {
     const durations = [15, 30, 45, 60]

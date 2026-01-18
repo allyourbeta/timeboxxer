@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
 import { DEFAULT_TASK_DURATION } from '@/lib/constants'
-import { getNextPositionInList } from './utils'
 
 export async function getTasks() {
   console.log('📋 [tasks.ts] getTasks called')
@@ -27,15 +26,15 @@ export async function getTasks() {
   }
 }
 
-export async function createTask(listId: string, title: string) {
+export async function createTask(homeListId: string, title: string, duration?: number) {
   const supabase = createClient()
   const userId = await getCurrentUserId()
   
-  // Get next position
+  // Get next position in home list
   const { data: existing } = await supabase
     .from('tasks')
     .select('position')
-    .eq('list_id', listId)
+    .eq('home_list_id', homeListId)
     .order('position', { ascending: false })
     .limit(1)
   
@@ -45,11 +44,14 @@ export async function createTask(listId: string, title: string) {
     .from('tasks')
     .insert({
       user_id: userId,
-      list_id: listId,
+      home_list_id: homeListId,
       title,
-      duration_minutes: DEFAULT_TASK_DURATION,
+      duration_minutes: duration ?? DEFAULT_TASK_DURATION,
       color_index: 0,
       position: nextPosition,
+      energy_level: 'medium',
+      is_completed: false,
+      is_daily: false,
     })
     .select()
     .single()
@@ -62,7 +64,16 @@ export async function updateTask(taskId: string, updates: {
   title?: string
   duration_minutes?: number
   color_index?: number
-  notes?: string
+  notes?: string | null
+  home_list_id?: string
+  committed_date?: string | null
+  scheduled_at?: string | null
+  highlight_date?: string | null
+  is_completed?: boolean
+  completed_at?: string | null
+  is_daily?: boolean
+  daily_source_id?: string | null
+  energy_level?: 'high' | 'medium' | 'low'
 }) {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -99,21 +110,28 @@ export async function deleteTask(taskId: string) {
   if (error) throw error
 }
 
-export async function moveTaskToList(taskId: string, newListId: string | null) {
+export async function moveTaskToHomeList(taskId: string, newHomeListId: string) {
   const supabase = createClient()
   
-  let newPosition = 0
+  // Get new position in destination list
+  const { data: existing } = await supabase
+    .from('tasks')
+    .select('position')
+    .eq('home_list_id', newHomeListId)
+    .order('position', { ascending: false })
+    .limit(1)
   
-  if (newListId) {
-    // Get new position in destination list
-    newPosition = await getNextPositionInList(newListId)
-  }
+  const newPosition = (existing?.[0]?.position ?? -1) + 1
   
   const { data, error } = await supabase
     .from('tasks')
     .update({ 
-      list_id: newListId,
-      position: newPosition 
+      home_list_id: newHomeListId,
+      position: newPosition,
+      // Clear date commitment and schedule when moving to new home
+      committed_date: null,
+      scheduled_at: null,
+      highlight_date: null
     })
     .eq('id', taskId)
     .select()

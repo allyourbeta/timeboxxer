@@ -72,17 +72,17 @@ export function useTaskHandlers() {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
     
-    const taskList = lists.find(l => l.id === task.list_id)
+    const taskList = lists.find(l => l.id === task.home_list_id)
     if (!taskList || taskList.system_type !== 'date') {
       console.warn('Highlights only available for date lists')
       return
     }
     
-    if (task.is_daily_highlight) {
-      await updateTask(taskId, { is_daily_highlight: false })
+    if (task.highlight_date) {
+      await updateTask(taskId, { highlight_date: null })
     } else {
       const highlightsInList = tasks.filter(t => 
-        t.list_id === task.list_id && t.is_daily_highlight
+        t.home_list_id === task.home_list_id && t.highlight_date !== null
       ).length
       
       if (highlightsInList >= 5) {
@@ -90,7 +90,9 @@ export function useTaskHandlers() {
         return
       }
       
-      await updateTask(taskId, { is_daily_highlight: true })
+      // Use the current date as the highlight date
+      const today = new Date().toISOString().split('T')[0]
+      await updateTask(taskId, { highlight_date: today })
     }
   }
 

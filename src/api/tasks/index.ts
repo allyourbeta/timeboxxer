@@ -5,29 +5,20 @@ export {
   getTasks,
   createTask,
   updateTask,
+  deleteTask,
   completeTask,
   uncompleteTask,
-  deleteTask,
-  moveTaskToList,
   reorderTasks,
 } from './crud'
 
-// Scheduling operations
+// Operations
 export {
-  moveToPurgatory,
-  moveFromPurgatory,
-  createCalendarTask,
-  cleanupExpiredScheduledTasks,
-  rollOverTasks,
-} from './scheduling'
-
-// Daily tasks and parked thoughts
-export {
+  commitTaskToDate,
+  uncommitTask,
+  scheduleTask,
+  unscheduleTask,
   spawnDailyTasks,
+  duplicateList,
+  rollOverTasks,
   createParkedThought,
-} from './daily'
-
-// Utility functions
-export {
-  getNextPositionInList,
-} from './utils'
+} from './operations'

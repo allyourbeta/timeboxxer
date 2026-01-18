@@ -32,34 +32,35 @@ export interface List {
 
 export interface Task {
   id: string;
-  list_id: string | null;
+  user_id: string;
   title: string;
   duration_minutes: number;
   color_index: number;
-  is_completed: boolean;
-  completed_at: string | null;
   position: number;
   notes: string | null;
-  // Limbo fields
-  moved_to_purgatory_at: string | null;
-  original_list_id: string | null;
-  original_list_name: string | null;
-  // Daily task fields
+  
+  // Home list - where this task "lives"
+  home_list_id: string;
+  
+  // Commitment - if set, task appears in that day's date list
+  committed_date: string | null;  // ISO date: '2026-01-18'
+  
+  // Scheduling - if set, task appears on calendar
+  scheduled_at: string | null;  // ISO timestamp: '2026-01-18T14:00:00Z'
+  
+  // Completion
+  is_completed: boolean;
+  completed_at: string | null;
+  
+  // Daily tasks
   is_daily: boolean;
   daily_source_id: string | null;
-  // Energy and highlight (NEW)
+  
+  // Per-day highlight
+  highlight_date: string | null;  // ISO date - task highlighted for this day only
+  
+  // Energy level
   energy_level: 'high' | 'medium' | 'low';
-  is_daily_highlight: boolean;
-}
-
-export interface ScheduledTask {
-  id: string;
-  userId: string;
-  taskId: string;
-  scheduledDate: string;  // ISO date string: '2026-01-12'
-  startTime: string;      // Time string: '14:30:00'
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 // =============================================================================
@@ -85,15 +86,10 @@ export const DEFAULT_COLOR_INDEX: ColorIndex = 0;
 // Composite Types (for UI)
 // =============================================================================
 
-/** Task with its schedule info (if scheduled) */
-export interface TaskWithSchedule extends Task {
-  schedule: ScheduledTask | null;
-}
-
-/** Scheduled task with full task details (for calendar view) */
+/** Task displayed on calendar */
 export interface CalendarEntry {
-  schedule: ScheduledTask;
   task: Task;
+  scheduledAt: Date;  // Parsed from task.scheduled_at
 }
 
 /** List with its tasks (for list panel) */

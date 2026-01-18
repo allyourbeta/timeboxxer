@@ -2,16 +2,7 @@
 
 import { getColor } from '@/lib/palettes'
 import { formatDateForDisplay } from '@/lib/dateList'
-import { List } from '@/types/app'
-
-interface Task {
-  id: string
-  list_id: string | null
-  title: string
-  duration_minutes: number
-  color_index: number
-  completed_at: string | null
-}
+import { List, Task } from '@/types/app'
 
 
 interface CompletedViewProps {
@@ -59,7 +50,7 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
               <div>
                 <div className="font-medium text-card-foreground">{task.title}</div>
                 <div className="text-xs text-muted-foreground">
-                  From: {getListName(task.list_id)} • {task.duration_minutes} min • 
+                  From: {getListName(task.home_list_id)} • {task.duration_minutes} min • 
                   Completed {new Date(task.completed_at!).toLocaleString()}
                 </div>
               </div>

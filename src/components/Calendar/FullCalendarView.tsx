@@ -6,23 +6,10 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { EventInput, EventApi, EventDropArg } from '@fullcalendar/core'
 import { getColor } from '@/lib/palettes'
-
-interface Task {
-  id: string
-  title: string
-  duration_minutes: number
-  color_index: number
-}
-
-interface ScheduledTask {
-  id: string
-  task_id: string
-  start_time: string
-}
+import { Task } from '@/types/app'
 
 interface FullCalendarViewProps {
   tasks: Task[]
-  scheduled: ScheduledTask[]
   paletteId: string
   onExternalDrop: (taskId: string, time: string) => void  // CHANGED
   onEventMove: (taskId: string, time: string) => void     // NEW - for moving existing events
@@ -35,7 +22,6 @@ interface FullCalendarViewProps {
 
 export function FullCalendarView({
   tasks,
-  scheduled,
   paletteId,
   onExternalDrop,
   onEventMove,
@@ -54,35 +40,30 @@ export function FullCalendarView({
   const [newTaskTitle, setNewTaskTitle] = useState('')
   
   // Convert scheduled tasks to FullCalendar events
-  const events: EventInput[] = scheduled.map(scheduledTask => {
-    const task = tasks.find(t => t.id === scheduledTask.task_id)
-    if (!task) return null
-    
-    const startTime = scheduledTask.start_time
-    const [hours, minutes] = startTime.split(':').map(Number)
-    const start = new Date()
-    start.setHours(hours, minutes, 0, 0)
-    
-    const end = new Date(start)
-    end.setMinutes(start.getMinutes() + task.duration_minutes)
-    
-    const backgroundColor = getColor(paletteId, task.color_index)
-    
-    return {
-      id: scheduledTask.id,
-      title: task.title,
-      start,
-      end,
-      backgroundColor,
-      borderColor: backgroundColor,
-      textColor: '#ffffff',
-      extendedProps: {
-        taskId: task.id,
-        durationMinutes: task.duration_minutes,
-        colorIndex: task.color_index
+  const events: EventInput[] = tasks
+    .filter(task => task.scheduled_at && !task.is_completed)
+    .map(task => {
+      const scheduledAt = new Date(task.scheduled_at!)
+      const end = new Date(scheduledAt)
+      end.setMinutes(scheduledAt.getMinutes() + task.duration_minutes)
+      
+      const backgroundColor = getColor(paletteId, task.color_index)
+      
+      return {
+        id: task.id,
+        title: task.title,
+        start: scheduledAt,
+        end,
+        backgroundColor,
+        borderColor: backgroundColor,
+        textColor: '#ffffff',
+        extendedProps: {
+          taskId: task.id,
+          durationMinutes: task.duration_minutes,
+          colorIndex: task.color_index
+        }
       }
-    }
-  }).filter(Boolean) as EventInput[]
+    })
 
   // Handle event drop (moving existing scheduled tasks)
   const handleEventDrop = useCallback((dropInfo: EventDropArg) => {

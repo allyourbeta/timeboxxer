@@ -1,15 +1,13 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
+import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { useAppHandlers, useAuth } from '@/hooks'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { FullCalendarView } from '@/components/Calendar'
 import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
-// LIMBO_LIST_ID will be fetched dynamically as purgatory list
-import { cleanupExpiredScheduledTasks } from '@/api'
 import { TOAST_DURATION_MS } from '@/lib/constants'
 import { getTodayListName, getLocalTodayISO } from '@/lib/dateList'
 
@@ -21,7 +19,6 @@ export default function Home() {
   // Stores (data only)
   const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForToday } = useTaskStore()
   const { lists, loading: listsLoading, loadLists } = useListStore()
-  const { scheduled, loading: scheduleLoading, loadSchedule } = useScheduleStore()
   const {
     currentView, setCurrentView,
     panelMode, setPanelMode,
@@ -83,14 +80,10 @@ export default function Home() {
     
     const init = async () => {
       try {
-        console.log('🧹 [page.tsx] Cleaning up expired tasks...')
-        await cleanupExpiredScheduledTasks()
-        
         console.log('📚 [page.tsx] Loading fresh data...')
         await Promise.all([
           loadLists(),
-          loadTasks(),
-          loadSchedule()
+          loadTasks()
         ])
         console.log('✅ [page.tsx] All data loaded successfully')
       } catch (err) {
@@ -99,7 +92,7 @@ export default function Home() {
     }
     
     init()
-  }, [user, loadLists, loadTasks, loadSchedule])
+  }, [user, loadLists, loadTasks])
 
   // Spawn daily tasks after data loads
   useEffect(() => {
@@ -133,8 +126,8 @@ export default function Home() {
   }
 
   // Computed values
-  const loading = tasksLoading || listsLoading || scheduleLoading
-  const scheduledTaskIds = scheduled.map(s => s.task_id)
+  const loading = tasksLoading || listsLoading
+  const scheduledTasks = tasks.filter(t => t.scheduled_at && !t.is_completed)
   const visibleLists = lists.filter(l => l.id !== pendingDelete?.listId)
   
   const completedToday = tasks.filter(t => {
@@ -159,9 +152,6 @@ export default function Home() {
     return result
   }
 
-  const scheduledTasks = tasks.filter(t => 
-    scheduled.some(s => s.task_id === t.id) && !t.is_completed
-  )
   
   const focusTask = focusTaskId ? tasks.find(t => t.id === focusTaskId) : null
 
@@ -237,7 +227,7 @@ export default function Home() {
               duplicatingListId={duplicatingListId}
               showNewListInput={showNewListInput}
               expandedListIds={expandedListIds}
-              scheduledTaskIds={scheduledTaskIds}
+              scheduledTaskIds={scheduledTasks.map(t => t.id)}
               onShowNewListInput={() => setShowNewListInput(true)}
               onCreateList={handleListCreate}
               onEditList={handleListEdit}
@@ -254,7 +244,10 @@ export default function Home() {
               onTaskCreate={handleTaskAdd}
               onTaskDailyToggle={handleTaskDailyToggle}
               onTaskEnergyChange={handleTaskEnergyChange}
-              onTaskHighlightToggle={handleTaskHighlightToggle}
+              onTaskHighlightToggle={(taskId: string) => {
+                const today = new Date().toISOString().split('T')[0] // Get today in ISO format
+                handleTaskHighlightToggle(taskId, today)
+              }}
               onTaskComplete={handleTaskComplete}
               onReorderTasks={handleReorderTasks}
               onRollOverTasks={handleRollOverTasks}
@@ -268,7 +261,6 @@ export default function Home() {
           <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border flex flex-col`}>
             <FullCalendarView
               tasks={tasks}
-              scheduled={scheduled}
               paletteId={PALETTE_ID}
               onExternalDrop={handleExternalDrop}
               onEventMove={handleEventMove}

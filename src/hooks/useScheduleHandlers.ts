@@ -1,56 +1,53 @@
 'use client'
 
-import { useTaskStore, useListStore, useScheduleStore } from '@/state'
+import { useTaskStore, useListStore } from '@/state'
 
 export function useScheduleHandlers() {
-  const { tasks, moveToPurgatory, moveFromPurgatory, createCalendarTask, reorderTasks } = useTaskStore()
+  const { tasks, commitTaskToDate, scheduleTask, unscheduleTask, reorderTasks } = useTaskStore()
   const { lists } = useListStore()
-  const { scheduled, scheduleTask, unscheduleTask } = useScheduleStore()
 
   const handleExternalDrop = async (taskId: string, time: string) => {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
 
     const today = new Date().toISOString().split('T')[0]
+    const scheduledAt = `${today}T${time}:00.000Z`
     
-    const purgatoryList = lists.find(l => l.system_type === 'purgatory')
-    if (task.list_id !== purgatoryList?.id) {
-      const originalList = lists.find(l => l.id === task.list_id)
-      const originalListName = originalList ? originalList.name : 'Unknown'
-      const originalListId = task.list_id || ''
-      await moveToPurgatory(taskId, originalListId, originalListName)
-    }
-    
-    await scheduleTask(taskId, today, time)
+    // Schedule the task for this time slot
+    await scheduleTask(taskId, scheduledAt)
   }
 
   const handleEventMove = async (taskId: string, newTime: string) => {
-    const existingSchedule = scheduled.find(s => s.task_id === taskId)
-    if (existingSchedule) {
-      await unscheduleTask(taskId)
-      await scheduleTask(taskId, existingSchedule.scheduled_date, newTime)
+    const task = tasks.find(t => t.id === taskId)
+    if (task?.scheduled_at) {
+      const date = task.scheduled_at.split('T')[0]
+      const newScheduledAt = `${date}T${newTime}:00.000Z`
+      await scheduleTask(taskId, newScheduledAt)
     }
   }
 
   const handleUnschedule = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task && task.original_list_id) {
-      const originalList = lists.find(l => l.id === task.original_list_id)
-      if (originalList) {
-        await moveFromPurgatory(taskId, task.original_list_id)
-      } else {
-        const parkedList = lists.find(l => l.system_type === 'parked')
-        if (parkedList) {
-          await moveFromPurgatory(taskId, parkedList.id)
-        }
-      }
-    }
     await unscheduleTask(taskId)
   }
 
   const handleCreateCalendarTask = async (title: string, time: string) => {
+    // Find the "Parked" list for new calendar tasks
+    const parkedList = lists.find(l => l.system_type === 'parked')
+    if (!parkedList) throw new Error('Parked list not found')
+    
+    const { createTask, scheduleTask } = useTaskStore.getState()
+    
+    // Create the task in the parked list
+    await createTask(parkedList.id, title)
+    
+    // Get the newly created task (it will be the last one)
+    const updatedTasks = useTaskStore.getState().tasks
+    const newTask = updatedTasks[updatedTasks.length - 1]
+    
+    // Schedule it for the specified time
     const today = new Date().toISOString().split('T')[0]
-    await createCalendarTask(title, time, today)
+    const scheduledAt = `${today}T${time}:00.000Z`
+    await scheduleTask(newTask.id, scheduledAt)
   }
 
   const handleReorderTasks = async (taskIds: string[]) => {

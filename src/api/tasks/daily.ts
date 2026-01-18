@@ -32,7 +32,7 @@ export async function createParkedThought(title: string) {
   const { data: maxPosData } = await supabase
     .from('tasks')
     .select('position')
-    .eq('list_id', parkedList.id)
+    .eq('home_list_id', parkedList.id)
     .order('position', { ascending: false })
     .limit(1)
   
@@ -42,14 +42,14 @@ export async function createParkedThought(title: string) {
     .from('tasks')
     .insert({
       user_id: userId,
-      list_id: parkedList.id,
+      home_list_id: parkedList.id,
       title,
       duration_minutes: DEFAULT_TASK_DURATION,
       color_index: getRandomColorIndex(),
       position: nextPosition,
       is_completed: false,
       is_daily: false,
-      is_daily_highlight: false,
+      highlight_date: null,
       energy_level: 'medium',
     })
     .select()

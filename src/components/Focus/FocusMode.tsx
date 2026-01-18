@@ -3,16 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-interface Task {
-  id: string
-  title: string
-  duration_minutes: number
-  color_index: number
-  is_completed: boolean
-  energy_level: 'high' | 'medium' | 'low'
-  is_daily_highlight: boolean
-}
+import { Task } from '@/types/app'
 
 interface FocusModeProps {
   task: Task
@@ -103,7 +94,7 @@ export function FocusMode({
           </h1>
           <div className="flex items-center justify-center gap-2 text-sm text-white/70">
             <span className="capitalize">{task.energy_level} energy</span>
-            {task.is_daily_highlight && (
+            {task.highlight_date && (
               <>
                 <span>•</span>
                 <span className="text-yellow-300">Daily highlight</span>

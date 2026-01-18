@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTaskStore, useListStore, useScheduleStore, useUIStore } from '@/state'
+import { useTaskStore, useListStore, useUIStore } from '@/state'
 // LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { rollOverTasks } from '@/api'
 import { DURATION_OPTIONS } from '@/lib/constants'
@@ -24,15 +24,14 @@ export function useAppHandlers() {
     deleteTask,
     completeTask,
     uncompleteTask,
-    moveToPurgatory,
-    moveFromPurgatory,
+    commitTaskToDate,
+    scheduleTask,
+    unscheduleTask,
     createParkedThought,
-    createCalendarTask,
     reorderTasks
   } = useTaskStore()
   
   const { lists, createList, deleteList, duplicateList, updateList } = useListStore()
-  const { scheduled, scheduleTask, unscheduleTask } = useScheduleStore()
   const { setEditingListId, setDuplicatingListId, setShowNewListInput } = useUIStore()
 
   // Local state for deletion flow
@@ -45,8 +44,8 @@ export function useAppHandlers() {
 
   // === TASK HANDLERS ===
   
-  const handleTaskAdd = async (listId: string, title: string) => {
-    await createTask(listId, title)
+  const handleTaskAdd = async (homeListId: string, title: string) => {
+    await createTask(homeListId, title)
   }
 
   const handleTaskDelete = async (taskId: string) => {
@@ -101,31 +100,23 @@ export function useAppHandlers() {
     await updateTask(taskId, { energy_level: level })
   }
 
-  const handleTaskHighlightToggle = async (taskId: string) => {
+  const handleTaskHighlightToggle = async (taskId: string, date: string) => {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
     
-    // Check if this task is in a date list
-    const taskList = lists.find(l => l.id === task.list_id)
-    if (!taskList || taskList.system_type !== 'date') {
-      console.warn('Highlights only available for date lists')
-      return
-    }
-    
-    if (task.is_daily_highlight) {
-      await updateTask(taskId, { is_daily_highlight: false })
+    // Check if task is already highlighted for this date
+    if (task.highlight_date === date) {
+      await updateTask(taskId, { highlight_date: null })
     } else {
-      // Check highlight count in this list
-      const highlightsInList = tasks.filter(t => 
-        t.list_id === task.list_id && t.is_daily_highlight
-      ).length
+      // Check highlight count for this date
+      const highlightsForDate = tasks.filter(t => t.highlight_date === date).length
       
-      if (highlightsInList >= 5) {
+      if (highlightsForDate >= 5) {
         alert('Maximum 5 highlights per day. Remove one first.')
         return
       }
       
-      await updateTask(taskId, { is_daily_highlight: true })
+      await updateTask(taskId, { highlight_date: date })
     }
   }
 
@@ -136,52 +127,41 @@ export function useAppHandlers() {
   // === SCHEDULE HANDLERS ===
 
   const handleExternalDrop = async (taskId: string, time: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (!task) return
-
     const today = new Date().toISOString().split('T')[0]
+    const scheduledAt = `${today}T${time}:00.000Z`
     
-    // Move to purgatory if not already there
-    const purgatoryList = lists.find(l => l.system_type === 'purgatory')
-    if (task.list_id !== purgatoryList?.id) {
-      const originalList = lists.find(l => l.id === task.list_id)
-      const originalListName = originalList ? originalList.name : 'Unknown'
-      const originalListId = task.list_id || ''
-      await moveToPurgatory(taskId, originalListId, originalListName)
-    }
-    
-    await scheduleTask(taskId, today, time)
+    await scheduleTask(taskId, scheduledAt)
   }
 
   const handleEventMove = async (taskId: string, newTime: string) => {
-    const existingSchedule = scheduled.find(s => s.task_id === taskId)
-    if (existingSchedule) {
-      await unscheduleTask(taskId)
-      await scheduleTask(taskId, existingSchedule.scheduled_date, newTime)
+    const task = tasks.find(t => t.id === taskId)
+    if (task?.scheduled_at) {
+      const date = task.scheduled_at.split('T')[0]
+      const newScheduledAt = `${date}T${newTime}:00.000Z`
+      await scheduleTask(taskId, newScheduledAt)
     }
   }
 
   const handleUnschedule = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task && task.original_list_id) {
-      // Check if original list still exists
-      const originalList = lists.find(l => l.id === task.original_list_id)
-      if (originalList) {
-        await moveFromPurgatory(taskId, task.original_list_id)
-      } else {
-        // Move to TBD Grab Bag if original list is gone
-        const parkedList = lists.find(l => l.system_type === 'parked')
-        if (parkedList) {
-          await moveFromPurgatory(taskId, parkedList.id)
-        }
-      }
-    }
     await unscheduleTask(taskId)
   }
 
   const handleCreateCalendarTask = async (title: string, time: string) => {
+    // Find the "Parked" list for new calendar tasks
+    const parkedList = lists.find(l => l.system_type === 'parked')
+    if (!parkedList) throw new Error('Parked list not found')
+    
+    // Create the task in the parked list
+    await createTask(parkedList.id, title)
+    
+    // Get the newly created task (it will be the last one)
+    const updatedTasks = useTaskStore.getState().tasks
+    const newTask = updatedTasks[updatedTasks.length - 1]
+    
+    // Schedule it for the specified time
     const today = new Date().toISOString().split('T')[0]
-    await createCalendarTask(title, time, today)
+    const scheduledAt = `${today}T${time}:00.000Z`
+    await scheduleTask(newTask.id, scheduledAt)
   }
 
   // === LIST HANDLERS ===
@@ -228,7 +208,7 @@ export function useAppHandlers() {
     
     // Move tasks back
     for (const task of pendingDelete.originalTasks) {
-      await updateTask(task.id, { list_id: task.originalListId })
+      await updateTask(task.id, { home_list_id: task.originalListId })
     }
     
     setPendingDelete(null)
