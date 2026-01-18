@@ -117,9 +117,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   spawnDailyTasksForToday: async (todayListId) => {
-    const newTasks = await spawnDailyTasks(todayListId)
-    if (newTasks && newTasks.length > 0) {
-      set({ tasks: [...get().tasks, ...newTasks] })
+    const count = await spawnDailyTasks(todayListId)
+    if (count > 0) {
+      // Reload tasks to get the newly spawned ones
+      await get().loadTasks()
     }
   },
   
@@ -129,8 +130,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   createCalendarTask: async (title, time, date) => {
-    const newTask = await apiCreateCalendarTask(title, time, date)
-    set({ tasks: [...get().tasks, newTask] })
+    await apiCreateCalendarTask(title, time, date)
+    // Reload tasks to get the newly created task
+    await get().loadTasks()
   },
 
   reorderTasks: async (taskIds: string[]) => {

@@ -14,29 +14,15 @@ export async function getScheduledTasks(date?: string) {
   return data
 }
 
-export async function scheduleTask(taskId: string, date: string, startTime: string) {
+export async function scheduleTask(taskId: string, date: string, startTime: string): Promise<{ id: string }> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  // Remove existing schedule for this task if any
-  await supabase
-    .from('scheduled_tasks')
-    .delete()
-    .eq('task_id', taskId)
-  
-  const { data, error } = await supabase
-    .from('scheduled_tasks')
-    .insert({
-      user_id: userId,
-      task_id: taskId,
-      scheduled_date: date,
-      start_time: startTime,
-    })
-    .select()
-    .single()
-  
+  const { data, error } = await supabase.rpc('schedule_task', {
+    p_task_id: taskId,
+    p_date: date,
+    p_start_time: startTime
+  })
   if (error) throw error
-  return data
+  return { id: data as string }
 }
 
 export async function unscheduleTask(taskId: string) {

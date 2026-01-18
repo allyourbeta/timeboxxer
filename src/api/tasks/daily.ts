@@ -2,51 +2,13 @@ import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
 import { DEFAULT_TASK_DURATION, getRandomColorIndex } from '@/lib/constants'
 
-export async function spawnDailyTasks(todayListId: string) {
+export async function spawnDailyTasks(todayListId: string): Promise<number> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  // Get all daily tasks that haven't been spawned today
-  const { data: dailyTasks } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('is_daily', true)
-    .is('daily_source_id', null) // Original daily tasks, not spawned instances
-  
-  if (!dailyTasks || dailyTasks.length === 0) return []
-  
-  // Check which ones already have today's instance
-  const { data: existingToday } = await supabase
-    .from('tasks')
-    .select('daily_source_id')
-    .eq('list_id', todayListId)
-    .not('daily_source_id', 'is', null)
-  
-  const alreadySpawnedIds = new Set(existingToday?.map((t: any) => t.daily_source_id) || [])
-  
-  // Spawn new instances for tasks not yet spawned today
-  const toSpawn = dailyTasks.filter((t: any) => !alreadySpawnedIds.has(t.id))
-  
-  if (toSpawn.length === 0) return []
-  
-  const newTasks = toSpawn.map((task: any) => ({
-    user_id: userId,
-    list_id: todayListId,
-    title: task.title,
-    duration_minutes: task.duration_minutes,
-    color_index: task.color_index,
-    is_daily: false, // Spawned instance is not itself daily
-    daily_source_id: task.id, // Reference to original daily task
-    position: task.position,
-  }))
-  
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert(newTasks)
-    .select()
-  
+  const { data, error } = await supabase.rpc('spawn_daily_tasks', {
+    p_today_list_id: todayListId
+  })
   if (error) throw error
-  return data
+  return data as number
 }
 
 export async function createParkedThought(title: string) {

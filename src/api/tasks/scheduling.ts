@@ -64,39 +64,17 @@ export async function moveFromPurgatory(taskId: string, newListId: string) {
   return data
 }
 
-export async function createCalendarTask(title: string, startTime: string, date: string) {
+export async function createCalendarTask(title: string, startTime: string, date: string): Promise<{ id: string }> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  const { data: task, error: taskError } = await supabase
-    .from('tasks')
-    .insert({
-      user_id: userId,
-      list_id: null,  // No list - created directly on calendar
-      title,
-      duration_minutes: DEFAULT_CALENDAR_TASK_DURATION,  // Default duration
-      color_index: getRandomColorIndex(),  // Random color
-      energy_level: 'medium',
-      position: 0,
-    })
-    .select()
-    .single()
-  
-  if (taskError) throw taskError
-  
-  // Also schedule it
-  const { error: scheduleError } = await supabase
-    .from('scheduled_tasks')
-    .insert({
-      user_id: userId,
-      task_id: task.id,
-      scheduled_date: date,
-      start_time: startTime + ':00',
-    })
-  
-  if (scheduleError) throw scheduleError
-  
-  return task
+  const { data, error } = await supabase.rpc('create_calendar_task', {
+    p_title: title,
+    p_start_time: startTime + ':00',
+    p_date: date,
+    p_duration_minutes: DEFAULT_CALENDAR_TASK_DURATION,
+    p_color_index: getRandomColorIndex()
+  })
+  if (error) throw error
+  return { id: data as string }
 }
 
 export async function cleanupExpiredScheduledTasks(): Promise<number> {
@@ -165,33 +143,10 @@ export async function cleanupExpiredScheduledTasks(): Promise<number> {
 
 export async function rollOverTasks(fromListId: string, toListId: string): Promise<number> {
   const supabase = createClient()
-  
-  // Get all incomplete tasks from source list
-  const { data: tasks, error: fetchError } = await supabase
-    .from('tasks')
-    .select('id')
-    .eq('list_id', fromListId)
-    .eq('is_completed', false)
-    .order('position')  // Preserve relative order
-  
-  if (fetchError) throw fetchError
-  if (!tasks || tasks.length === 0) return 0
-  
-  // Get starting position in destination list
-  const startPosition = await getNextPositionInList(toListId)
-  
-  // Update each task with new sequential position
-  const updates = tasks.map((task: { id: string }, index: number) => 
-    supabase
-      .from('tasks')
-      .update({ 
-        list_id: toListId,
-        position: startPosition + index 
-      })
-      .eq('id', task.id)
-  )
-  
-  await Promise.all(updates)
-  
-  return tasks.length
+  const { data, error } = await supabase.rpc('roll_over_tasks', {
+    from_list_id: fromListId,
+    to_list_id: toListId
+  })
+  if (error) throw error
+  return data as number
 }

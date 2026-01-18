@@ -75,25 +75,10 @@ export async function updateTask(taskId: string, updates: {
   return data
 }
 
-export async function completeTask(taskId: string) {
+export async function completeTask(taskId: string): Promise<void> {
   const supabase = createClient()
-  
-  // Mark complete
-  const { error: taskError } = await supabase
-    .from('tasks')
-    .update({ 
-      is_completed: true, 
-      completed_at: new Date().toISOString() 
-    })
-    .eq('id', taskId)
-  
-  if (taskError) throw taskError
-  
-  // Remove from schedule
-  await supabase
-    .from('scheduled_tasks')
-    .delete()
-    .eq('task_id', taskId)
+  const { error } = await supabase.rpc('complete_task', { p_task_id: taskId })
+  if (error) throw error
 }
 
 export async function uncompleteTask(taskId: string) {
@@ -140,14 +125,6 @@ export async function moveTaskToList(taskId: string, newListId: string | null) {
 
 export async function reorderTasks(taskIds: string[]): Promise<void> {
   const supabase = createClient()
-  
-  // Update each task's position based on array index
-  const updates = taskIds.map((id, index) => 
-    supabase
-      .from('tasks')
-      .update({ position: index })
-      .eq('id', id)
-  )
-  
-  await Promise.all(updates)
+  const { error } = await supabase.rpc('reorder_tasks', { task_ids: taskIds })
+  if (error) throw error
 }

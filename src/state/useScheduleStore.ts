@@ -28,14 +28,9 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   },
   
   scheduleTask: async (taskId, date, time) => {
-    const newSchedule = await apiScheduleTask(taskId, date, time)
-    // Remove any existing schedule for this task, add new one
-    set({
-      scheduled: [
-        ...get().scheduled.filter(s => s.task_id !== taskId),
-        newSchedule
-      ]
-    })
+    await apiScheduleTask(taskId, date, time)
+    // Reload schedule to get the updated data
+    await get().loadSchedule()
   },
   
   unscheduleTask: async (taskId) => {
