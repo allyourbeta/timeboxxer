@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
 import { DEFAULT_TASK_DURATION } from '@/lib/constants'
+import { getNextPositionInList } from './utils'
 
 export async function getTasks() {
   console.log('📋 [tasks.ts] getTasks called')
@@ -115,12 +116,24 @@ export async function deleteTask(taskId: string) {
 
 export async function moveTaskToList(taskId: string, newListId: string | null) {
   const supabase = createClient()
+  
+  let newPosition = 0
+  
+  if (newListId) {
+    // Get new position in destination list
+    newPosition = await getNextPositionInList(newListId)
+  }
+  
   const { data, error } = await supabase
     .from('tasks')
-    .update({ list_id: newListId })
+    .update({ 
+      list_id: newListId,
+      position: newPosition 
+    })
     .eq('id', taskId)
     .select()
     .single()
+    
   if (error) throw error
   return data
 }

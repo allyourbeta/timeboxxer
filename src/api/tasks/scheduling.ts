@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
 import { DEFAULT_CALENDAR_TASK_DURATION, getRandomColorIndex, PURGATORY_EXPIRY_DAYS } from '@/lib/constants'
+import { getNextPositionInList } from './utils'
 
 export async function moveToPurgatory(taskId: string, originalListId: string, originalListName: string) {
   const supabase = createClient()
@@ -18,10 +19,14 @@ export async function moveToPurgatory(taskId: string, originalListId: string, or
     throw new Error('Purgatory list not found')
   }
   
+  // Get new position in destination list
+  const newPosition = await getNextPositionInList(purgatoryList.id)
+  
   const { data, error } = await supabase
     .from('tasks')
     .update({
       list_id: purgatoryList.id,
+      position: newPosition,
       moved_to_purgatory_at: new Date().toISOString(),
       original_list_id: originalListId,
       original_list_name: originalListName,
@@ -37,10 +42,15 @@ export async function moveToPurgatory(taskId: string, originalListId: string, or
 
 export async function moveFromPurgatory(taskId: string, newListId: string) {
   const supabase = createClient()
+  
+  // Get new position in destination list
+  const newPosition = await getNextPositionInList(newListId)
+  
   const { data, error } = await supabase
     .from('tasks')
     .update({
       list_id: newListId,
+      position: newPosition,
       moved_to_purgatory_at: null,
       original_list_id: null,
       original_list_name: null,
@@ -156,24 +166,32 @@ export async function cleanupExpiredScheduledTasks(): Promise<number> {
 export async function rollOverTasks(fromListId: string, toListId: string): Promise<number> {
   const supabase = createClient()
   
-  // Get all incomplete tasks from the source list
+  // Get all incomplete tasks from source list
   const { data: tasks, error: fetchError } = await supabase
     .from('tasks')
     .select('id')
     .eq('list_id', fromListId)
     .eq('is_completed', false)
+    .order('position')  // Preserve relative order
   
   if (fetchError) throw fetchError
   if (!tasks || tasks.length === 0) return 0
   
-  // Move them to the destination list
-  const taskIds = tasks.map((t: { id: string }) => t.id)
-  const { error: updateError } = await supabase
-    .from('tasks')
-    .update({ list_id: toListId })
-    .in('id', taskIds)
+  // Get starting position in destination list
+  const startPosition = await getNextPositionInList(toListId)
   
-  if (updateError) throw updateError
+  // Update each task with new sequential position
+  const updates = tasks.map((task: { id: string }, index: number) => 
+    supabase
+      .from('tasks')
+      .update({ 
+        list_id: toListId,
+        position: startPosition + index 
+      })
+      .eq('id', task.id)
+  )
   
-  return taskIds.length
+  await Promise.all(updates)
+  
+  return tasks.length
 }

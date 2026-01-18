@@ -26,3 +26,8 @@ export {
   spawnDailyTasks,
   createParkedThought,
 } from './daily'
+
+// Utility functions
+export {
+  getNextPositionInList,
+} from './utils'
