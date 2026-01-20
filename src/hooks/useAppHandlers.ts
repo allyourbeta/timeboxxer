@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
-import { rollOverTasks } from '@/api'
 import { DURATION_OPTIONS } from '@/lib/constants'
-import { getTomorrowListName, getLocalTomorrowISO } from '@/lib/dateList'
+import { getLocalTodayISO, getLocalTomorrowISO } from '@/lib/dateUtils'
 
 interface PendingDelete {
   listId: string
@@ -12,7 +11,6 @@ interface PendingDelete {
   originalTasks: Array<{ id: string; originalListId: string }>
   timeoutId: NodeJS.Timeout
 }
-
 
 export function useAppHandlers() {
   // Get store actions
@@ -23,11 +21,12 @@ export function useAppHandlers() {
     deleteTask,
     completeTask,
     uncompleteTask,
-    commitTaskToDate,
     scheduleTask,
     unscheduleTask,
+    setTaskHighlight,
     createParkedThought,
-    reorderTasks
+    reorderTasks,
+    rollOverTasks
   } = useTaskStore()
   
   const { lists, createList, deleteList, duplicateList, updateList } = useListStore()
@@ -105,7 +104,7 @@ export function useAppHandlers() {
     
     // Check if task is already highlighted for this date
     if (task.highlight_date === date) {
-      await updateTask(taskId, { highlight_date: null })
+      await setTaskHighlight(taskId, null)
     } else {
       // Check highlight count for this date
       const highlightsForDate = tasks.filter(t => t.highlight_date === date).length
@@ -115,7 +114,7 @@ export function useAppHandlers() {
         return
       }
       
-      await updateTask(taskId, { highlight_date: date })
+      await setTaskHighlight(taskId, date)
     }
   }
 
@@ -126,7 +125,7 @@ export function useAppHandlers() {
   // === SCHEDULE HANDLERS ===
 
   const handleExternalDrop = async (taskId: string, time: string) => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalTodayISO()
     const scheduledAt = `${today}T${time}:00.000Z`
     
     await scheduleTask(taskId, scheduledAt)
@@ -158,7 +157,7 @@ export function useAppHandlers() {
     const newTask = updatedTasks[updatedTasks.length - 1]
     
     // Schedule it for the specified time
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalTodayISO()
     const scheduledAt = `${today}T${time}:00.000Z`
     await scheduleTask(newTask.id, scheduledAt)
   }
@@ -189,7 +188,7 @@ export function useAppHandlers() {
     
     // Block today and future date lists
     if (list.system_type === 'date') {
-      const listDate = new Date(list.name)
+      const listDate = new Date(list.list_date!)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       listDate.setHours(0, 0, 0, 0)
@@ -198,7 +197,6 @@ export function useAppHandlers() {
     
     await deleteList(listId)
   }
-
 
   const handleUndoDelete = async () => {
     if (!pendingDelete) return
@@ -237,17 +235,14 @@ export function useAppHandlers() {
   // === ROLL OVER HANDLER ===
 
   const handleRollOverTasks = async (fromListId: string) => {
-    // Find tomorrow's list
-    const tomorrowList = lists.find(l => 
-      l.list_date === getLocalTomorrowISO()
-    )
+    // Find the list to get its date
+    const fromList = lists.find(l => l.id === fromListId)
+    if (!fromList?.list_date) return
     
-    if (!tomorrowList) {
-      console.error('Tomorrow list not found')
-      return
-    }
+    const fromDate = fromList.list_date
+    const toDate = getLocalTomorrowISO()
     
-    const count = await rollOverTasks(fromListId, tomorrowList.id)
+    const count = await rollOverTasks(fromDate, toDate)
     
     if (count > 0) {
       // Reload tasks to reflect the move

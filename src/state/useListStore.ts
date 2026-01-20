@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, ensureTodayList, ensureTomorrowList } from '@/api'
-import { duplicateList as apiDuplicateList } from '@/api/tasks/operations'
+import { duplicateList as apiDuplicateList } from '@/api'
 import { sortListsForDisplay } from '@/lib/listSort'
 import { List } from '@/types/app'
 

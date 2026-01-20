@@ -17,7 +17,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth()
   
   // Stores (data only)
-  const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForToday } = useTaskStore()
+  const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForDate } = useTaskStore()
   const { lists, loading: listsLoading, loadLists } = useListStore()
   const {
     currentView, setCurrentView,
@@ -101,10 +101,10 @@ export default function Home() {
       // Find today's date list
       const todayList = lists.find(l => l.list_date === getLocalTodayISO())
       if (todayList) {
-        spawnDailyTasksForToday(todayList.id)
+        spawnDailyTasksForDate(getLocalTodayISO())
       }
     }
-  }, [user, tasksLoading, listsLoading, tasks.length, lists, spawnDailyTasksForToday])
+  }, [user, tasksLoading, listsLoading, tasks.length, lists, spawnDailyTasksForDate])
 
   // NOW we can have conditional returns (after all hooks)
   

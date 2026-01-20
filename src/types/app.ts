@@ -28,6 +28,8 @@ export interface List {
   is_system: boolean;
   system_type: 'parked' | 'date' | null;
   list_date: string | null;  // ISO date string for date lists
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Task {
@@ -61,6 +63,10 @@ export interface Task {
   
   // Energy level
   energy_level: 'high' | 'medium' | 'low';
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
 }
 
 // =============================================================================
@@ -148,4 +154,3 @@ export interface ScheduleTaskInput {
   startTime: string;
   mode: ScheduleMode;
 }
-

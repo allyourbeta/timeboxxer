@@ -1,38 +1,65 @@
 import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
-import { formatDateForDisplay, getTodayListName, getTodayISO, getTomorrowListName, getTomorrowISO } from '@/lib/dateList'
+import { formatDateForDisplay } from '@/lib/dateUtils'
+import type { List } from '@/types/app'
 
-export async function getLists() {
-  console.log('📋 [lists.ts] getLists called')
-  try {
-    const supabase = createClient()
-    console.log('📋 [lists.ts] Querying lists from database...')
-    
-    const { data, error } = await supabase
-      .from('lists')
-      .select('*')
-      .order('position')
-      
-    if (error) {
-      console.error('❌ [lists.ts] Database query error:', error)
-      throw error
-    }
-    
-    console.log('✅ [lists.ts] Lists loaded successfully:', { count: data?.length || 0 })
-    return data
-  } catch (err) {
-    console.error('💥 [lists.ts] getLists exception:', err)
-    throw err
-  }
+// =============================================================================
+// READ OPERATIONS
+// =============================================================================
+
+/**
+ * Fetch all lists for the current user
+ */
+export async function getLists(): Promise<List[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('lists')
+    .select('*')
+    .order('position')
+  
+  if (error) throw error
+  return data || []
 }
 
-export async function createList(name: string) {
+/**
+ * Get the TBD Grab Bag list (creates if doesn't exist)
+ */
+export async function getGrabBag(): Promise<List> {
+  const supabase = createClient()
+  const { data: grabBagId, error: rpcError } = await supabase.rpc('ensure_grab_bag')
+  
+  if (rpcError) throw rpcError
+  if (!grabBagId) throw new Error('Failed to get or create Grab Bag')
+  
+  const { data: list, error: listError } = await supabase
+    .from('lists')
+    .select('*')
+    .eq('id', grabBagId)
+    .single()
+  
+  if (listError) throw listError
+  if (!list) throw new Error('Grab Bag list not found after creation')
+  
+  return list
+}
+
+// =============================================================================
+// CREATE OPERATIONS
+// =============================================================================
+
+/**
+ * Create a new user list
+ */
+export async function createList(name: string): Promise<List> {
   const supabase = createClient()
   const userId = await getCurrentUserId()
   
+  // Get next position
   const { data: existing } = await supabase
     .from('lists')
     .select('position')
+    .eq('user_id', userId)
+    .eq('is_system', false)
     .order('position', { ascending: false })
     .limit(1)
   
@@ -44,106 +71,95 @@ export async function createList(name: string) {
       user_id: userId,
       name,
       position: nextPosition,
+      is_system: false,
     })
     .select()
     .single()
   
   if (error) throw error
   return data
-}
-
-export async function updateList(listId: string, name: string) {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from('lists')
-    .update({ name })
-    .eq('id', listId)
-    .select()
-    .single()
-  if (error) throw error
-  return data
-}
-
-export async function deleteList(listId: string) {
-  const supabase = createClient()
-  // Tasks will have list_id set to NULL due to ON DELETE SET NULL
-  const { error } = await supabase
-    .from('lists')
-    .delete()
-    .eq('id', listId)
-  if (error) throw error
-}
-
-export async function duplicateList(listId: string, newName: string): Promise<string> {
-  const supabase = createClient()
-  const { data, error } = await supabase.rpc('duplicate_list', {
-    source_list_id: listId,
-    new_list_name: newName
-  })
-  if (error) throw error
-  return data as string
 }
 
 /**
- * Ensure a date list exists for the given date
- * @param dateISO - The date in YYYY-MM-DD format (from client's local timezone)
+ * Ensure a date list exists for the given date (uses RPC for race-condition safety)
  */
-export async function ensureDateList(dateISO: string) {
+export async function ensureDateList(dateISO: string): Promise<List> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
   const displayName = formatDateForDisplay(dateISO)
   
-  // Check if list exists for this date
-  const { data: existing } = await supabase
+  const { data: listId, error: rpcError } = await supabase.rpc('ensure_date_list', {
+    p_date: dateISO,
+    p_display_name: displayName,
+  })
+  
+  if (rpcError) throw rpcError
+  if (!listId) throw new Error('Failed to get or create date list')
+  
+  const { data: list, error: listError } = await supabase
     .from('lists')
     .select('*')
-    .eq('system_type', 'date')
-    .eq('list_date', dateISO)
-    .eq('user_id', userId)
-    .maybeSingle()
-  
-  if (existing) return existing
-  
-  // Create new date list
-  const { data, error } = await supabase
-    .from('lists')
-    .insert({
-      user_id: userId,
-      name: displayName,
-      list_date: dateISO,
-      position: 0,
-      is_system: true,
-      system_type: 'date',
-    })
-    .select()
+    .eq('id', listId)
     .single()
   
-  if (error) {
-    // Handle race condition - another request created it
-    if (error.code === '23505') {
-      const { data: refetched } = await supabase
-        .from('lists')
-        .select('*')
-        .eq('system_type', 'date')
-        .eq('list_date', dateISO)
-        .eq('user_id', userId)
-        .single()
-      return refetched
-    }
-    throw error
-  }
-  
-  return data
+  if (listError) throw listError
+  return list
 }
 
-// Convenience wrappers that call ensureDateList
-// These should ONLY be called from client-side code
-export async function ensureTodayList() {
-  const { getLocalTodayISO } = await import('@/lib/dateList')
+/**
+ * Ensure today's date list exists
+ */
+export async function ensureTodayList(): Promise<List> {
+  const { getLocalTodayISO } = await import('@/lib/dateUtils')
   return ensureDateList(getLocalTodayISO())
 }
 
-export async function ensureTomorrowList() {
-  const { getLocalTomorrowISO } = await import('@/lib/dateList')
+/**
+ * Ensure tomorrow's date list exists
+ */
+export async function ensureTomorrowList(): Promise<List> {
+  const { getLocalTomorrowISO } = await import('@/lib/dateUtils')
   return ensureDateList(getLocalTomorrowISO())
+}
+
+// =============================================================================
+// UPDATE OPERATIONS
+// =============================================================================
+
+/**
+ * Update list name
+ */
+export async function updateList(listId: string, name: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('lists')
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq('id', listId)
+  
+  if (error) throw error
+}
+
+// =============================================================================
+// DELETE OPERATIONS
+// =============================================================================
+
+/**
+ * Delete a list (uses RPC to reassign tasks to Grab Bag first)
+ */
+export async function deleteList(listId: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.rpc('delete_list_safe', { p_list_id: listId })
+  if (error) throw error
+}
+
+/**
+ * Duplicate a list and its tasks (uses RPC for atomicity)
+ */
+export async function duplicateList(listId: string, newName: string): Promise<string> {
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('duplicate_list', {
+    p_list_id: listId,
+    p_new_name: newName,
+  })
+  if (error) throw error
+  return data as string
 }

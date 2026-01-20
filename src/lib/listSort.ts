@@ -5,6 +5,7 @@ interface List {
   is_collapsed: boolean
   is_system: boolean
   system_type: 'parked' | 'date' | null
+  list_date: string | null
 }
 
 /**
@@ -29,16 +30,18 @@ export function sortListsForDisplay<T extends List>(lists: T[]): T[] {
     
     // Both system lists
     if (a.is_system && b.is_system) {
-      // Date lists come first, sorted by name (which is the date)
+      // Date lists come first, sorted by list_date
       if (a.system_type === 'date' && b.system_type !== 'date') return -1
       if (a.system_type !== 'date' && b.system_type === 'date') return 1
       
-      // Both date lists - sort by date (today before tomorrow)
+      // Both date lists - sort by list_date (today before tomorrow)
       if (a.system_type === 'date' && b.system_type === 'date') {
-        // Parse the date from the name and compare
-        const dateA = new Date(a.name)
-        const dateB = new Date(b.name)
-        return dateA.getTime() - dateB.getTime()
+        if (!a.list_date && !b.list_date) return 0
+        if (!a.list_date) return 1
+        if (!b.list_date) return -1
+        
+        // Compare dates directly (YYYY-MM-DD format)
+        return a.list_date.localeCompare(b.list_date)
       }
       
       // Other system lists: only parked now
