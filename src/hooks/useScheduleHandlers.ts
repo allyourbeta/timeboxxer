@@ -1,6 +1,9 @@
 'use client'
 
 import { useTaskStore, useListStore } from '@/state'
+import { getLocalTodayISO, createLocalTimestamp } from '@/lib/dateUtils'
+
+
 
 export function useScheduleHandlers() {
   const { tasks, commitTaskToDate, scheduleTask, unscheduleTask, reorderTasks } = useTaskStore()
@@ -11,7 +14,7 @@ export function useScheduleHandlers() {
     if (!task) return
 
     const today = new Date().toISOString().split('T')[0]
-    const scheduledAt = `${today}T${time}:00.000Z`
+    const scheduledAt = createLocalTimestamp(today, time)
     
     // Schedule the task for this time slot
     await scheduleTask(taskId, scheduledAt)
@@ -21,7 +24,7 @@ export function useScheduleHandlers() {
     const task = tasks.find(t => t.id === taskId)
     if (task?.scheduled_at) {
       const date = task.scheduled_at.split('T')[0]
-      const newScheduledAt = `${date}T${newTime}:00.000Z`
+      const newScheduledAt = createLocalTimestamp(date, newTime)
       await scheduleTask(taskId, newScheduledAt)
     }
   }
@@ -46,7 +49,7 @@ export function useScheduleHandlers() {
     
     // Schedule it for the specified time
     const today = new Date().toISOString().split('T')[0]
-    const scheduledAt = `${today}T${time}:00.000Z`
+    const scheduledAt = createLocalTimestamp(today, time)
     await scheduleTask(newTask.id, scheduledAt)
   }
 

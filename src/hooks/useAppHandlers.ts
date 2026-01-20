@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { DURATION_OPTIONS } from '@/lib/constants'
 import { getLocalTodayISO, getLocalTomorrowISO, createLocalTimestamp } from '@/lib/dateUtils'
+import type { Task, List } from '@/types/app'
+
 
 
 
