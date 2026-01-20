@@ -38,7 +38,7 @@ export function useListHandlers() {
     const list = lists.find(l => l.id === listId)
     if (!list) return
     
-    if (list.system_type === 'purgatory' || list.system_type === 'parked') return
+    if (list.system_type === 'parked') return
     
     if (list.system_type === 'date') {
       const listDate = new Date(list.name)

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
-// LIMBO_LIST_ID will be fetched dynamically as purgatory list
 import { rollOverTasks } from '@/api'
 import { DURATION_OPTIONS } from '@/lib/constants'
 import { getTomorrowListName, getLocalTomorrowISO } from '@/lib/dateList'
@@ -185,8 +184,8 @@ export function useAppHandlers() {
     const list = lists.find(l => l.id === listId)
     if (!list) return
     
-    // Only block Limbo and Parked Items
-    if (list.system_type === 'purgatory' || list.system_type === 'parked') return
+    // Only block Parked Items  
+    if (list.system_type === 'parked') return
     
     // Block today and future date lists
     if (list.system_type === 'date') {

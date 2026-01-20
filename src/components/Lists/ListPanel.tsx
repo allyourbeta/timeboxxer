@@ -142,7 +142,7 @@ export function ListPanel({
               key={list.id}
               id={list.id}
               name={displayName}
-              isInbox={list.system_type === 'purgatory'}
+              isInbox={false}
               isSystemList={list.is_system}
               isDateList={list.system_type === 'date'}
               tasks={getTasksForList(list.id)}

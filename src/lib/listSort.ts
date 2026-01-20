@@ -4,7 +4,7 @@ interface List {
   position: number
   is_collapsed: boolean
   is_system: boolean
-  system_type: 'purgatory' | 'parked' | 'date' | null
+  system_type: 'parked' | 'date' | null
 }
 
 /**
@@ -14,12 +14,11 @@ interface List {
 const SYSTEM_LIST_ORDER: Record<string, number> = {
   date: 1,      // Today's date list first (main workspace)
   parked: 2,    // Quick capture
-  purgatory: 3, // Limbo - Scheduled tasks holding area
 }
 
 /**
  * Sort lists for display:
- * 1. System lists first (date lists by date, then parked, then limbo)
+ * 1. System lists first (date lists by date, then parked)
  * 2. User lists by position
  */
 export function sortListsForDisplay<T extends List>(lists: T[]): T[] {
@@ -42,8 +41,8 @@ export function sortListsForDisplay<T extends List>(lists: T[]): T[] {
         return dateA.getTime() - dateB.getTime()
       }
       
-      // Other system lists: parked before limbo
-      const order: Record<string, number> = { parked: 1, purgatory: 2 } // purgatory = limbo in UI
+      // Other system lists: only parked now
+      const order: Record<string, number> = { parked: 1 }
       const orderA = order[a.system_type || ''] ?? 99
       const orderB = order[b.system_type || ''] ?? 99
       return orderA - orderB

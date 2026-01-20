@@ -26,7 +26,7 @@ export interface List {
   is_collapsed: boolean;
   // System list fields
   is_system: boolean;
-  system_type: 'purgatory' | 'parked' | 'date' | null;
+  system_type: 'parked' | 'date' | null;
   list_date: string | null;  // ISO date string for date lists
 }
 
