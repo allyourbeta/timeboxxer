@@ -44,6 +44,7 @@ export default function Home() {
     handleTaskEnergyChange,
     handleTaskHighlightToggle,
     handleReorderTasks,
+    handleDragEnd,
     handleExternalDrop,
     handleEventMove,
     handleUnschedule,
@@ -251,6 +252,7 @@ export default function Home() {
               onTaskComplete={handleTaskComplete}
               onReorderTasks={handleReorderTasks}
               onRollOverTasks={handleRollOverTasks}
+              onDragEnd={handleDragEnd}
               columnCount={listColumnCount}
             />
           </div>

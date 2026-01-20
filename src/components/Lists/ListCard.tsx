@@ -6,7 +6,7 @@ import { TaskCard, AddTaskInput } from '@/components/Tasks'
 import { ListCardMenu } from './ListCardMenu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { Task } from '@/types/app'
 
 interface ListCardProps {
@@ -92,36 +92,6 @@ export function ListCard({
     return true
   }
 
-  const handleDragEnd = (result: DropResult) => {
-    console.log('Drag ended:', result)
-    
-    // Dropped outside the list
-    if (!result.destination) {
-      return
-    }
-    
-    // Didn't move
-    if (result.destination.index === result.source.index) {
-      return
-    }
-    
-    // Get tasks for this list (not completed)
-    const listTasks = tasks
-      .filter(t => !t.is_completed)
-      .sort((a, b) => a.position - b.position)
-    
-    // Reorder the array
-    const reordered = Array.from(listTasks)
-    const [removed] = reordered.splice(result.source.index, 1)
-    reordered.splice(result.destination.index, 0, removed)
-    
-    // Get new order of IDs
-    const newTaskIds = reordered.map(t => t.id)
-    console.log('New order:', newTaskIds)
-    
-    // Call the handler
-    onReorderTasks(newTaskIds)
-  }
 
   
   // Get the first task's color for accent bar
@@ -214,7 +184,6 @@ export function ListCard({
       {isExpanded && (
         <div className="px-4 pb-4">
           
-          <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId={id}>
               {(provided) => (
                 <div
@@ -265,7 +234,6 @@ export function ListCard({
                 </div>
               )}
             </Droppable>
-          </DragDropContext>
           
           {/* Roll Over button - only for date lists with incomplete tasks */}
           {isDateList && !isInbox && tasks.filter(t => !t.is_completed).length > 0 && onRollOver && (

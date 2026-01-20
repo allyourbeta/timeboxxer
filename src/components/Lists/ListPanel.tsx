@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Draggable } from '@fullcalendar/interaction'
+import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
 import { formatDateForDisplay } from '@/lib/dateList'
@@ -34,6 +35,7 @@ interface ListPanelProps {
   onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
   onRollOverTasks: (fromListId: string) => void
+  onDragEnd: (result: DropResult) => void
   columnCount: 1 | 2
 }
 
@@ -63,6 +65,7 @@ export function ListPanel({
   onTaskComplete,
   onReorderTasks,
   onRollOverTasks,
+  onDragEnd,
   columnCount,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
@@ -115,8 +118,18 @@ export function ListPanel({
     }
   }, [lists, tasks, expandedListIds, onToggleListExpanded])
   
-  const getTasksForList = (listId: string) =>
-    tasks.filter(t => t.home_list_id === listId && !t.is_completed)
+  const getTasksForList = (listId: string) => {
+    const list = lists.find(l => l.id === listId)
+    if (!list) return []
+    
+    // For date lists, show tasks committed to that date
+    if (list.system_type === 'date' && list.list_date) {
+      return tasks.filter(t => t.committed_date === list.list_date && !t.is_completed)
+    }
+    
+    // For regular lists, show tasks that live in this list
+    return tasks.filter(t => t.home_list_id === listId && !t.is_completed)
+  }
   
   const cycleDuration = (current: number, reverse: boolean) => {
     const durations = [15, 30, 45, 60]
@@ -130,9 +143,10 @@ export function ListPanel({
   }
   
   return (
-    <div ref={containerRef} className="border-r border-theme overflow-y-auto">
-      <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
-        {lists.map((list) => {
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div ref={containerRef} className="border-r border-theme overflow-y-auto">
+        <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
+          {lists.map((list) => {
           const isExpanded = expandedListIds.has(list.id)
           const displayName = list.system_type === 'date' && list.list_date
             ? formatDateForDisplay(list.list_date)
@@ -221,7 +235,8 @@ export function ListPanel({
             + Add List
           </button>
         )}
+        </div>
       </div>
-    </div>
+    </DragDropContext>
   )
 }

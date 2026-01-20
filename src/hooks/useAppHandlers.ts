@@ -5,6 +5,7 @@ import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { DURATION_OPTIONS } from '@/lib/constants'
 import { getLocalTodayISO, getLocalTomorrowISO, createLocalTimestamp } from '@/lib/dateUtils'
 import type { Task, List } from '@/types/app'
+import type { DropResult } from '@hello-pangea/dnd'
 
 
 
@@ -25,6 +26,7 @@ export function useAppHandlers() {
     deleteTask,
     completeTask,
     uncompleteTask,
+    commitTaskToDate,
     scheduleTask,
     unscheduleTask,
     setTaskHighlight,
@@ -124,6 +126,78 @@ export function useAppHandlers() {
 
   const handleReorderTasks = async (taskIds: string[]) => {
     await reorderTasks(taskIds)
+  }
+
+  const handleCommitTaskToDate = async (taskId: string, date: string) => {
+    await commitTaskToDate(taskId, date)
+  }
+
+  const handleDragEnd = async (result: DropResult) => {
+    console.log('🎯 Drag ended:', result)
+    
+    // Dropped outside any droppable area
+    if (!result.destination) {
+      console.log('❌ Dropped outside droppable area')
+      return
+    }
+
+    const sourceId = result.source.droppableId
+    const destinationId = result.destination.droppableId
+    const taskId = result.draggableId
+
+    console.log('📦 Drag details:', { sourceId, destinationId, taskId })
+
+    // Same list, same position - no change
+    if (sourceId === destinationId && result.source.index === result.destination.index) {
+      console.log('📍 No position change')
+      return
+    }
+
+    // Same list - reorder within list
+    if (sourceId === destinationId) {
+      console.log('🔄 Reordering within same list')
+      const sourceList = lists.find(l => l.id === sourceId)
+      if (!sourceList) return
+
+      // Get tasks for this list using the same logic as the UI
+      let listTasks: typeof tasks = []
+      if (sourceList.system_type === 'date' && sourceList.list_date) {
+        listTasks = tasks
+          .filter(t => t.committed_date === sourceList.list_date && !t.is_completed)
+          .sort((a, b) => a.position - b.position)
+      } else {
+        listTasks = tasks
+          .filter(t => t.home_list_id === sourceId && !t.is_completed)
+          .sort((a, b) => a.position - b.position)
+      }
+
+      // Reorder the array
+      const reordered = Array.from(listTasks)
+      const [removed] = reordered.splice(result.source.index, 1)
+      reordered.splice(result.destination.index, 0, removed)
+
+      // Get new order of IDs
+      const newTaskIds = reordered.map(t => t.id)
+      console.log('📝 New order:', newTaskIds)
+      
+      await reorderTasks(newTaskIds)
+      return
+    }
+
+    // Different lists - check if destination is a date list
+    const destinationList = lists.find(l => l.id === destinationId)
+    if (!destinationList) {
+      console.log('❌ Destination list not found')
+      return
+    }
+
+    if (destinationList.system_type === 'date' && destinationList.list_date) {
+      console.log('📅 Committing task to date:', destinationList.list_date)
+      await commitTaskToDate(taskId, destinationList.list_date)
+      return
+    }
+
+    console.log('❓ Unhandled drag scenario')
   }
 
   // === SCHEDULE HANDLERS ===
@@ -235,19 +309,34 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
   // === ROLL OVER HANDLER ===
 
   const handleRollOverTasks = async (fromListId: string) => {
+    console.log('🔄 handleRollOverTasks called with:', fromListId)
+    console.log('📋 Available lists:', lists.map(l => ({ id: l.id, name: l.name, list_date: l.list_date, system_type: l.system_type })))
+    
     // Find the list to get its date
     const fromList = lists.find(l => l.id === fromListId)
-    if (!fromList?.list_date) return
+    console.log('🎯 fromList found:', fromList)
+    
+    if (!fromList?.list_date) {
+      console.log('❌ No list_date found, fromList.list_date:', fromList?.list_date)
+      return
+    }
     
     const fromDate = fromList.list_date
     const toDate = getLocalTomorrowISO()
+    console.log('📅 Rolling over from:', fromDate, 'to:', toDate)
     
-    const count = await rollOverTasks(fromDate, toDate)
-    
-    if (count > 0) {
-      // Reload tasks to reflect the move
-      const { loadTasks } = useTaskStore.getState()
-      await loadTasks()
+    try {
+      const count = await rollOverTasks(fromDate, toDate)
+      console.log('✅ Roll over completed, count:', count)
+      
+      if (count > 0) {
+        // Reload tasks to reflect the move
+        const { loadTasks } = useTaskStore.getState()
+        await loadTasks()
+        console.log('🔄 Tasks reloaded after roll over')
+      }
+    } catch (error) {
+      console.error('💥 Roll over failed:', error)
     }
   }
 
@@ -267,6 +356,8 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     handleTaskEnergyChange,
     handleTaskHighlightToggle,
     handleReorderTasks,
+    handleCommitTaskToDate,
+    handleDragEnd,
     
     // Schedule handlers
     handleExternalDrop,
