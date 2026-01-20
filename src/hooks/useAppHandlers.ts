@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { DURATION_OPTIONS } from '@/lib/constants'
-import { getLocalTodayISO, getLocalTomorrowISO } from '@/lib/dateUtils'
+import { getLocalTodayISO, getLocalTomorrowISO, createLocalTimestamp } from '@/lib/dateUtils'
+
+
 
 interface PendingDelete {
   listId: string
@@ -123,44 +125,40 @@ export function useAppHandlers() {
   }
 
   // === SCHEDULE HANDLERS ===
+const handleExternalDrop = async (taskId: string, time: string): Promise<void> => {
+  const today: string = getLocalTodayISO()
+  const scheduledAt: string = createLocalTimestamp(today, time)
 
-  const handleExternalDrop = async (taskId: string, time: string) => {
-    const today = getLocalTodayISO()
-    const scheduledAt = `${today}T${time}:00.000Z`
-    
-    await scheduleTask(taskId, scheduledAt)
-  }
+  await scheduleTask(taskId, scheduledAt)
+}
 
-  const handleEventMove = async (taskId: string, newTime: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task?.scheduled_at) {
-      const date = task.scheduled_at.split('T')[0]
-      const newScheduledAt = `${date}T${newTime}:00.000Z`
-      await scheduleTask(taskId, newScheduledAt)
-    }
+const handleEventMove = async (taskId: string, newTime: string): Promise<void> => {
+  const task: Task | undefined = tasks.find((t: Task) => t.id === taskId)
+
+  if (task?.scheduled_at) {
+    const date: string = task.scheduled_at.split('T')[0]
+    const newScheduledAt: string = createLocalTimestamp(date, newTime)
+    await scheduleTask(taskId, newScheduledAt)
   }
+}
 
   const handleUnschedule = async (taskId: string) => {
     await unscheduleTask(taskId)
   }
 
-  const handleCreateCalendarTask = async (title: string, time: string) => {
-    // Find the "Parked" list for new calendar tasks
-    const parkedList = lists.find(l => l.system_type === 'parked')
-    if (!parkedList) throw new Error('Parked list not found')
-    
-    // Create the task in the parked list
-    await createTask(parkedList.id, title)
-    
-    // Get the newly created task (it will be the last one)
-    const updatedTasks = useTaskStore.getState().tasks
-    const newTask = updatedTasks[updatedTasks.length - 1]
-    
-    // Schedule it for the specified time
-    const today = getLocalTodayISO()
-    const scheduledAt = `${today}T${time}:00.000Z`
-    await scheduleTask(newTask.id, scheduledAt)
-  }
+const handleCreateCalendarTask = async (title: string, time: string): Promise<void> => {
+  const parkedList: List | undefined = lists.find((l: List) => l.system_type === 'parked')
+  if (!parkedList) throw new Error('Parked list not found')
+
+  await createTask(parkedList.id, title)
+
+  const updatedTasks = useTaskStore.getState().tasks
+  const newTask = updatedTasks[updatedTasks.length - 1]
+
+  const today: string = getLocalTodayISO()
+  const scheduledAt: string = createLocalTimestamp(today, time)
+  await scheduleTask(newTask.id, scheduledAt)
+}
 
   // === LIST HANDLERS ===
 
