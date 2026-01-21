@@ -180,75 +180,81 @@ export function ListCard({
         </div>
       )}
       
-      {/* Expanded content with animation */}
-      {isExpanded && (
-        <div className="px-4 pb-4">
-          <Droppable droppableId={id} key={`${id}-${isExpanded}`}>
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"
-              >
-                {tasks
-                  .filter(t => !t.is_completed)
-                  .sort((a, b) => a.position - b.position)
-                  .map((task, index) => (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={{
-                              ...provided.draggableProps.style,
-                              opacity: snapshot.isDragging ? 0.8 : 1,
-                            }}
-                          >
-                            <TaskCard
-                              id={task.id}
-                              title={task.title}
-                              durationMinutes={task.duration_minutes}
-                              colorIndex={task.color_index}
-                              isCompleted={task.is_completed}
-                              isScheduled={scheduledTaskIds.includes(task.id)}
-                              isDaily={task.is_daily}
-                              isInPurgatory={isInbox}
-                              isHighlight={task.highlight_date !== null}
-                              canHighlight={isDateList}
-                              energyLevel={task.energy_level || 'medium'}
-                              paletteId={paletteId}
-                              onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
-                              onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
-                              onDailyToggle={() => onTaskDailyToggle(task.id)}
-                              onHighlightToggle={() => onTaskHighlightToggle(task.id)}
-                              onComplete={() => onTaskComplete(task.id)}
-                              onDelete={() => onTaskDelete(task.id)}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                  {provided.placeholder}
+      {/* Drop zone - ALWAYS rendered for drag-drop */}
+      <Droppable droppableId={id}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`
+              transition-colors duration-150
+              ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50 ring-4 ring-blue-400 dark:ring-blue-500 ring-inset' : ''}
+              ${isExpanded ? 'px-4 pb-4' : 'min-h-[32px] mx-4 mb-2 rounded-lg border-2 border-dashed border-border/30 hover:border-blue-300'}
+            `}
+          >
+            {isExpanded && (
+              <>
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                  {tasks
+                    .filter(t => !t.is_completed)
+                    .sort((a, b) => a.position - b.position)
+                    .map((task, index) => (
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              style={{
+                                ...provided.draggableProps.style,
+                                opacity: snapshot.isDragging ? 0.8 : 1,
+                              }}
+                            >
+                              <TaskCard
+                                id={task.id}
+                                title={task.title}
+                                durationMinutes={task.duration_minutes}
+                                colorIndex={task.color_index}
+                                isCompleted={task.is_completed}
+                                isScheduled={scheduledTaskIds.includes(task.id)}
+                                isDaily={task.is_daily}
+                                isInPurgatory={isInbox}
+                                isHighlight={task.highlight_date !== null}
+                                canHighlight={isDateList}
+                                energyLevel={task.energy_level || 'medium'}
+                                paletteId={paletteId}
+                                onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
+                                onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
+                                onDailyToggle={() => onTaskDailyToggle(task.id)}
+                                onHighlightToggle={() => onTaskHighlightToggle(task.id)}
+                                onComplete={() => onTaskComplete(task.id)}
+                                onDelete={() => onTaskDelete(task.id)}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
                 </div>
-              )}
-            </Droppable>
-          
-          {/* Roll Over button - only for date lists with incomplete tasks */}
-          {isDateList && !isInbox && tasks.filter(t => !t.is_completed).length > 0 && onRollOver && (
-            <button
-              onClick={onRollOver}
-              className="w-full mt-2 mb-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md border border-dashed border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <span>→</span>
-              <span>Roll over to tomorrow</span>
-            </button>
-          )}
+                
+                {/* Roll Over button - only for date lists with incomplete tasks */}
+                {isDateList && !isInbox && tasks.filter(t => !t.is_completed).length > 0 && onRollOver && (
+                  <button
+                    onClick={onRollOver}
+                    className="w-full mt-2 mb-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md border border-dashed border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>→</span>
+                    <span>Roll over to tomorrow</span>
+                  </button>
+                )}
 
-          {/* Add task input */}
-          <AddTaskInput onAdd={onTaskAdd} />
-        </div>
-      )}
+                {/* Add task input */}
+                <AddTaskInput onAdd={onTaskAdd} />
+              </>
+            )}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
       
       {/* Duplicate input */}
       {isDuplicating && (

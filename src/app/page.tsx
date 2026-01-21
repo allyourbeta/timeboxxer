@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
+import { DragDropContext } from '@hello-pangea/dnd'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { useAppHandlers, useAuth } from '@/hooks'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
-import { FullCalendarView } from '@/components/Calendar'
+import { CalendarView } from '@/components/Calendar'
 import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
 import { TOAST_DURATION_MS } from '@/lib/constants'
@@ -216,67 +217,68 @@ export default function Home() {
         weekData={getWeekData()}
       />
 
-      <div className="flex h-[calc(100vh-3.5rem)]">
-        {/* Lists Panel */}
-        {(panelMode === 'both' || panelMode === 'lists-only') && (
-          <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} overflow-auto p-4`}>
-            <ListPanel
-              lists={visibleLists}
-              tasks={tasks}
-              paletteId={PALETTE_ID}
-              editingListId={editingListId}
-              duplicatingListId={duplicatingListId}
-              showNewListInput={showNewListInput}
-              expandedListIds={expandedListIds}
-              scheduledTaskIds={scheduledTasks.map(t => t.id)}
-              onShowNewListInput={() => setShowNewListInput(true)}
-              onCreateList={handleListCreate}
-              onEditList={handleListEdit}
-              onDeleteList={handleDeleteListClick}
-              onDuplicateList={handleListDuplicate}
-              onSetEditingListId={setEditingListId}
-              onSetDuplicatingListId={setDuplicatingListId}
-              onToggleListExpanded={toggleListExpanded}
-              onTaskDurationChange={async (taskId, newDuration) => {
-                const { updateTask } = useTaskStore.getState()
-                await updateTask(taskId, { duration_minutes: newDuration })
-              }}
-              onTaskDelete={handleTaskDelete}
-              onTaskCreate={handleTaskAdd}
-              onTaskDailyToggle={handleTaskDailyToggle}
-              onTaskEnergyChange={handleTaskEnergyChange}
-              onTaskHighlightToggle={(taskId: string) => {
-                const today = new Date().toISOString().split('T')[0] // Get today in ISO format
-                handleTaskHighlightToggle(taskId, today)
-              }}
-              onTaskComplete={handleTaskComplete}
-              onReorderTasks={handleReorderTasks}
-              onRollOverTasks={handleRollOverTasks}
-              onDragEnd={handleDragEnd}
-              columnCount={listColumnCount}
-            />
-          </div>
-        )}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex h-[calc(100vh-3.5rem)]">
+          {/* Lists Panel */}
+          {(panelMode === 'both' || panelMode === 'lists-only') && (
+            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} overflow-auto p-4`}>
+              <ListPanel
+                lists={visibleLists}
+                tasks={tasks}
+                paletteId={PALETTE_ID}
+                editingListId={editingListId}
+                duplicatingListId={duplicatingListId}
+                showNewListInput={showNewListInput}
+                expandedListIds={expandedListIds}
+                scheduledTaskIds={scheduledTasks.map(t => t.id)}
+                onShowNewListInput={() => setShowNewListInput(true)}
+                onCreateList={handleListCreate}
+                onEditList={handleListEdit}
+                onDeleteList={handleDeleteListClick}
+                onDuplicateList={handleListDuplicate}
+                onSetEditingListId={setEditingListId}
+                onSetDuplicatingListId={setDuplicatingListId}
+                onToggleListExpanded={toggleListExpanded}
+                onTaskDurationChange={async (taskId, newDuration) => {
+                  const { updateTask } = useTaskStore.getState()
+                  await updateTask(taskId, { duration_minutes: newDuration })
+                }}
+                onTaskDelete={handleTaskDelete}
+                onTaskCreate={handleTaskAdd}
+                onTaskDailyToggle={handleTaskDailyToggle}
+                onTaskEnergyChange={handleTaskEnergyChange}
+                onTaskHighlightToggle={(taskId: string) => {
+                  const today = new Date().toISOString().split('T')[0] // Get today in ISO format
+                  handleTaskHighlightToggle(taskId, today)
+                }}
+                onTaskComplete={handleTaskComplete}
+                onReorderTasks={handleReorderTasks}
+                onRollOverTasks={handleRollOverTasks}
+                columnCount={listColumnCount}
+              />
+            </div>
+          )}
 
-        {/* Calendar Panel */}
-        {(panelMode === 'both' || panelMode === 'calendar-only') && (
-          <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border flex flex-col`}>
-            <FullCalendarView
-              tasks={tasks}
-              paletteId={PALETTE_ID}
-              onExternalDrop={handleExternalDrop}
-              onEventMove={handleEventMove}
-              onUnschedule={handleUnschedule}
-              onComplete={handleTaskComplete}
-              onDurationChange={async (taskId, newDuration) => {
-                const { updateTask } = useTaskStore.getState()
-                await updateTask(taskId, { duration_minutes: newDuration })
-              }}
-              onCreateTask={handleCreateCalendarTask}
-            />
-          </div>
-        )}
-      </div>
+          {/* Calendar Panel */}
+          {(panelMode === 'both' || panelMode === 'calendar-only') && (
+            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border flex flex-col`}>
+              <CalendarView
+                tasks={tasks}
+                paletteId={PALETTE_ID}
+                onExternalDrop={handleExternalDrop}
+                onEventMove={handleEventMove}
+                onUnschedule={handleUnschedule}
+                onComplete={handleTaskComplete}
+                onDurationChange={async (taskId, newDuration) => {
+                  const { updateTask } = useTaskStore.getState()
+                  await updateTask(taskId, { duration_minutes: newDuration })
+                }}
+                onCreateTask={handleCreateCalendarTask}
+              />
+            </div>
+          )}
+        </div>
+      </DragDropContext>
 
       {/* Focus Mode */}
       {focusTask && (

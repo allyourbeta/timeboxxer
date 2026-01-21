@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { DURATION_OPTIONS } from '@/lib/constants'
 import { getLocalTodayISO, getLocalTomorrowISO, createLocalTimestamp } from '@/lib/dateUtils'
+import { parseSlotId, slotIdToTimestamp } from '@/lib/calendarUtils'
+import { processDragEnd } from '@/services'
 import type { Task, List } from '@/types/app'
 import type { DropResult } from '@hello-pangea/dnd'
 
@@ -45,6 +47,7 @@ export function useAppHandlers() {
     taskId: string
     taskTitle: string
   } | null>(null)
+  
 
   // === TASK HANDLERS ===
   
@@ -133,71 +136,45 @@ export function useAppHandlers() {
   }
 
   const handleDragEnd = async (result: DropResult) => {
-    console.log('🎯 Drag ended:', result)
+    const operation = await processDragEnd(result, tasks, lists)
     
-    // Dropped outside any droppable area
-    if (!result.destination) {
-      console.log('❌ Dropped outside droppable area')
-      return
+    switch (operation.type) {
+      case 'reorder':
+        if (operation.data?.taskIds) {
+          await reorderTasks(operation.data.taskIds)
+        }
+        break
+        
+      case 'schedule':
+        if (operation.data?.taskId && operation.data?.scheduledAt) {
+          await scheduleTask(operation.data.taskId, operation.data.scheduledAt)
+        }
+        break
+        
+      case 'reschedule':
+        if (operation.data?.taskId && operation.data?.scheduledAt) {
+          await scheduleTask(operation.data.taskId, operation.data.scheduledAt)
+        }
+        break
+        
+      case 'commit':
+        if (operation.data?.taskId && operation.data?.date) {
+          await commitTaskToDate(operation.data.taskId, operation.data.date)
+          console.log('✅ Task committed to date successfully')
+        }
+        break
+        
+      case 'move':
+        if (operation.data?.taskId && operation.data?.homeListId) {
+          await updateTask(operation.data.taskId, { home_list_id: operation.data.homeListId })
+        }
+        break
+        
+      case 'none':
+      default:
+        // No action needed
+        break
     }
-
-    const sourceId = result.source.droppableId
-    const destinationId = result.destination.droppableId
-    const taskId = result.draggableId
-
-    console.log('📦 Drag details:', { sourceId, destinationId, taskId })
-
-    // Same list, same position - no change
-    if (sourceId === destinationId && result.source.index === result.destination.index) {
-      console.log('📍 No position change')
-      return
-    }
-
-    // Same list - reorder within list
-    if (sourceId === destinationId) {
-      console.log('🔄 Reordering within same list')
-      const sourceList = lists.find(l => l.id === sourceId)
-      if (!sourceList) return
-
-      // Get tasks for this list using the same logic as the UI
-      let listTasks: typeof tasks = []
-      if (sourceList.system_type === 'date' && sourceList.list_date) {
-        listTasks = tasks
-          .filter(t => t.committed_date === sourceList.list_date && !t.is_completed)
-          .sort((a, b) => a.position - b.position)
-      } else {
-        listTasks = tasks
-          .filter(t => t.home_list_id === sourceId && !t.is_completed)
-          .sort((a, b) => a.position - b.position)
-      }
-
-      // Reorder the array
-      const reordered = Array.from(listTasks)
-      const [removed] = reordered.splice(result.source.index, 1)
-      reordered.splice(result.destination.index, 0, removed)
-
-      // Get new order of IDs
-      const newTaskIds = reordered.map(t => t.id)
-      console.log('📝 New order:', newTaskIds)
-      
-      await reorderTasks(newTaskIds)
-      return
-    }
-
-    // Different lists - check if destination is a date list
-    const destinationList = lists.find(l => l.id === destinationId)
-    if (!destinationList) {
-      console.log('❌ Destination list not found')
-      return
-    }
-
-    if (destinationList.system_type === 'date' && destinationList.list_date) {
-      console.log('📅 Committing task to date:', destinationList.list_date)
-      await commitTaskToDate(taskId, destinationList.list_date)
-      return
-    }
-
-    console.log('❓ Unhandled drag scenario')
   }
 
   // === SCHEDULE HANDLERS ===
@@ -305,6 +282,7 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
   const handleParkThought = async (title: string) => {
     await createParkedThought(title)
   }
+
 
   // === ROLL OVER HANDLER ===
 

@@ -1,1 +1,1 @@
-export { FullCalendarView } from './FullCalendarView'
+export { CalendarView } from './CalendarView'

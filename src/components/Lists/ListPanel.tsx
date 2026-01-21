@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Draggable } from '@fullcalendar/interaction'
-import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
 import { formatDateForDisplay } from '@/lib/dateList'
@@ -35,7 +33,6 @@ interface ListPanelProps {
   onTaskComplete: (taskId: string) => void
   onReorderTasks: (taskIds: string[]) => void
   onRollOverTasks: (fromListId: string) => void
-  onDragEnd: (result: DropResult) => void
   columnCount: 1 | 2
 }
 
@@ -65,41 +62,12 @@ export function ListPanel({
   onTaskComplete,
   onReorderTasks,
   onRollOverTasks,
-  onDragEnd,
   columnCount,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
   const hasInitializedExpansion = useRef(false)
 
-  // Initialize FullCalendar Draggable for external drag
-  useEffect(() => {
-    if (!containerRef.current) return
-    
-    const draggable = new Draggable(containerRef.current, {
-      itemSelector: '[data-task-id]',
-      eventData: (eventEl) => {
-        const taskId = eventEl.getAttribute('data-task-id')
-        const title = eventEl.getAttribute('data-title')
-        const duration = parseInt(eventEl.getAttribute('data-duration') || '30', 10)
-        const color = eventEl.getAttribute('data-color')
-        
-        return {
-          id: `temp-${taskId}`,
-          title: title || 'Task',
-          duration: { minutes: duration },
-          backgroundColor: color,
-          borderColor: color,
-          extendedProps: {
-            taskId,
-            isExternal: true
-          }
-        }
-      }
-    })
-    
-    return () => draggable.destroy()
-  }, [])
 
   // Initialize expansion state - expand first list with tasks
   useEffect(() => {
@@ -143,8 +111,7 @@ export function ListPanel({
   }
   
   return (
-    <DragDropContext onDragEnd={onDragEnd} key="main-dnd-context">
-      <div ref={containerRef} className="border-r border-theme overflow-y-auto">
+    <div ref={containerRef} className="border-r border-theme overflow-y-auto">
         <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
           {lists.map((list) => {
           const isExpanded = expandedListIds.has(list.id)
@@ -237,6 +204,5 @@ export function ListPanel({
         )}
         </div>
       </div>
-    </DragDropContext>
   )
 }
