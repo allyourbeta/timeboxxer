@@ -183,18 +183,17 @@ export function ListCard({
       {/* Expanded content with animation */}
       {isExpanded && (
         <div className="px-4 pb-4">
-          
-            <Droppable droppableId={id}>
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"
-                >
-                  {tasks
-                    .filter(t => !t.is_completed)
-                    .sort((a, b) => a.position - b.position)
-                    .map((task, index) => (
+          <Droppable droppableId={id} key={`${id}-${isExpanded}`}>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"
+              >
+                {tasks
+                  .filter(t => !t.is_completed)
+                  .sort((a, b) => a.position - b.position)
+                  .map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
                         {(provided, snapshot) => (
                           <div

@@ -143,7 +143,7 @@ export function ListPanel({
   }
   
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext onDragEnd={onDragEnd} key="main-dnd-context">
       <div ref={containerRef} className="border-r border-theme overflow-y-auto">
         <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
           {lists.map((list) => {
