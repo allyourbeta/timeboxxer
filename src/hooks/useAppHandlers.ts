@@ -238,7 +238,7 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     if (!list) return
     
     // Count tasks in this list
-    const taskCount = tasks.filter(t => t.home_list_id === listId).length
+    const taskCount = tasks.filter(t => t.home_list_id === listId && !t.is_completed).length
     
     if (taskCount === 0) {
       // No tasks to clear, do nothing (or show a toast "List is already empty")
@@ -282,7 +282,7 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     }
     
     // Check if list has tasks
-    const taskCount = tasks.filter(t => t.home_list_id === listId).length
+    const taskCount = tasks.filter(t => t.home_list_id === listId && !t.is_completed).length
     if (taskCount > 0) {
       // List is not empty - don't delete
       // The UI should prevent this, but this is a safety check
