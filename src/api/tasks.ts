@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/client'
 import { getCurrentUserId } from '@/utils/supabase/auth'
 import { DEFAULT_TASK_DURATION } from '@/lib/constants'
+import { getCompletedList, getParkedList } from './lists'
 import type { Task } from '@/types/app'
 
 // =============================================================================
@@ -146,40 +147,33 @@ export async function moveTask(taskId: string, newListId: string): Promise<void>
  */
 export async function completeTask(taskId: string): Promise<void> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  // First get the task to save its current list
-  const { data: task } = await supabase
+
+  // Step 1: Get the task's current list_id
+  const { data: task, error: taskError } = await supabase
     .from('tasks')
     .select('list_id')
     .eq('id', taskId)
     .single()
-  
+
+  if (taskError) throw taskError
   if (!task) throw new Error('Task not found')
-  
-  // Find the Completed list
-  const { data: completedList } = await supabase
-    .from('lists')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('list_type', 'completed')
-    .single()
-  
-  if (!completedList) throw new Error('Completed list not found')
-  
-  // Move task to Completed list and mark completion
-  const { error } = await supabase
+
+  // Step 2: Get Completed list (creates if missing)
+  const completedList = await getCompletedList()
+
+  // Step 3: Update the task
+  const { error: updateError } = await supabase
     .from('tasks')
-    .update({ 
+    .update({
       previous_list_id: task.list_id,
       list_id: completedList.id,
       completed_at: new Date().toISOString(),
-      scheduled_at: null, // Clear schedule
-      updated_at: new Date().toISOString() 
+      scheduled_at: null,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', taskId)
-  
-  if (error) throw error
+
+  if (updateError) throw updateError
 }
 
 /**
@@ -187,64 +181,51 @@ export async function completeTask(taskId: string): Promise<void> {
  */
 export async function uncompleteTask(taskId: string): Promise<void> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  // Get the task to find its previous list
-  const { data: task } = await supabase
+
+  // Step 1: Get the task
+  const { data: task, error: taskError } = await supabase
     .from('tasks')
-    .select('previous_list_id')
+    .select('list_id, previous_list_id')
     .eq('id', taskId)
     .single()
-  
+
+  if (taskError) throw taskError
   if (!task) throw new Error('Task not found')
-  
+
+  // Step 2: Determine target list
   let targetListId = task.previous_list_id
-  
-  // If previous list is gone, use Parked list
-  if (!targetListId) {
-    const { data: parkedList } = await supabase
-      .from('lists')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('list_type', 'parked')
-      .single()
-    
-    if (!parkedList) throw new Error('Parked list not found')
-    targetListId = parkedList.id
-  } else {
-    // Check if previous list still exists
+
+  // Step 3: Check if previous list still exists
+  if (targetListId) {
     const { data: previousList } = await supabase
       .from('lists')
       .select('id')
       .eq('id', targetListId)
       .single()
-    
+
     if (!previousList) {
-      // Previous list is gone, use Parked
-      const { data: parkedList } = await supabase
-        .from('lists')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('list_type', 'parked')
-        .single()
-      
-      if (!parkedList) throw new Error('Parked list not found')
-      targetListId = parkedList.id
+      targetListId = null
     }
   }
-  
-  // Move task back and clear completion
-  const { error } = await supabase
+
+  // Step 4: Fall back to Parked if no valid previous list
+  if (!targetListId) {
+    const parkedList = await getParkedList()
+    targetListId = parkedList.id
+  }
+
+  // Step 5: Update the task
+  const { error: updateError } = await supabase
     .from('tasks')
-    .update({ 
+    .update({
       list_id: targetListId,
       previous_list_id: null,
-      completed_at: null, 
-      updated_at: new Date().toISOString() 
+      completed_at: null,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', taskId)
-  
-  if (error) throw error
+
+  if (updateError) throw updateError
 }
 
 

@@ -26,33 +26,61 @@ export async function getLists(): Promise<List[]> {
  */
 export async function getParkedList(): Promise<List> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  // Try to find existing Parked list
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Step 1: Try to find existing Parked list
   const { data: existing, error: findError } = await supabase
     .from('lists')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .eq('list_type', 'parked')
     .single()
-  
+
+  // If found, return it
   if (!findError && existing) {
-    return existing
+    return existing as List
   }
-  
-  // Create Parked list if it doesn't exist
-  const { data: list, error: createError } = await supabase
+
+  // Step 2: Only proceed to create if error is "no rows found" (PGRST116)
+  if (findError && (findError as any).code !== 'PGRST116') {
+    throw findError
+  }
+
+  // Step 3: Create the Parked list
+  const { data: created, error: createError } = await supabase
     .from('lists')
     .insert({
-      user_id: userId,
+      user_id: user.id,
       name: 'Parked Items',
-      list_type: 'parked',
+      list_type: 'parked'
     })
     .select()
     .single()
-  
-  if (createError) throw createError
-  return list
+
+  // Step 4: Handle race condition (another tab created it)
+  if (createError) {
+    if ((createError as any).code === '23505') {
+      const { data: existing2, error: refetchError } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('list_type', 'parked')
+        .single()
+
+      if (refetchError) throw refetchError
+      if (!existing2) throw new Error('Parked list not found after race condition')
+      return existing2 as List
+    }
+    throw createError
+  }
+
+  // Step 5: Guard against null
+  if (!created) {
+    throw new Error('Failed to create Parked list (no data returned)')
+  }
+
+  return created as List
 }
 
 /**
@@ -60,33 +88,61 @@ export async function getParkedList(): Promise<List> {
  */
 export async function getCompletedList(): Promise<List> {
   const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
-  // Try to find existing Completed list
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Step 1: Try to find existing Completed list
   const { data: existing, error: findError } = await supabase
     .from('lists')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .eq('list_type', 'completed')
     .single()
-  
+
+  // If found, return it
   if (!findError && existing) {
-    return existing
+    return existing as List
   }
-  
-  // Create Completed list if it doesn't exist
-  const { data: list, error: createError } = await supabase
+
+  // Step 2: Only proceed to create if error is "no rows found" (PGRST116)
+  if (findError && (findError as any).code !== 'PGRST116') {
+    throw findError
+  }
+
+  // Step 3: Create the Completed list
+  const { data: created, error: createError } = await supabase
     .from('lists')
     .insert({
-      user_id: userId,
+      user_id: user.id,
       name: 'Completed',
-      list_type: 'completed',
+      list_type: 'completed'
     })
     .select()
     .single()
-  
-  if (createError) throw createError
-  return list
+
+  // Step 4: Handle race condition (another tab created it)
+  if (createError) {
+    if ((createError as any).code === '23505') {
+      const { data: existing2, error: refetchError } = await supabase
+        .from('lists')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('list_type', 'completed')
+        .single()
+
+      if (refetchError) throw refetchError
+      if (!existing2) throw new Error('Completed list not found after race condition')
+      return existing2 as List
+    }
+    throw createError
+  }
+
+  // Step 5: Guard against null
+  if (!created) {
+    throw new Error('Failed to create Completed list (no data returned)')
+  }
+
+  return created as List
 }
 
 // =============================================================================
