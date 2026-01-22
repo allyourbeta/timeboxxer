@@ -106,13 +106,6 @@ export function calculateSlotIndex(clientY: number, calendarRect: DOMRect, scrol
   const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR // 45px per 15-min slot
   const slotIndex = Math.floor(Math.max(0, relativeY) / slotHeightPx)
   
-  console.log('📐 calculateSlotIndex Debug:')
-  console.log('  relativeY:', relativeY)
-  console.log('  SLOT_HEIGHT:', SLOT_HEIGHT)
-  console.log('  SLOTS_PER_HOUR:', SLOTS_PER_HOUR)
-  console.log('  slotHeightPx:', slotHeightPx)
-  console.log('  final slotIndex:', slotIndex)
-  
   return slotIndex
 }
 
@@ -271,8 +264,6 @@ export function calculateTaskWidths(tasks: ScheduledTask[]): Map<string, TaskLay
       if (!columnAssignments.has(task2.id)) columnAssignments.set(task2.id, 1)
     }
   }
-
-  console.log('Column assignments:', Object.fromEntries(columnAssignments))
 
   // Step 3: Build result map with widths and column assignments
   for (const task of tasks) {

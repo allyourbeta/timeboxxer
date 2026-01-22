@@ -115,14 +115,29 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   
   completeTask: async (taskId) => {
-    // Optimistic update - remove from tasks
+    const task = get().tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    // Optimistic update - update fields, DON'T remove the task
     set(state => ({
-      tasks: state.tasks.filter(t => t.id !== taskId)
+      tasks: state.tasks.map(t =>
+        t.id === taskId
+          ? {
+              ...t,
+              previous_list_id: t.list_id,
+              completed_at: new Date().toISOString(),
+              scheduled_at: null,
+            }
+          : t
+      )
     }))
-    
+
     try {
       await apiCompleteTask(taskId)
+      // Reload to get correct list_id from server
+      await get().loadTasks()
     } catch (error) {
+      // Reload to revert on error
       await get().loadTasks()
       set({ error: (error as Error).message })
       throw error

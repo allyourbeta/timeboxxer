@@ -80,24 +80,6 @@ export function parseTimestamp(timestamp: string): { date: string; time: string 
   return { date: datePart, time }
 }
 
-/**
- * Get tasks scheduled for a specific calendar date
- * Simple string comparison - no timezone math needed
- * 
- * @param tasks - Array of tasks with scheduled_at field
- * @param targetDate - Date to filter by (YYYY-MM-DD)
- * @returns Filtered tasks
- */
-export function getTasksForCalendarDate<T extends { scheduled_at: string | null; is_completed: boolean }>(
-  tasks: T[],
-  targetDate: string
-): T[] {
-  return tasks.filter(t => {
-    if (!t.scheduled_at || t.is_completed) return false
-    const taskDate = t.scheduled_at.split('T')[0]
-    return taskDate === targetDate
-  })
-}
 
 /**
  * Check if a scheduled timestamp is overdue (before today)

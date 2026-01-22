@@ -18,10 +18,15 @@ export function useAuth(): UseAuthReturn {
     const supabase = createClient()
     
     // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error('Failed to get session:', error)
+        setLoading(false)
+      })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

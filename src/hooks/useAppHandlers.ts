@@ -56,11 +56,19 @@ export function useAppHandlers() {
   // === TASK HANDLERS ===
   
   const handleTaskAdd = async (listId: string, title: string) => {
-    await createTask(listId, title)
+    try {
+      await createTask(listId, title)
+    } catch (error) {
+      console.error('Failed to add task:', error)
+    }
   }
 
   const handleTaskDelete = async (taskId: string) => {
-    await deleteTask(taskId)
+    try {
+      await deleteTask(taskId)
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+    }
   }
 
   const handleTaskDiscardClick = (taskId: string, taskTitle: string) => {
@@ -70,8 +78,12 @@ export function useAppHandlers() {
   const handleTaskDiscardConfirm = async () => {
     if (!discardConfirm) return
     
-    await deleteTask(discardConfirm.taskId)
-    setDiscardConfirm(null)
+    try {
+      await deleteTask(discardConfirm.taskId)
+      setDiscardConfirm(null)
+    } catch (error) {
+      console.error('Failed to discard task:', error)
+    }
   }
 
   const handleTaskDiscardCancel = () => {
@@ -89,20 +101,36 @@ export function useAppHandlers() {
       newIndex = currentIndex >= durations.length - 1 ? 0 : currentIndex + 1
     }
     
-    await updateTask(taskId, { duration_minutes: durations[newIndex] })
+    try {
+      await updateTask(taskId, { duration_minutes: durations[newIndex] })
+    } catch (error) {
+      console.error('Failed to update duration:', error)
+    }
   }
 
   const handleTaskComplete = async (taskId: string) => {
-    await completeTask(taskId)
+    try {
+      await completeTask(taskId)
+    } catch (error) {
+      console.error('Failed to complete task:', error)
+    }
   }
 
   const handleTaskUncomplete = async (taskId: string) => {
-    await uncompleteTask(taskId)
+    try {
+      await uncompleteTask(taskId)
+    } catch (error) {
+      console.error('Failed to restore task:', error)
+    }
   }
 
 
   const handleTaskEnergyChange = async (taskId: string, level: 'high' | 'medium' | 'low') => {
-    await updateTask(taskId, { energy_level: level })
+    try {
+      await updateTask(taskId, { energy_level: level })
+    } catch (error) {
+      console.error('Failed to update energy:', error)
+    }
   }
 
 
@@ -114,7 +142,6 @@ export function useAppHandlers() {
     switch (operation.type) {
       case 'reorder':
         // Reordering removed in new schema
-        console.log('Reordering not supported in new schema')
         break
         
       case 'schedule':
@@ -148,13 +175,21 @@ export function useAppHandlers() {
   // === LIST HANDLERS ===
 
   const handleListCreate = async (name: string) => {
-    await createList(name)
-    setShowNewListInput(false)
+    try {
+      await createList(name)
+      setShowNewListInput(false)
+    } catch (error) {
+      console.error('Failed to create list:', error)
+    }
   }
 
   const handleListEdit = async (listId: string, newName: string) => {
-    await updateList(listId, newName)
-    setEditingListId(null)
+    try {
+      await updateList(listId, newName)
+      setEditingListId(null)
+    } catch (error) {
+      console.error('Failed to rename list:', error)
+    }
   }
 
 
@@ -181,9 +216,12 @@ export function useAppHandlers() {
   const handleClearListConfirm = async () => {
     if (!clearListConfirm) return
     
-    await clearTasksInList(clearListConfirm.listId)
-    
-    setClearListConfirm(null)
+    try {
+      await clearTasksInList(clearListConfirm.listId)
+      setClearListConfirm(null)
+    } catch (error) {
+      console.error('Failed to clear list:', error)
+    }
   }
 
   const handleClearListCancel = () => {
@@ -212,7 +250,6 @@ export function useAppHandlers() {
 
     // Check if list has tasks
     const taskCount = tasks.filter(t => t.list_id === listId && !t.completed_at).length
-    console.log('DEBUG delete:', { listId, taskCount, list: list?.list_type, list_date: list?.list_date })
 
     if (taskCount > 0) {
       // List is not empty - don't delete
@@ -222,7 +259,11 @@ export function useAppHandlers() {
     }
     
     // List is empty, safe to delete
-    await deleteList(listId)
+    try {
+      await deleteList(listId)
+    } catch (error) {
+      console.error('Failed to delete list:', error)
+    }
   }
 
   const handleUndoDelete = async () => {
@@ -230,12 +271,15 @@ export function useAppHandlers() {
     
     clearTimeout(pendingDelete.timeoutId)
     
-    // Move tasks back
-    for (const task of pendingDelete.originalTasks) {
-      await moveTask(task.id, task.originalListId)
+    try {
+      // Move tasks back
+      for (const task of pendingDelete.originalTasks) {
+        await moveTask(task.id, task.originalListId)
+      }
+      setPendingDelete(null)
+    } catch (error) {
+      console.error('Failed to undo delete:', error)
     }
-    
-    setPendingDelete(null)
   }
 
   // === FOCUS MODE HANDLERS ===
@@ -249,32 +293,36 @@ export function useAppHandlers() {
   }
 
   const handleFocusComplete = async (taskId: string) => {
-    await completeTask(taskId)
-    setFocusTaskId(null)
+    try {
+      await completeTask(taskId)
+      setFocusTaskId(null)
+    } catch (error) {
+      console.error('Failed to complete focused task:', error)
+    }
   }
 
   // === PARK HANDLER ===
 
   const handleParkThought = async (title: string) => {
-    await createParkedThought(title)
+    try {
+      await createParkedThought(title)
+    } catch (error) {
+      console.error('Failed to park thought:', error)
+    }
   }
 
 
   // === ROLL OVER HANDLER ===
 
   const handleRollOverTasks = async (fromListId: string) => {
-    console.log('🔄 handleRollOverTasks called with:', fromListId)
-    
     // Find the list to get its date
     const fromList = lists.find(l => l.id === fromListId)
     
     if (!fromList?.list_date) {
-      console.log('❌ No list_date found')
       return
     }
     
     const toDate = getLocalTomorrowISO()
-    console.log('📅 Rolling over from:', fromList.list_date, 'to:', toDate)
     
     try {
       // Ensure tomorrow's date list exists
@@ -286,13 +334,9 @@ export function useAppHandlers() {
         !t.completed_at
       )
       
-      console.log('📝 Moving tasks:', tasksToMove.length)
-      
       for (const task of tasksToMove) {
         await moveTask(task.id, tomorrowList.id)
       }
-      
-      console.log('✅ Roll over completed, moved:', tasksToMove.length)
     } catch (error) {
       console.error('💥 Roll over failed:', error)
     }

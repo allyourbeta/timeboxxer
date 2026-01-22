@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
+import { Check, X } from 'lucide-react'
 import { getColor } from '@/lib/palettes'
 import { Task } from '@/types/app'
 import { 
@@ -97,6 +98,7 @@ export function CalendarView({
   
   // State for inline task creation
   const [editingSlot, setEditingSlot] = useState<string | null>(null)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   // Register cancel callback with parent for drag start handling
   useEffect(() => {
@@ -153,7 +155,7 @@ export function CalendarView({
   const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR // 45px per 15-min slot
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background" onClick={() => setSelectedTaskId(null)}>
       {/* Calendar header */}
       <div className="flex-shrink-0 p-4 border-b border-border">
         <h2 className="text-lg font-semibold text-foreground">
@@ -267,17 +269,43 @@ export function CalendarView({
                     left: `${leftPercent}%`,
                     backgroundColor,
                   }}
-                  onClick={() => {
-                    // TODO: Show task actions popover
-                    console.log('Task clicked:', task.id)
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedTaskId(selectedTaskId === task.id ? null : task.id)
                   }}
                   data-testid={`scheduled-task-${task.id}`}
                   data-scheduled-time={startTime}
                 >
                   <div className="flex items-center h-full px-2">
-                    <span className="truncate text-sm font-semibold text-white drop-shadow-sm">
+                    <span className="truncate text-sm font-semibold text-white drop-shadow-sm flex-1">
                       {task.title}
                     </span>
+                    {selectedTaskId === task.id && (
+                      <div className="flex gap-1 ml-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onComplete(task.id)
+                            setSelectedTaskId(null)
+                          }}
+                          className="p-1 bg-green-500 hover:bg-green-600 rounded text-white"
+                          title="Complete"
+                        >
+                          <Check className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onUnschedule(task.id)
+                            setSelectedTaskId(null)
+                          }}
+                          className="p-1 bg-gray-500 hover:bg-gray-600 rounded text-white"
+                          title="Remove from calendar"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
