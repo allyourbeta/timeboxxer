@@ -274,16 +274,11 @@ export function CalendarView({
                   data-testid={`scheduled-task-${task.id}`}
                   data-scheduled-time={startTime}
                 >
-                      <div className="p-1.5 h-full flex flex-col">
-                        <div className="text-sm font-semibold truncate text-white drop-shadow-sm">
-                          {task.title}
-                        </div>
-                        {height > 35 && (
-                          <div className="text-xs text-white/90 mt-0.5">
-                            {task.duration_minutes}m
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex items-center h-full px-2">
+                    <span className="truncate text-sm font-semibold text-white drop-shadow-sm">
+                      {task.title}
+                    </span>
+                  </div>
                 </div>
               )
             })}
