@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
 import { getColor } from '@/lib/palettes'
 import { Task } from '@/types/app'
@@ -14,8 +14,60 @@ import {
   getInitialScrollPosition,
   formatSlotId,
   generateAllSlotIds,
-  calculateTaskWidths
+  calculateTaskWidths,
+  parseSlotId
 } from '@/lib/calendarUtils'
+
+// SlotInput component for inline task creation
+function SlotInput({ 
+  onSubmit, 
+  onCancel 
+}: { 
+  onSubmit: (title: string) => void
+  onCancel: () => void 
+}) {
+  const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (value.trim()) {
+        onSubmit(value.trim())
+      } else {
+        onCancel()
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      onCancel()
+    }
+  }
+  
+  const handleBlur = () => {
+    // Small delay to allow click events to process first
+    setTimeout(() => {
+      onCancel()
+    }, 100)
+  }
+  
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      placeholder="New task..."
+      className="absolute inset-x-0 top-0 h-8 px-2 text-sm bg-white border-2 border-blue-500 rounded shadow-lg focus:outline-none z-50"
+      onClick={(e) => e.stopPropagation()}
+    />
+  )
+}
 
 interface CalendarViewProps {
   tasks: Task[]
@@ -26,6 +78,7 @@ interface CalendarViewProps {
   onComplete: (taskId: string) => void
   onCreateTask: (title: string, time: string) => void
   onDurationChange: (taskId: string, newDuration: number) => void
+  onDragStart?: (cancelCallback: () => void) => void
 }
 
 export function CalendarView({
@@ -37,9 +90,20 @@ export function CalendarView({
   onComplete,
   onCreateTask,
   onDurationChange,
+  onDragStart,
 }: CalendarViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const hourLabels = getHourLabels()
+  
+  // State for inline task creation
+  const [editingSlot, setEditingSlot] = useState<string | null>(null)
+
+  // Register cancel callback with parent for drag start handling
+  useEffect(() => {
+    if (onDragStart) {
+      onDragStart(() => setEditingSlot(null))
+    }
+  }, [onDragStart])
 
   // Scroll to "now minus 1.5 hours" on mount
   useEffect(() => {
@@ -62,6 +126,28 @@ export function CalendarView({
   // Generate all slot IDs for the 24-hour period (96 slots with 15-min intervals)
   const slotIds = generateAllSlotIds()
   
+  // Click handler for creating tasks inline
+  const handleSlotClick = (e: React.MouseEvent, slotId: string) => {
+    // Only trigger if clicking the slot background, not a task
+    if (e.target !== e.currentTarget) return
+    
+    // Parse slot ID to get time
+    const parsed = parseSlotId(slotId)
+    if (!parsed) return
+    
+    const slotTime = `${parsed.hours.toString().padStart(2, '0')}:${parsed.minutes.toString().padStart(2, '0')}`
+    
+    // Check max 2 rule - count tasks at this exact time
+    const tasksInSlot = scheduledTasks.filter(task => {
+      if (!task.scheduled_at) return false
+      const taskTime = timestampToTime(task.scheduled_at)
+      return taskTime === slotTime
+    })
+    
+    if (tasksInSlot.length >= 2) return
+    
+    setEditingSlot(slotTime)
+  }
 
   // Helper to get slot height in pixels
   const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR // 45px per 15-min slot
@@ -118,7 +204,7 @@ export function CalendarView({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={`
-                        absolute w-full border-b 
+                        absolute w-full border-b cursor-pointer
                         ${isHourBoundary ? 'border-border/50' : 'border-border/20'}
                         ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 ring-inset' : ''}
                         transition-colors duration-150
@@ -128,8 +214,18 @@ export function CalendarView({
                         height: `${slotHeightPx}px`
                       }}
                       data-droppable-id={slotId}
+                      onClick={(e) => handleSlotClick(e, slotId)}
                     >
                       {provided.placeholder}
+                      {editingSlot && editingSlot === `${hour.toString().padStart(2, '0')}:${(quarter * 15).toString().padStart(2, '0')}` && (
+                        <SlotInput
+                          onSubmit={(title) => {
+                            onCreateTask(title, editingSlot)
+                            setEditingSlot(null)
+                          }}
+                          onCancel={() => setEditingSlot(null)}
+                        />
+                      )}
                     </div>
                   )}
                 </Droppable>

@@ -50,32 +50,40 @@ export function useScheduleHandlers() {
   }
 
   const handleCreateCalendarTask = async (title: string, time: string) => {
-    // Find the "Parked" list for new calendar tasks
-    const parkedList = lists.find(l => l.list_type === 'parked')
-    if (!parkedList) throw new Error('Parked list not found')
+    if (!title.trim()) return
     
-    const { createTask, scheduleTask } = useTaskStore.getState()
-    
-    // Create the task in the parked list
-    await createTask(parkedList.id, title)
-    
-    // Get the newly created task (it will be the last one)
-    const updatedTasks = useTaskStore.getState().tasks
-    const newTask = updatedTasks[updatedTasks.length - 1]
-    
-    // Schedule it for the specified time
-    const today = new Date().toISOString().split('T')[0]
-    const scheduledAt = createLocalTimestamp(today, time)
-    
-    // Check if scheduling is allowed (max 2 overlapping tasks)
-    const validation = canScheduleTask(updatedTasks, newTask.id, scheduledAt, newTask.duration_minutes)
-    if (!validation.allowed) {
-      alert(validation.message)
-      // If we can't schedule it, leave it in parked list
-      return
+    try {
+      // Get today's date in ISO format
+      const today = getLocalTodayISO()
+      
+      // Ensure today's date list exists
+      const { ensureDateList } = useListStore.getState()
+      const dateList = await ensureDateList(today)
+      
+      // Create the task in today's date list
+      const { createTask, scheduleTask } = useTaskStore.getState()
+      await createTask(dateList.id, title.trim())
+      
+      // Get the newly created task (it will be the last one)
+      const updatedTasks = useTaskStore.getState().tasks
+      const newTask = updatedTasks[updatedTasks.length - 1]
+      
+      // Schedule it for the specified time
+      const scheduledAt = createLocalTimestamp(today, time)
+      
+      // Check if scheduling is allowed (max 2 overlapping tasks)
+      const validation = canScheduleTask(updatedTasks, newTask.id, scheduledAt, newTask.duration_minutes)
+      if (!validation.allowed) {
+        alert(validation.message)
+        // If we can't schedule it, leave it in the date list unscheduled
+        return
+      }
+      
+      await scheduleTask(newTask.id, scheduledAt)
+    } catch (error) {
+      console.error('Failed to create calendar task:', error)
+      alert('Failed to create task')
     }
-    
-    await scheduleTask(newTask.id, scheduledAt)
   }
 
   const handleReorderTasks = async (taskIds: string[]) => {

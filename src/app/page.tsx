@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { useAppHandlers, useAuth, useScheduleHandlers } from '@/hooks'
@@ -68,6 +68,9 @@ export default function Home() {
     handleUnschedule,
     handleCreateCalendarTask,
   } = useScheduleHandlers()
+
+  // Ref to track calendar editing cancellation
+  const cancelEditingRef = useRef<(() => void) | null>(null)
 
   // Load data on mount (only when authenticated)
   useEffect(() => {
@@ -220,7 +223,15 @@ export default function Home() {
         weekData={getWeekData()}
       />
 
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DragDropContext 
+        onDragEnd={handleDragEnd}
+        onDragStart={() => {
+          // Cancel any ongoing slot editing when drag starts
+          if (cancelEditingRef.current) {
+            cancelEditingRef.current()
+          }
+        }}
+      >
         <div className="flex h-[calc(100vh-3.5rem)]">
           {/* Lists Panel */}
           {(panelMode === 'both' || panelMode === 'lists-only') && (
@@ -269,6 +280,9 @@ export default function Home() {
                   await updateTask(taskId, { duration_minutes: newDuration })
                 }}
                 onCreateTask={handleCreateCalendarTask}
+                onDragStart={(cancelCallback) => {
+                  cancelEditingRef.current = cancelCallback
+                }}
               />
             </div>
           )}
