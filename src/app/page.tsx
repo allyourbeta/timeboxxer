@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
-import { useAppHandlers, useAuth } from '@/hooks'
+import { useAppHandlers, useAuth, useScheduleHandlers } from '@/hooks'
 import { Header, CompletedView } from '@/components/Layout'
 import { ListPanel } from '@/components/Lists'
 import { CalendarView } from '@/components/Calendar'
@@ -42,10 +42,6 @@ export default function Home() {
     handleTaskUncomplete,
     handleTaskEnergyChange,
     handleDragEnd,
-    handleExternalDrop,
-    handleEventMove,
-    handleUnschedule,
-    handleCreateCalendarTask,
     handleListCreate,
     handleListEdit,
     handleDeleteListClick,
@@ -64,6 +60,14 @@ export default function Home() {
     handleTaskDiscardConfirm,
     handleTaskDiscardCancel,
   } = useAppHandlers()
+
+  // Schedule handlers with proper overlap validation
+  const {
+    handleExternalDrop,
+    handleEventMove,
+    handleUnschedule,
+    handleCreateCalendarTask,
+  } = useScheduleHandlers()
 
   // Load data on mount (only when authenticated)
   useEffect(() => {

@@ -143,41 +143,7 @@ export function useAppHandlers() {
     }
   }
 
-  // === SCHEDULE HANDLERS ===
-const handleExternalDrop = async (taskId: string, time: string): Promise<void> => {
-  const today: string = getLocalTodayISO()
-  const scheduledAt: string = createLocalTimestamp(today, time)
-
-  await scheduleTask(taskId, scheduledAt)
-}
-
-const handleEventMove = async (taskId: string, newTime: string): Promise<void> => {
-  const task: Task | undefined = tasks.find((t: Task) => t.id === taskId)
-
-  if (task?.scheduled_at) {
-    const date: string = task.scheduled_at.split('T')[0]
-    const newScheduledAt: string = createLocalTimestamp(date, newTime)
-    await scheduleTask(taskId, newScheduledAt)
-  }
-}
-
-  const handleUnschedule = async (taskId: string) => {
-    await unscheduleTask(taskId)
-  }
-
-const handleCreateCalendarTask = async (title: string, time: string): Promise<void> => {
-  const parkedList: List | undefined = lists.find((l: List) => l.list_type === 'parked')
-  if (!parkedList) throw new Error('Parked list not found')
-
-  await createTask(parkedList.id, title)
-
-  const updatedTasks = useTaskStore.getState().tasks
-  const newTask = updatedTasks[updatedTasks.length - 1]
-
-  const today: string = getLocalTodayISO()
-  const scheduledAt: string = createLocalTimestamp(today, time)
-  await scheduleTask(newTask.id, scheduledAt)
-}
+  // Schedule handlers moved to useScheduleHandlers.ts
 
   // === LIST HANDLERS ===
 
@@ -346,12 +312,6 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     handleTaskUncomplete,
     handleTaskEnergyChange,
     handleDragEnd,
-    
-    // Schedule handlers
-    handleExternalDrop,
-    handleEventMove,
-    handleUnschedule,
-    handleCreateCalendarTask,
     
     // List handlers
     handleListCreate,

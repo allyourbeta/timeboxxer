@@ -254,35 +254,34 @@ export function calculateTaskWidths(tasks: ScheduledTask[]): Map<string, TaskLay
     }
   }
   
-  // Step 2: For each task, check if it shares ANY slot with another task
-  for (const task of tasks) {
-    const startSlot = timeToSlotIndex(task.scheduled_at)
-    const endSlot = startSlot + Math.ceil(task.duration_minutes / 15)
-    
-    let hasOverlap = false
-    let overlapPartner: string | null = null
-    
-    for (let slot = startSlot; slot < endSlot; slot++) {
-      const tasksInSlot = slotOccupancy.get(slot) || []
-      if (tasksInSlot.length > 1) {
-        hasOverlap = true
-        // Find the other task in this slot
-        overlapPartner = tasksInSlot.find(id => id !== task.id) || null
-        break
-      }
-    }
-    
-    if (hasOverlap) {
-      // 50% width, assign column based on start time
-      const partnerTask = tasks.find(t => t.id === overlapPartner)
-      const thisStart = new Date(task.scheduled_at).getTime()
-      const partnerStart = partnerTask ? new Date(partnerTask.scheduled_at).getTime() : Infinity
+  // Step 2: Assign columns to overlapping tasks
+  const columnAssignments = new Map<string, number>()
+
+  for (const [slot, taskIds] of slotOccupancy.entries()) {
+    if (taskIds.length === 2) {
+      const [task1, task2] = taskIds
+        .map(id => tasks.find(t => t.id === id)!)
+        .sort((a, b) => {
+          const timeCompare = a.scheduled_at!.localeCompare(b.scheduled_at!)
+          return timeCompare !== 0 ? timeCompare : a.id.localeCompare(b.id)
+        })
       
-      // Earlier task gets column 0 (left), later gets column 1 (right)
-      const column = thisStart <= partnerStart ? 0 : 1
+      // Only set if not already assigned
+      if (!columnAssignments.has(task1.id)) columnAssignments.set(task1.id, 0)
+      if (!columnAssignments.has(task2.id)) columnAssignments.set(task2.id, 1)
+    }
+  }
+
+  console.log('Column assignments:', Object.fromEntries(columnAssignments))
+
+  // Step 3: Build result map with widths and column assignments
+  for (const task of tasks) {
+    const column = columnAssignments.get(task.id)
+    if (column !== undefined) {
+      // Task has overlap, use 50% width with assigned column
       result.set(task.id, { width: 50, column })
     } else {
-      // 100% width, column 0
+      // No overlap, use 100% width at column 0
       result.set(task.id, { width: 100, column: 0 })
     }
   }
