@@ -24,7 +24,7 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
     const list = lists.find(l => l.id === listId)
     if (!list) return 'Unknown list'
     
-    return list.system_type === 'date' && list.list_date
+    return list.list_type === 'date' && list.list_date
       ? formatDateForDisplay(list.list_date)
       : list.name
   }
@@ -50,7 +50,7 @@ export function CompletedView({ tasks, lists, paletteId, onRestore }: CompletedV
               <div>
                 <div className="font-medium text-card-foreground">{task.title}</div>
                 <div className="text-xs text-muted-foreground">
-                  From: {getListName(task.home_list_id)} • {task.duration_minutes} min • 
+                  From: {getListName(task.previous_list_id || '')} • {task.duration_minutes} min • 
                   Completed {new Date(task.completed_at!).toLocaleString()}
                 </div>
               </div>

@@ -94,7 +94,7 @@ export function FocusMode({
           </h1>
           <div className="flex items-center justify-center gap-2 text-sm text-white/70">
             <span className="capitalize">{task.energy_level} energy</span>
-            {task.highlight_date && (
+            {false && (
               <>
                 <span>•</span>
                 <span className="text-yellow-300">Daily highlight</span>

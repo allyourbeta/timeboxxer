@@ -49,7 +49,7 @@ export function CalendarView({
   }, [])
 
   // Filter scheduled tasks for today
-  const scheduledTasks = tasks.filter(task => task.scheduled_at && !task.is_completed)
+  const scheduledTasks = tasks.filter(task => task.scheduled_at && !task.completed_at)
 
   // Generate all slot IDs for the 24-hour period (96 slots with 15-min intervals)
   const slotIds = generateAllSlotIds()

@@ -8,16 +8,14 @@ import type { Task } from '@/types/app'
 // =============================================================================
 
 /**
- * Fetch incomplete tasks for the current user
- * Completed tasks are fetched separately with pagination
+ * Fetch all tasks for the current user
  */
 export async function getTasks(): Promise<Task[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
-    .eq('is_completed', false)
-    .order('position')
+    .order('created_at')
   
   if (error) throw error
   return data || []
@@ -31,7 +29,7 @@ export async function getCompletedTasks(limit = 50, offset = 0): Promise<Task[]>
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
-    .eq('is_completed', true)
+    .not('completed_at', 'is', null)
     .order('completed_at', { ascending: false })
     .range(offset, offset + limit - 1)
   
@@ -47,43 +45,27 @@ export async function getCompletedTasks(limit = 50, offset = 0): Promise<Task[]>
  * Create a new task in a list
  */
 export async function createTask(
-  homeListId: string,
+  listId: string,
   title: string,
   options?: {
     duration?: number
     colorIndex?: number
-    committedDate?: string | null
     scheduledAt?: string | null
   }
 ): Promise<Task> {
   const supabase = createClient()
   const userId = await getCurrentUserId()
   
-  // Get next position in home list
-  const { data: existing } = await supabase
-    .from('tasks')
-    .select('position')
-    .eq('home_list_id', homeListId)
-    .eq('is_completed', false)
-    .order('position', { ascending: false })
-    .limit(1)
-  
-  const nextPosition = (existing?.[0]?.position ?? -1) + 1
-  
   const { data, error } = await supabase
     .from('tasks')
     .insert({
       user_id: userId,
-      home_list_id: homeListId,
+      list_id: listId,
       title,
       duration_minutes: options?.duration ?? DEFAULT_TASK_DURATION,
       color_index: options?.colorIndex ?? 0,
-      position: nextPosition,
-      committed_date: options?.committedDate ?? null,
       scheduled_at: options?.scheduledAt ?? null,
       energy_level: 'medium',
-      is_completed: false,
-      is_daily: false,
     })
     .select()
     .single()
@@ -103,7 +85,7 @@ export async function updateTask(
   taskId: string,
   updates: Partial<Pick<Task, 
     'title' | 'notes' | 'duration_minutes' | 'color_index' | 
-    'energy_level' | 'is_daily' | 'highlight_date'
+    'energy_level' | 'list_id'
   >>
 ): Promise<void> {
   const supabase = createClient()
@@ -143,50 +125,15 @@ export async function unscheduleTask(taskId: string): Promise<void> {
 }
 
 /**
- * Commit task to a date (appears in that day's date list)
+ * Move task to a different list
  */
-export async function commitTaskToDate(taskId: string, date: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from('tasks')
-    .update({ committed_date: date, updated_at: new Date().toISOString() })
-    .eq('id', taskId)
-  
-  if (error) throw error
-}
-
-/**
- * Remove task from date list
- */
-export async function uncommitTask(taskId: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from('tasks')
-    .update({ committed_date: null, updated_at: new Date().toISOString() })
-    .eq('id', taskId)
-  
-  if (error) throw error
-}
-
-/**
- * Complete a task (uses RPC for atomicity)
- */
-export async function completeTask(taskId: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase.rpc('complete_task', { p_task_id: taskId })
-  if (error) throw error
-}
-
-/**
- * Uncomplete a task
- */
-export async function uncompleteTask(taskId: string): Promise<void> {
+export async function moveTask(taskId: string, newListId: string): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase
     .from('tasks')
     .update({ 
-      is_completed: false, 
-      completed_at: null, 
+      list_id: newListId, 
+      scheduled_at: null, // Clear schedule when moving
       updated_at: new Date().toISOString() 
     })
     .eq('id', taskId)
@@ -195,16 +142,111 @@ export async function uncompleteTask(taskId: string): Promise<void> {
 }
 
 /**
- * Set task highlight for a specific date (uses RPC for limit enforcement)
+ * Complete a task - move to Completed list
  */
-export async function setTaskHighlight(taskId: string, date: string | null): Promise<void> {
+export async function completeTask(taskId: string): Promise<void> {
   const supabase = createClient()
-  const { error } = await supabase.rpc('set_task_highlight', {
-    p_task_id: taskId,
-    p_date: date,
-  })
+  const userId = await getCurrentUserId()
+  
+  // First get the task to save its current list
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('list_id')
+    .eq('id', taskId)
+    .single()
+  
+  if (!task) throw new Error('Task not found')
+  
+  // Find the Completed list
+  const { data: completedList } = await supabase
+    .from('lists')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('list_type', 'completed')
+    .single()
+  
+  if (!completedList) throw new Error('Completed list not found')
+  
+  // Move task to Completed list and mark completion
+  const { error } = await supabase
+    .from('tasks')
+    .update({ 
+      previous_list_id: task.list_id,
+      list_id: completedList.id,
+      completed_at: new Date().toISOString(),
+      scheduled_at: null, // Clear schedule
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', taskId)
+  
   if (error) throw error
 }
+
+/**
+ * Uncomplete a task - move back to previous list
+ */
+export async function uncompleteTask(taskId: string): Promise<void> {
+  const supabase = createClient()
+  const userId = await getCurrentUserId()
+  
+  // Get the task to find its previous list
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('previous_list_id')
+    .eq('id', taskId)
+    .single()
+  
+  if (!task) throw new Error('Task not found')
+  
+  let targetListId = task.previous_list_id
+  
+  // If previous list is gone, use Parked list
+  if (!targetListId) {
+    const { data: parkedList } = await supabase
+      .from('lists')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('list_type', 'parked')
+      .single()
+    
+    if (!parkedList) throw new Error('Parked list not found')
+    targetListId = parkedList.id
+  } else {
+    // Check if previous list still exists
+    const { data: previousList } = await supabase
+      .from('lists')
+      .select('id')
+      .eq('id', targetListId)
+      .single()
+    
+    if (!previousList) {
+      // Previous list is gone, use Parked
+      const { data: parkedList } = await supabase
+        .from('lists')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('list_type', 'parked')
+        .single()
+      
+      if (!parkedList) throw new Error('Parked list not found')
+      targetListId = parkedList.id
+    }
+  }
+  
+  // Move task back and clear completion
+  const { error } = await supabase
+    .from('tasks')
+    .update({ 
+      list_id: targetListId,
+      previous_list_id: null,
+      completed_at: null, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', taskId)
+  
+  if (error) throw error
+}
+
 
 // =============================================================================
 // DELETE OPERATIONS
@@ -235,13 +277,13 @@ export async function clearTasksInList(listId: string): Promise<number> {
   const { count } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
-    .eq('home_list_id', listId)
+    .eq('list_id', listId)
   
   // Delete all tasks in this list
   const { error } = await supabase
     .from('tasks')
     .delete()
-    .eq('home_list_id', listId)
+    .eq('list_id', listId)
   
   if (error) throw error
   return count || 0
@@ -251,46 +293,13 @@ export async function clearTasksInList(listId: string): Promise<number> {
 // BATCH OPERATIONS
 // =============================================================================
 
-/**
- * Reorder tasks within a list (uses RPC for atomicity)
- */
-export async function reorderTasks(taskIds: string[]): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase.rpc('reorder_tasks', { p_task_ids: taskIds })
-  if (error) throw error
-}
-
-/**
- * Roll over uncommitted tasks from one date to another
- */
-export async function rollOverTasks(fromDate: string, toDate: string): Promise<number> {
-  const supabase = createClient()
-  const { data, error } = await supabase.rpc('roll_over_tasks', {
-    p_from_date: fromDate,
-    p_to_date: toDate,
-  })
-  if (error) throw error
-  return data as number
-}
-
-/**
- * Spawn daily tasks for a given date
- */
-export async function spawnDailyTasks(targetDate: string): Promise<number> {
-  const supabase = createClient()
-  const { data, error } = await supabase.rpc('spawn_daily_tasks', {
-    p_target_date: targetDate
-  })
-  if (error) throw error
-  return data as number
-}
 
 // =============================================================================
 // SPECIAL OPERATIONS
 // =============================================================================
 
 /**
- * Create a task in the "Parked" (TBD Grab Bag) list
+ * Create a task in the "Parked" list
  */
 export async function createParkedThought(title: string): Promise<Task> {
   const supabase = createClient()
@@ -301,7 +310,7 @@ export async function createParkedThought(title: string): Promise<Task> {
     .from('lists')
     .select('id')
     .eq('user_id', userId)
-    .eq('system_type', 'parked')
+    .eq('list_type', 'parked')
     .single()
   
   if (!parkedList) throw new Error('Parked list not found')

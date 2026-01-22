@@ -8,26 +8,19 @@ export {
   clearTasksInList,
   completeTask,
   uncompleteTask,
+  moveTask,
   scheduleTask,
   unscheduleTask,
-  commitTaskToDate,
-  uncommitTask,
-  setTaskHighlight,
-  reorderTasks,
-  rollOverTasks,
-  spawnDailyTasks,
   createParkedThought,
 } from './tasks'
 
 // List operations
 export {
   getLists,
-  getGrabBag,
   createList,
   updateList,
   deleteList,
-  duplicateList,
   ensureDateList,
-  ensureTodayList,
-  ensureTomorrowList,
+  getParkedList,
+  getCompletedList,
 } from './lists'

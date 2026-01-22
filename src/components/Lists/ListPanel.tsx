@@ -25,11 +25,8 @@ interface ListPanelProps {
   onTaskDurationChange: (taskId: string, duration: number) => void
   onTaskDelete: (taskId: string) => void
   onTaskCreate: (listId: string, title: string) => void
-  onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
-  onTaskHighlightToggle: (taskId: string) => void
   onTaskComplete: (taskId: string) => void
-  onReorderTasks: (taskIds: string[]) => void
   onRollOverTasks: (fromListId: string) => void
   columnCount: 1 | 2
 }
@@ -52,11 +49,8 @@ export function ListPanel({
   onTaskDurationChange,
   onTaskDelete,
   onTaskCreate,
-  onTaskDailyToggle,
   onTaskEnergyChange,
-  onTaskHighlightToggle,
   onTaskComplete,
-  onReorderTasks,
   onRollOverTasks,
   columnCount,
 }: ListPanelProps) {
@@ -73,7 +67,7 @@ export function ListPanel({
     
     // Find first list with tasks and expand it
     const firstWithTasks = lists.find(list => {
-      const taskCount = tasks.filter(t => t.home_list_id === list.id && !t.is_completed).length
+      const taskCount = tasks.filter(t => t.list_id === list.id && !t.completed_at).length
       return taskCount > 0
     })
     
@@ -83,16 +77,8 @@ export function ListPanel({
   }, [lists, tasks, expandedListIds, onToggleListExpanded])
   
   const getTasksForList = (listId: string) => {
-    const list = lists.find(l => l.id === listId)
-    if (!list) return []
-    
-    // For date lists, show tasks committed to that date
-    if (list.system_type === 'date' && list.list_date) {
-      return tasks.filter(t => t.committed_date === list.list_date && !t.is_completed)
-    }
-    
-    // For regular lists, show tasks that live in this list
-    return tasks.filter(t => t.home_list_id === listId && !t.is_completed)
+    // Simple: return all tasks in this list that aren't completed
+    return tasks.filter(t => t.list_id === listId && !t.completed_at)
   }
   
   const cycleDuration = (current: number, reverse: boolean) => {
@@ -111,7 +97,7 @@ export function ListPanel({
         <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
           {lists.map((list) => {
           const isExpanded = expandedListIds.has(list.id)
-          const displayName = list.system_type === 'date' && list.list_date
+          const displayName = list.list_type === 'date' && list.list_date
             ? formatDateForDisplay(list.list_date)
             : list.name
           return (
@@ -120,8 +106,8 @@ export function ListPanel({
               id={list.id}
               name={displayName}
               isInbox={false}
-              isSystemList={list.is_system}
-              isDateList={list.system_type === 'date'}
+              isSystemList={list.list_type === 'parked' || list.list_type === 'completed'}
+              isDateList={list.list_type === 'date'}
               tasks={getTasksForList(list.id)}
               paletteId={paletteId}
               isEditing={editingListId === list.id}
@@ -141,13 +127,10 @@ export function ListPanel({
               }
               onTaskDelete={onTaskDelete}
               onTaskAdd={(title) => onTaskCreate(list.id, title)}
-              onTaskDailyToggle={onTaskDailyToggle}
               onTaskEnergyChange={onTaskEnergyChange}
-              onTaskHighlightToggle={onTaskHighlightToggle}
               onTaskComplete={onTaskComplete}
-              onReorderTasks={onReorderTasks}
               onRollOver={
-                list.system_type === 'date' 
+                list.list_type === 'date' 
                   ? () => onRollOverTasks(list.id)
                   : undefined
               }

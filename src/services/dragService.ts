@@ -9,13 +9,12 @@ import type { Task, List } from '@/types/app'
 import type { DropResult } from '@hello-pangea/dnd'
 
 export interface DragOperationResult {
-  type: 'none' | 'reorder' | 'schedule' | 'commit' | 'move' | 'reschedule'
+  type: 'none' | 'reorder' | 'schedule' | 'move' | 'reschedule'
   data?: {
     taskIds?: string[]
     taskId?: string
     scheduledAt?: string
-    date?: string
-    homeListId?: string
+    listId?: string
   }
 }
 
@@ -29,7 +28,7 @@ export async function processDragEnd(
   console.log('Source droppableId:', result.source?.droppableId)
   console.log('Destination droppableId:', result.destination?.droppableId)
   console.log('Draggable ID:', result.draggableId)
-  console.log('Available lists:', lists.map(l => ({ id: l.id, name: l.name, system_type: l.system_type })))
+  console.log('Available lists:', lists.map(l => ({ id: l.id, name: l.name, list_type: l.list_type })))
 
   // Dropped outside any droppable area
   if (!result.destination) {
@@ -57,17 +56,10 @@ export async function processDragEnd(
     const sourceList = lists.find(l => l.id === sourceId)
     if (!sourceList) return { type: 'none' }
 
-    // Get tasks for this list using the same logic as the UI
-    let listTasks: Task[] = []
-    if (sourceList.system_type === 'date' && sourceList.list_date) {
-      listTasks = tasks
-        .filter(t => t.committed_date === sourceList.list_date && !t.is_completed)
-        .sort((a, b) => a.position - b.position)
-    } else {
-      listTasks = tasks
-        .filter(t => t.home_list_id === sourceId && !t.is_completed)
-        .sort((a, b) => a.position - b.position)
-    }
+    // Get tasks for this list - simple in new schema
+    const listTasks = tasks
+      .filter(t => t.list_id === sourceId && !t.completed_at)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
     // Reorder the array
     const reordered = Array.from(listTasks)
@@ -142,21 +134,13 @@ export async function processDragEnd(
   console.log('📋 Destination list found:', {
     id: destinationList.id,
     name: destinationList.name,
-    system_type: destinationList.system_type,
+    list_type: destinationList.list_type,
     list_date: destinationList.list_date
   })
 
-  if (destinationList.system_type === 'date' && destinationList.list_date) {
-    console.log('📅 Committing task to date list:', destinationList.list_date)
-    return {
-      type: 'commit',
-      data: { taskId, date: destinationList.list_date }
-    }
-  }
-
-  console.log('📝 Regular list drop - updating home_list_id')
+  console.log('📝 List drop - moving task to new list')
   return {
     type: 'move',
-    data: { taskId, homeListId: destinationId }
+    data: { taskId, listId: destinationId }
   }
 }

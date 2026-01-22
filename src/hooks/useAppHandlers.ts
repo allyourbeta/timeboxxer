@@ -29,16 +29,13 @@ export function useAppHandlers() {
     clearTasksInList,
     completeTask,
     uncompleteTask,
-    commitTaskToDate,
+    moveTask,
     scheduleTask,
     unscheduleTask,
-    setTaskHighlight,
     createParkedThought,
-    reorderTasks,
-    rollOverTasks
   } = useTaskStore()
   
-  const { lists, createList, deleteList, duplicateList, updateList } = useListStore()
+  const { lists, createList, deleteList, updateList, ensureDateList } = useListStore()
   const { setEditingListId, setShowNewListInput } = useUIStore()
 
   // Local state for deletion flow
@@ -58,8 +55,8 @@ export function useAppHandlers() {
 
   // === TASK HANDLERS ===
   
-  const handleTaskAdd = async (homeListId: string, title: string) => {
-    await createTask(homeListId, title)
+  const handleTaskAdd = async (listId: string, title: string) => {
+    await createTask(listId, title)
   }
 
   const handleTaskDelete = async (taskId: string) => {
@@ -103,53 +100,21 @@ export function useAppHandlers() {
     await uncompleteTask(taskId)
   }
 
-  const handleTaskDailyToggle = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task) {
-      await updateTask(taskId, { is_daily: !task.is_daily })
-    }
-  }
 
   const handleTaskEnergyChange = async (taskId: string, level: 'high' | 'medium' | 'low') => {
     await updateTask(taskId, { energy_level: level })
   }
 
-  const handleTaskHighlightToggle = async (taskId: string, date: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (!task) return
-    
-    // Check if task is already highlighted for this date
-    if (task.highlight_date === date) {
-      await setTaskHighlight(taskId, null)
-    } else {
-      // Check highlight count for this date
-      const highlightsForDate = tasks.filter(t => t.highlight_date === date).length
-      
-      if (highlightsForDate >= 5) {
-        alert('Maximum 5 highlights per day. Remove one first.')
-        return
-      }
-      
-      await setTaskHighlight(taskId, date)
-    }
-  }
 
-  const handleReorderTasks = async (taskIds: string[]) => {
-    await reorderTasks(taskIds)
-  }
 
-  const handleCommitTaskToDate = async (taskId: string, date: string) => {
-    await commitTaskToDate(taskId, date)
-  }
 
   const handleDragEnd = async (result: DropResult) => {
     const operation = await processDragEnd(result, tasks, lists)
     
     switch (operation.type) {
       case 'reorder':
-        if (operation.data?.taskIds) {
-          await reorderTasks(operation.data.taskIds)
-        }
+        // Reordering removed in new schema
+        console.log('Reordering not supported in new schema')
         break
         
       case 'schedule':
@@ -164,16 +129,10 @@ export function useAppHandlers() {
         }
         break
         
-      case 'commit':
-        if (operation.data?.taskId && operation.data?.date) {
-          await commitTaskToDate(operation.data.taskId, operation.data.date)
-          console.log('✅ Task committed to date successfully')
-        }
-        break
         
       case 'move':
-        if (operation.data?.taskId && operation.data?.homeListId) {
-          await updateTask(operation.data.taskId, { home_list_id: operation.data.homeListId })
+        if (operation.data?.taskId && operation.data?.listId) {
+          await moveTask(operation.data.taskId, operation.data.listId)
         }
         break
         
@@ -207,7 +166,7 @@ const handleEventMove = async (taskId: string, newTime: string): Promise<void> =
   }
 
 const handleCreateCalendarTask = async (title: string, time: string): Promise<void> => {
-  const parkedList: List | undefined = lists.find((l: List) => l.system_type === 'parked')
+  const parkedList: List | undefined = lists.find((l: List) => l.list_type === 'parked')
   if (!parkedList) throw new Error('Parked list not found')
 
   await createTask(parkedList.id, title)
@@ -238,7 +197,7 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     if (!list) return
     
     // Count tasks in this list
-    const taskCount = tasks.filter(t => t.home_list_id === listId).length
+    const taskCount = tasks.filter(t => t.list_id === listId).length
     
     if (taskCount === 0) {
       // No tasks to clear, do nothing (or show a toast "List is already empty")
@@ -267,22 +226,28 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
 
   const handleDeleteListClick = async (listId: string) => {
     const list = lists.find(l => l.id === listId)
+    
     if (!list) return
     
-    // Block system lists (Parked Items)
-    if (list.system_type === 'parked') return
-    
+    // Block system lists (Parked Items, Completed)
+    if (list.list_type === 'parked' || list.list_type === 'completed') return
+
     // Block today and future date lists
-    if (list.system_type === 'date') {
+    if (list.list_type === 'date') {
       const listDate = new Date(list.list_date!)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       listDate.setHours(0, 0, 0, 0)
+
       if (listDate >= today) return
     }
-    
+
+
+
     // Check if list has tasks
-    const taskCount = tasks.filter(t => t.home_list_id === listId).length
+    const taskCount = tasks.filter(t => t.list_id === listId && !t.completed_at).length
+    console.log('DEBUG delete:', { listId, taskCount, list: list?.list_type, list_date: list?.list_date })
+
     if (taskCount > 0) {
       // List is not empty - don't delete
       // The UI should prevent this, but this is a safety check
@@ -301,7 +266,7 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     
     // Move tasks back
     for (const task of pendingDelete.originalTasks) {
-      await updateTask(task.id, { home_list_id: task.originalListId })
+      await moveTask(task.id, task.originalListId)
     }
     
     setPendingDelete(null)
@@ -333,31 +298,35 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
 
   const handleRollOverTasks = async (fromListId: string) => {
     console.log('🔄 handleRollOverTasks called with:', fromListId)
-    console.log('📋 Available lists:', lists.map(l => ({ id: l.id, name: l.name, list_date: l.list_date, system_type: l.system_type })))
     
     // Find the list to get its date
     const fromList = lists.find(l => l.id === fromListId)
-    console.log('🎯 fromList found:', fromList)
     
     if (!fromList?.list_date) {
-      console.log('❌ No list_date found, fromList.list_date:', fromList?.list_date)
+      console.log('❌ No list_date found')
       return
     }
     
-    const fromDate = fromList.list_date
     const toDate = getLocalTomorrowISO()
-    console.log('📅 Rolling over from:', fromDate, 'to:', toDate)
+    console.log('📅 Rolling over from:', fromList.list_date, 'to:', toDate)
     
     try {
-      const count = await rollOverTasks(fromDate, toDate)
-      console.log('✅ Roll over completed, count:', count)
+      // Ensure tomorrow's date list exists
+      const tomorrowList = await ensureDateList(toDate)
       
-      if (count > 0) {
-        // Reload tasks to reflect the move
-        const { loadTasks } = useTaskStore.getState()
-        await loadTasks()
-        console.log('🔄 Tasks reloaded after roll over')
+      // Move all incomplete tasks from this list to tomorrow's list
+      const tasksToMove = tasks.filter(t => 
+        t.list_id === fromListId && 
+        !t.completed_at
+      )
+      
+      console.log('📝 Moving tasks:', tasksToMove.length)
+      
+      for (const task of tasksToMove) {
+        await moveTask(task.id, tomorrowList.id)
       }
+      
+      console.log('✅ Roll over completed, moved:', tasksToMove.length)
     } catch (error) {
       console.error('💥 Roll over failed:', error)
     }
@@ -375,11 +344,7 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     handleTaskDurationClick,
     handleTaskComplete,
     handleTaskUncomplete,
-    handleTaskDailyToggle,
     handleTaskEnergyChange,
-    handleTaskHighlightToggle,
-    handleReorderTasks,
-    handleCommitTaskToDate,
     handleDragEnd,
     
     // Schedule handlers

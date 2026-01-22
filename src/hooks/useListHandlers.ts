@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
-import { rollOverTasks } from '@/api'
 import { getTomorrowListName, getLocalTomorrowISO } from '@/lib/dateList'
 
 interface PendingDelete {
@@ -14,7 +13,7 @@ interface PendingDelete {
 
 export function useListHandlers() {
   const { updateTask } = useTaskStore()
-  const { lists, createList, deleteList, duplicateList, updateList } = useListStore()
+  const { lists, createList, deleteList, updateList } = useListStore()
   const { setEditingListId, setShowNewListInput } = useUIStore()
   
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
@@ -34,9 +33,9 @@ export function useListHandlers() {
     const list = lists.find(l => l.id === listId)
     if (!list) return
     
-    if (list.system_type === 'parked') return
+    if (list.list_type === 'parked') return
     
-    if (list.system_type === 'date') {
+    if (list.list_type === 'date') {
       const listDate = new Date(list.name)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -53,7 +52,7 @@ export function useListHandlers() {
     clearTimeout(pendingDelete.timeoutId)
     
     for (const task of pendingDelete.originalTasks) {
-      await updateTask(task.id, { home_list_id: task.originalListId })
+      await updateTask(task.id, { list_id: task.originalListId })
     }
     
     setPendingDelete(null)
@@ -69,12 +68,8 @@ export function useListHandlers() {
       return
     }
     
-    const count = await rollOverTasks(fromListId, tomorrowList.id)
-    
-    if (count > 0) {
-      const { loadTasks } = useTaskStore.getState()
-      await loadTasks()
-    }
+    // Roll over functionality removed in new schema
+    console.log('Roll over not implemented in new schema')
   }
 
   return {

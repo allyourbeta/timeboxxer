@@ -6,7 +6,7 @@ import { getLocalTodayISO, createLocalTimestamp } from '@/lib/dateUtils'
 
 
 export function useScheduleHandlers() {
-  const { tasks, commitTaskToDate, scheduleTask, unscheduleTask, reorderTasks } = useTaskStore()
+  const { tasks, scheduleTask, unscheduleTask } = useTaskStore()
   const { lists } = useListStore()
 
   const handleExternalDrop = async (taskId: string, time: string) => {
@@ -35,7 +35,7 @@ export function useScheduleHandlers() {
 
   const handleCreateCalendarTask = async (title: string, time: string) => {
     // Find the "Parked" list for new calendar tasks
-    const parkedList = lists.find(l => l.system_type === 'parked')
+    const parkedList = lists.find(l => l.list_type === 'parked')
     if (!parkedList) throw new Error('Parked list not found')
     
     const { createTask, scheduleTask } = useTaskStore.getState()
@@ -54,7 +54,8 @@ export function useScheduleHandlers() {
   }
 
   const handleReorderTasks = async (taskIds: string[]) => {
-    await reorderTasks(taskIds)
+    // Reordering removed in new schema
+    console.log('Reordering not supported in new schema')
   }
 
   return {

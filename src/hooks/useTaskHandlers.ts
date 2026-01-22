@@ -58,10 +58,8 @@ export function useTaskHandlers() {
   }
 
   const handleTaskDailyToggle = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task) {
-      await updateTask(taskId, { is_daily: !task.is_daily })
-    }
+    // Daily tasks removed in new schema
+    console.log('Daily tasks not supported in new schema')
   }
 
   const handleTaskEnergyChange = async (taskId: string, level: 'high' | 'medium' | 'low') => {
@@ -69,31 +67,8 @@ export function useTaskHandlers() {
   }
 
   const handleTaskHighlightToggle = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (!task) return
-    
-    const taskList = lists.find(l => l.id === task.home_list_id)
-    if (!taskList || taskList.system_type !== 'date') {
-      console.warn('Highlights only available for date lists')
-      return
-    }
-    
-    if (task.highlight_date) {
-      await updateTask(taskId, { highlight_date: null })
-    } else {
-      const highlightsInList = tasks.filter(t => 
-        t.home_list_id === task.home_list_id && t.highlight_date !== null
-      ).length
-      
-      if (highlightsInList >= 5) {
-        alert('Maximum 5 highlights per day. Remove one first.')
-        return
-      }
-      
-      // Use the current date as the highlight date
-      const today = new Date().toISOString().split('T')[0]
-      await updateTask(taskId, { highlight_date: today })
-    }
+    // Highlights removed in new schema
+    console.log('Highlights not supported in new schema')
   }
 
   return {

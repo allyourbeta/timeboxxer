@@ -18,7 +18,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth()
   
   // Stores (data only)
-  const { tasks, loading: tasksLoading, loadTasks, spawnDailyTasksForDate } = useTaskStore()
+  const { tasks, loading: tasksLoading, loadTasks } = useTaskStore()
   const { lists, loading: listsLoading, loadLists } = useListStore()
   const {
     currentView, setCurrentView,
@@ -40,10 +40,7 @@ export default function Home() {
     handleTaskDurationClick,
     handleTaskComplete,
     handleTaskUncomplete,
-    handleTaskDailyToggle,
     handleTaskEnergyChange,
-    handleTaskHighlightToggle,
-    handleReorderTasks,
     handleDragEnd,
     handleExternalDrop,
     handleEventMove,
@@ -105,10 +102,10 @@ export default function Home() {
       // Find today's date list
       const todayList = lists.find(l => l.list_date === getLocalTodayISO())
       if (todayList) {
-        spawnDailyTasksForDate(getLocalTodayISO())
+        // Daily tasks removed in new schema
       }
     }
-  }, [user, tasksLoading, listsLoading, tasks.length, lists, spawnDailyTasksForDate])
+  }, [user, tasksLoading, listsLoading, tasks.length, lists])
 
   // NOW we can have conditional returns (after all hooks)
   
@@ -131,11 +128,11 @@ export default function Home() {
 
   // Computed values
   const loading = tasksLoading || listsLoading
-  const scheduledTasks = tasks.filter(t => t.scheduled_at && !t.is_completed)
+  const scheduledTasks = tasks.filter(t => t.scheduled_at && !t.completed_at)
   const visibleLists = lists.filter(l => l.id !== pendingDelete?.listId)
   
   const completedToday = tasks.filter(t => {
-    if (!t.is_completed || !t.completed_at) return false
+    if (!t.completed_at) return false
     const completedDate = new Date(t.completed_at).toDateString()
     const today = new Date().toDateString()
     return completedDate === today
@@ -148,7 +145,7 @@ export default function Home() {
       date.setDate(date.getDate() - i)
       const dateStr = date.toDateString()
       const count = tasks.filter(t => {
-        if (!t.is_completed || !t.completed_at) return false
+        if (!t.completed_at) return false
         return new Date(t.completed_at).toDateString() === dateStr
       }).length
       result.push(count)
@@ -189,7 +186,7 @@ export default function Home() {
           weekData={getWeekData()}
         />
         <CompletedView
-          tasks={tasks.filter(t => t.is_completed)}
+          tasks={tasks.filter(t => t.completed_at)}
           lists={lists}
           paletteId={PALETTE_ID}
           onRestore={handleTaskUncomplete}
@@ -245,14 +242,8 @@ export default function Home() {
                 }}
                 onTaskDelete={handleTaskDelete}
                 onTaskCreate={handleTaskAdd}
-                onTaskDailyToggle={handleTaskDailyToggle}
                 onTaskEnergyChange={handleTaskEnergyChange}
-                onTaskHighlightToggle={(taskId: string) => {
-                  const today = new Date().toISOString().split('T')[0] // Get today in ISO format
-                  handleTaskHighlightToggle(taskId, today)
-                }}
                 onTaskComplete={handleTaskComplete}
-                onReorderTasks={handleReorderTasks}
                 onRollOverTasks={handleRollOverTasks}
                 columnCount={listColumnCount}
               />

@@ -8,15 +8,10 @@ import {
   clearTasksInList as apiClearTasksInList,
   completeTask as apiCompleteTask, 
   uncompleteTask as apiUncompleteTask,
-  commitTaskToDate as apiCommitTaskToDate,
-  uncommitTask as apiUncommitTask,
+  moveTask as apiMoveTask,
   scheduleTask as apiScheduleTask,
   unscheduleTask as apiUnscheduleTask,
-  setTaskHighlight as apiSetTaskHighlight,
-  spawnDailyTasks as apiSpawnDailyTasks,
   createParkedThought as apiCreateParkedThought,
-  reorderTasks as apiReorderTasks,
-  rollOverTasks as apiRollOverTasks,
 } from '@/api'
 import type { Task } from '@/types/app'
 
@@ -29,21 +24,16 @@ interface TaskStore {
   // Actions
   loadTasks: () => Promise<void>
   loadCompletedTasks: (limit?: number, offset?: number) => Promise<void>
-  createTask: (homeListId: string, title: string) => Promise<void>
+  createTask: (listId: string, title: string) => Promise<void>
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
   clearTasksInList: (listId: string) => Promise<number>
   completeTask: (taskId: string) => Promise<void>
   uncompleteTask: (taskId: string) => Promise<void>
-  commitTaskToDate: (taskId: string, date: string) => Promise<void>
-  uncommitTask: (taskId: string) => Promise<void>
+  moveTask: (taskId: string, newListId: string) => Promise<void>
   scheduleTask: (taskId: string, scheduledAt: string) => Promise<void>
   unscheduleTask: (taskId: string) => Promise<void>
-  setTaskHighlight: (taskId: string, date: string | null) => Promise<void>
-  spawnDailyTasksForDate: (date: string) => Promise<void>
   createParkedThought: (title: string) => Promise<void>
-  reorderTasks: (taskIds: string[]) => Promise<void>
-  rollOverTasks: (fromDate: string, toDate: string) => Promise<number>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -75,8 +65,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   
-  createTask: async (homeListId, title) => {
-    const newTask = await apiCreateTask(homeListId, title)
+  createTask: async (listId, title) => {
+    const newTask = await apiCreateTask(listId, title)
     set({ tasks: [...get().tasks, newTask] })
   },
   
@@ -118,7 +108,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     
     // Remove these tasks from local state
     set({
-      tasks: get().tasks.filter(t => t.home_list_id !== listId)
+      tasks: get().tasks.filter(t => t.list_id !== listId)
     })
     
     return count
@@ -150,33 +140,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  commitTaskToDate: async (taskId, date) => {
+  moveTask: async (taskId, newListId) => {
     // Optimistic update
     set(state => ({
       tasks: state.tasks.map(t =>
-        t.id === taskId ? { ...t, committed_date: date } : t
+        t.id === taskId ? { ...t, list_id: newListId } : t
       )
     }))
     
     try {
-      await apiCommitTaskToDate(taskId, date)
-    } catch (error) {
-      await get().loadTasks()
-      set({ error: (error as Error).message })
-      throw error
-    }
-  },
-
-  uncommitTask: async (taskId) => {
-    // Optimistic update
-    set(state => ({
-      tasks: state.tasks.map(t =>
-        t.id === taskId ? { ...t, committed_date: null } : t
-      )
-    }))
-    
-    try {
-      await apiUncommitTask(taskId)
+      await apiMoveTask(taskId, newListId)
     } catch (error) {
       await get().loadTasks()
       set({ error: (error as Error).message })
@@ -218,29 +191,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  setTaskHighlight: async (taskId, date) => {
-    // Optimistic update
-    set(state => ({
-      tasks: state.tasks.map(t =>
-        t.id === taskId ? { ...t, highlight_date: date } : t
-      )
-    }))
-    
-    try {
-      await apiSetTaskHighlight(taskId, date)
-    } catch (error) {
-      await get().loadTasks()
-      set({ error: (error as Error).message })
-      throw error
-    }
-  },
-
-  spawnDailyTasksForDate: async (date) => {
-    const count = await apiSpawnDailyTasks(date)
-    if (count > 0) {
-      await get().loadTasks()
-    }
-  },
   
   createParkedThought: async (title) => {
     const newTask = await apiCreateParkedThought(title)
@@ -248,45 +198,4 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
 
-  reorderTasks: async (taskIds: string[]) => {
-    // Optimistic update
-    const currentTasks = get().tasks
-    const updatedTasks = currentTasks.map(task => {
-      const newPosition = taskIds.indexOf(task.id)
-      if (newPosition !== -1) {
-        return { ...task, position: newPosition }
-      }
-      return task
-    })
-    
-    updatedTasks.sort((a, b) => a.position - b.position)
-    set({ tasks: updatedTasks })
-    
-    try {
-      await apiReorderTasks(taskIds)
-    } catch (error) {
-      await get().loadTasks()
-      set({ error: (error as Error).message })
-      throw error
-    }
-  },
-
-  rollOverTasks: async (fromDate, toDate) => {
-    // Optimistic update
-    set(state => ({
-      tasks: state.tasks.map(t =>
-        t.committed_date === fromDate && !t.is_completed
-          ? { ...t, committed_date: toDate }
-          : t
-      )
-    }))
-    
-    try {
-      return await apiRollOverTasks(fromDate, toDate)
-    } catch (error) {
-      await get().loadTasks()
-      set({ error: (error as Error).message })
-      throw error
-    }
-  },
 }))

@@ -22,12 +22,8 @@ export interface List {
   id: string;
   user_id: string;
   name: string;
-  position: number;
-  is_collapsed: boolean;
-  // System list fields
-  is_system: boolean;
-  system_type: 'parked' | 'date' | null;
-  list_date: string | null;  // ISO date string for date lists
+  list_type: 'user' | 'date' | 'completed' | 'parked';
+  list_date?: string;  // Only for date lists (ISO date string)
   created_at: string;
   updated_at: string;
 }
@@ -35,34 +31,20 @@ export interface List {
 export interface Task {
   id: string;
   user_id: string;
+  list_id: string;  // The ONE list this task belongs to
+  
   title: string;
+  notes: string | null;
   duration_minutes: number;
   color_index: number;
-  position: number;
-  notes: string | null;
+  energy_level: 'high' | 'medium' | 'low';
   
-  // Home list - where this task "lives"
-  home_list_id: string;
-  
-  // Commitment - if set, task appears in that day's date list
-  committed_date: string | null;  // ISO date: '2026-01-18'
-  
-  // Scheduling - if set, task appears on calendar
-  scheduled_at: string | null;  // ISO timestamp: '2026-01-18T14:00:00Z'
+  // Scheduling - if set, task appears on calendar (but stays in its list)
+  scheduled_at: string | null;  // Local timestamp: '2026-01-18T14:00:00'
   
   // Completion
-  is_completed: boolean;
-  completed_at: string | null;
-  
-  // Daily tasks
-  is_daily: boolean;
-  daily_source_id: string | null;
-  
-  // Per-day highlight
-  highlight_date: string | null;  // ISO date - task highlighted for this day only
-  
-  // Energy level
-  energy_level: 'high' | 'medium' | 'low';
+  previous_list_id: string | null;  // Where it was before completion (for uncomplete)
+  completed_at: string | null;     // When it was completed
   
   // Timestamps
   created_at: string;

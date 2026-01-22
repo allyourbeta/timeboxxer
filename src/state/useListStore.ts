@@ -1,7 +1,14 @@
 import { create } from 'zustand'
-import { getLists, createList as apiCreateList, updateList as apiUpdateList, deleteList as apiDeleteList, ensureTodayList, ensureTomorrowList } from '@/api'
-import { duplicateList as apiDuplicateList } from '@/api'
-import { sortListsForDisplay } from '@/lib/listSort'
+import { 
+  getLists, 
+  createList as apiCreateList, 
+  updateList as apiUpdateList, 
+  deleteList as apiDeleteList, 
+  ensureDateList,
+  getParkedList,
+  getCompletedList 
+} from '@/api'
+// import { sortListsForDisplay } from '@/lib/listSort'
 import { List } from '@/types/app'
 
 interface ListStore {
@@ -12,7 +19,9 @@ interface ListStore {
   createList: (name: string) => Promise<List>
   updateList: (listId: string, name: string) => Promise<void>
   deleteList: (listId: string) => Promise<void>
-  duplicateList: (listId: string, newName: string) => Promise<void>
+  ensureDateList: (date: string) => Promise<List>
+  getCompletedList: () => List | null
+  getParkedList: () => List | null
 }
 
 export const useListStore = create<ListStore>((set, get) => ({
@@ -24,15 +33,16 @@ export const useListStore = create<ListStore>((set, get) => ({
     try {
       set({ loading: true })
       
-      console.log('📅 [useListStore] Ensuring today and tomorrow lists exist...')
-      await ensureTodayList()
-      await ensureTomorrowList()
+      console.log('📅 [useListStore] Ensuring system lists exist...')
+      await getParkedList()
+      await getCompletedList()
       
       console.log('📋 [useListStore] Fetching all lists...')
       const data = await getLists()
       
       console.log('🔄 [useListStore] Sorting lists for display...')
-      const sortedLists = sortListsForDisplay(data || [])
+      // const sortedLists = sortListsForDisplay(data || [])
+      const sortedLists = data || []
       
       console.log('✅ [useListStore] Lists loaded and sorted:', { count: sortedLists.length })
       set({ lists: sortedLists, loading: false })
@@ -63,9 +73,20 @@ export const useListStore = create<ListStore>((set, get) => ({
     set({ lists: get().lists.filter(l => l.id !== listId) })
   },
   
-  duplicateList: async (listId, newName) => {
-    const newListId = await apiDuplicateList(listId, newName)
-    // Reload lists to get the new one with tasks
-    await get().loadLists()
+  ensureDateList: async (date) => {
+    const list = await ensureDateList(date)
+    const currentLists = get().lists
+    if (!currentLists.find(l => l.id === list.id)) {
+      set({ lists: [...currentLists, list] })
+    }
+    return list
+  },
+  
+  getCompletedList: () => {
+    return get().lists.find(l => l.list_type === 'completed') || null
+  },
+  
+  getParkedList: () => {
+    return get().lists.find(l => l.list_type === 'parked') || null
   },
 }))

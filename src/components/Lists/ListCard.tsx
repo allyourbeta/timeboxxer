@@ -29,11 +29,8 @@ interface ListCardProps {
   onTaskDurationClick: (taskId: string, currentDuration: number, reverse: boolean) => void
   onTaskDelete: (taskId: string) => void
   onTaskAdd: (title: string) => void
-  onTaskDailyToggle: (taskId: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
-  onTaskHighlightToggle: (taskId: string) => void
   onTaskComplete: (taskId: string) => void
-  onReorderTasks: (taskIds: string[]) => void
   onRollOver?: () => void
 }
 
@@ -57,11 +54,8 @@ export function ListCard({
   onTaskDurationClick,
   onTaskDelete,
   onTaskAdd,
-  onTaskDailyToggle,
   onTaskEnergyChange,
-  onTaskHighlightToggle,
   onTaskComplete,
-  onReorderTasks,
   onRollOver,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
@@ -207,8 +201,8 @@ export function ListCard({
               <>
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
                   {tasks
-                    .filter(t => !t.is_completed)
-                    .sort((a, b) => a.position - b.position)
+                    .filter(t => !t.completed_at)
+                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
                     .map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided, snapshot) => (
@@ -226,18 +220,18 @@ export function ListCard({
                                 title={task.title}
                                 durationMinutes={task.duration_minutes}
                                 colorIndex={task.color_index}
-                                isCompleted={task.is_completed}
+                                isCompleted={!!task.completed_at}
                                 isScheduled={scheduledTaskIds.includes(task.id)}
-                                isDaily={task.is_daily}
+                                isDaily={false}
                                 isInPurgatory={isInbox}
-                                isHighlight={task.highlight_date !== null}
-                                canHighlight={isDateList}
+                                isHighlight={false}
+                                canHighlight={false}
                                 energyLevel={task.energy_level || 'medium'}
                                 paletteId={paletteId}
                                 onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
                                 onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
-                                onDailyToggle={() => onTaskDailyToggle(task.id)}
-                                onHighlightToggle={() => onTaskHighlightToggle(task.id)}
+                                onDailyToggle={() => {}}
+                                onHighlightToggle={() => {}}
                                 onComplete={() => onTaskComplete(task.id)}
                                 onDelete={() => onTaskDelete(task.id)}
                               />
@@ -248,7 +242,7 @@ export function ListCard({
                 </div>
                 
                 {/* Roll Over button - only for date lists with incomplete tasks */}
-                {isDateList && !isInbox && tasks.filter(t => !t.is_completed).length > 0 && onRollOver && (
+                {isDateList && !isInbox && tasks.filter(t => !t.completed_at).length > 0 && onRollOver && (
                   <button
                     onClick={onRollOver}
                     className="w-full mt-2 mb-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md border border-dashed border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-2"
