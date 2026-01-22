@@ -26,6 +26,7 @@ export function useAppHandlers() {
     createTask,
     updateTask,
     deleteTask,
+    clearTasksInList,
     completeTask,
     uncompleteTask,
     commitTaskToDate,
@@ -38,7 +39,7 @@ export function useAppHandlers() {
   } = useTaskStore()
   
   const { lists, createList, deleteList, duplicateList, updateList } = useListStore()
-  const { setEditingListId, setDuplicatingListId, setShowNewListInput } = useUIStore()
+  const { setEditingListId, setShowNewListInput } = useUIStore()
 
   // Local state for deletion flow
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
@@ -46,6 +47,12 @@ export function useAppHandlers() {
   const [discardConfirm, setDiscardConfirm] = useState<{
     taskId: string
     taskTitle: string
+  } | null>(null)
+
+  const [clearListConfirm, setClearListConfirm] = useState<{
+    listId: string
+    listName: string
+    taskCount: number
   } | null>(null)
   
 
@@ -225,16 +232,44 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     setEditingListId(null)
   }
 
-  const handleListDuplicate = async (listId: string, newName: string) => {
-    await duplicateList(listId, newName)
-    setDuplicatingListId(null)
+
+  const handleClearListClick = (listId: string) => {
+    const list = lists.find(l => l.id === listId)
+    if (!list) return
+    
+    // Count tasks in this list
+    const taskCount = tasks.filter(t => t.home_list_id === listId).length
+    
+    if (taskCount === 0) {
+      // No tasks to clear, do nothing (or show a toast "List is already empty")
+      return
+    }
+    
+    // Show confirmation dialog
+    setClearListConfirm({
+      listId,
+      listName: list.name,
+      taskCount,
+    })
+  }
+
+  const handleClearListConfirm = async () => {
+    if (!clearListConfirm) return
+    
+    await clearTasksInList(clearListConfirm.listId)
+    
+    setClearListConfirm(null)
+  }
+
+  const handleClearListCancel = () => {
+    setClearListConfirm(null)
   }
 
   const handleDeleteListClick = async (listId: string) => {
     const list = lists.find(l => l.id === listId)
     if (!list) return
     
-    // Only block Parked Items  
+    // Block system lists (Parked Items)
     if (list.system_type === 'parked') return
     
     // Block today and future date lists
@@ -246,6 +281,16 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
       if (listDate >= today) return
     }
     
+    // Check if list has tasks
+    const taskCount = tasks.filter(t => t.home_list_id === listId).length
+    if (taskCount > 0) {
+      // List is not empty - don't delete
+      // The UI should prevent this, but this is a safety check
+      console.warn('Cannot delete non-empty list. Clear it first.')
+      return
+    }
+    
+    // List is empty, safe to delete
     await deleteList(listId)
   }
 
@@ -346,7 +391,6 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     // List handlers
     handleListCreate,
     handleListEdit,
-    handleListDuplicate,
     handleDeleteListClick,
     handleUndoDelete,
     
@@ -360,6 +404,12 @@ const handleCreateCalendarTask = async (title: string, time: string): Promise<vo
     handleTaskDiscardClick,
     handleTaskDiscardConfirm,
     handleTaskDiscardCancel,
+    
+    // Clear list
+    clearListConfirm,
+    handleClearListClick,
+    handleClearListConfirm,
+    handleClearListCancel,
     
     // Park handler
     handleParkThought,

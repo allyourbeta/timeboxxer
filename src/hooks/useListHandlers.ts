@@ -15,7 +15,7 @@ interface PendingDelete {
 export function useListHandlers() {
   const { updateTask } = useTaskStore()
   const { lists, createList, deleteList, duplicateList, updateList } = useListStore()
-  const { setEditingListId, setDuplicatingListId, setShowNewListInput } = useUIStore()
+  const { setEditingListId, setShowNewListInput } = useUIStore()
   
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
 
@@ -29,10 +29,6 @@ export function useListHandlers() {
     setEditingListId(null)
   }
 
-  const handleListDuplicate = async (listId: string, newName: string) => {
-    await duplicateList(listId, newName)
-    setDuplicatingListId(null)
-  }
 
   const handleDeleteListClick = async (listId: string) => {
     const list = lists.find(l => l.id === listId)
@@ -86,7 +82,6 @@ export function useListHandlers() {
     setPendingDelete,
     handleListCreate,
     handleListEdit,
-    handleListDuplicate,
     handleDeleteListClick,
     handleUndoDelete,
     handleRollOverTasks,

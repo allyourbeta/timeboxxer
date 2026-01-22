@@ -5,6 +5,7 @@ import {
   createTask as apiCreateTask, 
   updateTask as apiUpdateTask, 
   deleteTask as apiDeleteTask, 
+  clearTasksInList as apiClearTasksInList,
   completeTask as apiCompleteTask, 
   uncompleteTask as apiUncompleteTask,
   commitTaskToDate as apiCommitTaskToDate,
@@ -31,6 +32,7 @@ interface TaskStore {
   createTask: (homeListId: string, title: string) => Promise<void>
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
+  clearTasksInList: (listId: string) => Promise<number>
   completeTask: (taskId: string) => Promise<void>
   uncompleteTask: (taskId: string) => Promise<void>
   commitTaskToDate: (taskId: string, date: string) => Promise<void>
@@ -109,6 +111,17 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message })
       throw error
     }
+  },
+
+  clearTasksInList: async (listId) => {
+    const count = await apiClearTasksInList(listId)
+    
+    // Remove these tasks from local state
+    set({
+      tasks: get().tasks.filter(t => t.home_list_id !== listId)
+    })
+    
+    return count
   },
   
   completeTask: async (taskId) => {

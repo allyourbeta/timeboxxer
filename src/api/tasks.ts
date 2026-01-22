@@ -223,6 +223,30 @@ export async function deleteTask(taskId: string): Promise<void> {
   if (error) throw error
 }
 
+/**
+ * Delete all tasks in a list
+ * @param listId - The list to clear
+ * @returns Number of tasks deleted
+ */
+export async function clearTasksInList(listId: string): Promise<number> {
+  const supabase = createClient()
+  
+  // First count how many will be deleted (for return value)
+  const { count } = await supabase
+    .from('tasks')
+    .select('*', { count: 'exact', head: true })
+    .eq('home_list_id', listId)
+  
+  // Delete all tasks in this list
+  const { error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('home_list_id', listId)
+  
+  if (error) throw error
+  return count || 0
+}
+
 // =============================================================================
 // BATCH OPERATIONS
 // =============================================================================

@@ -1,22 +1,24 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import { MoreVertical, Trash2, Copy, Edit2 } from 'lucide-react'
+import { MoreVertical, Trash2, Eraser, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface ListCardMenuProps {
   isSystemList: boolean
   canDelete: boolean
+  taskCount: number
   onEdit: () => void
-  onDuplicate: () => void
+  onClearList: () => void
   onDelete: () => void
 }
 
 export function ListCardMenu({
   isSystemList,
   canDelete,
+  taskCount,
   onEdit,
-  onDuplicate,
+  onClearList,
   onDelete,
 }: ListCardMenuProps) {
   const [showMenu, setShowMenu] = useState(false)
@@ -56,6 +58,9 @@ export function ListCardMenu({
     }
   }
 
+  // Determine if delete should be disabled
+  const canDeleteNow = canDelete && taskCount === 0
+
   return (
     <div ref={menuRef}>
       <Button
@@ -93,12 +98,22 @@ export function ListCardMenu({
                 onClick={(e) => {
                   e.stopPropagation()
                   setShowMenu(false)
-                  onDuplicate()
+                  onClearList()
                 }}
-                className="w-full px-3 py-2 text-left text-sm text-popover-foreground hover:bg-accent flex items-center gap-2"
+                disabled={taskCount === 0}
+                className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
+                  taskCount === 0 
+                    ? 'text-muted-foreground cursor-not-allowed' 
+                    : 'text-popover-foreground hover:bg-accent'
+                }`}
               >
-                <Copy className="h-4 w-4" />
-                Duplicate
+                <Eraser className="h-4 w-4" />
+                Clear List
+                {taskCount > 0 && (
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {taskCount}
+                  </span>
+                )}
               </button>
             </>
           )}
@@ -108,14 +123,23 @@ export function ListCardMenu({
               onClick={(e) => {
                 e.stopPropagation()
                 e.preventDefault()
-                console.log('Delete button clicked, calling onDelete')
+                if (!canDeleteNow) return
                 setShowMenu(false)
                 onDelete()
               }}
-              className="w-full px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
+              disabled={!canDeleteNow}
+              className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
+                canDeleteNow
+                  ? 'text-destructive hover:bg-destructive/10'
+                  : 'text-muted-foreground cursor-not-allowed'
+              }`}
+              title={!canDeleteNow ? 'Clear list first' : undefined}
             >
               <Trash2 className="h-4 w-4" />
               Delete List
+              {!canDeleteNow && taskCount > 0 && (
+                <span className="text-xs ml-auto">Clear first</span>
+              )}
             </button>
           )}
           

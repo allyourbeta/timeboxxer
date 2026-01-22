@@ -24,7 +24,6 @@ export default function Home() {
     currentView, setCurrentView,
     panelMode, setPanelMode,
     editingListId, setEditingListId,
-    duplicatingListId, setDuplicatingListId,
     showNewListInput, setShowNewListInput,
     expandedListIds, toggleListExpanded,
     collapseAllLists,
@@ -52,9 +51,12 @@ export default function Home() {
     handleCreateCalendarTask,
     handleListCreate,
     handleListEdit,
-    handleListDuplicate,
     handleDeleteListClick,
     handleUndoDelete,
+    clearListConfirm,
+    handleClearListClick,
+    handleClearListConfirm,
+    handleClearListCancel,
     handleStartFocus,
     handleExitFocus,
     handleFocusComplete,
@@ -227,7 +229,6 @@ export default function Home() {
                 tasks={tasks}
                 paletteId={PALETTE_ID}
                 editingListId={editingListId}
-                duplicatingListId={duplicatingListId}
                 showNewListInput={showNewListInput}
                 expandedListIds={expandedListIds}
                 scheduledTaskIds={scheduledTasks.map(t => t.id)}
@@ -235,9 +236,8 @@ export default function Home() {
                 onCreateList={handleListCreate}
                 onEditList={handleListEdit}
                 onDeleteList={handleDeleteListClick}
-                onDuplicateList={handleListDuplicate}
+                onClearList={handleClearListClick}
                 onSetEditingListId={setEditingListId}
-                onSetDuplicatingListId={setDuplicatingListId}
                 onToggleListExpanded={toggleListExpanded}
                 onTaskDurationChange={async (taskId, newDuration) => {
                   const { updateTask } = useTaskStore.getState()
@@ -314,6 +314,18 @@ export default function Home() {
         confirmVariant="destructive"
         onConfirm={handleTaskDiscardConfirm}
         onCancel={handleTaskDiscardCancel}
+      />
+
+      {/* Clear List Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!clearListConfirm}
+        title="Clear this list?"
+        message={`Delete all ${clearListConfirm?.taskCount} task${clearListConfirm?.taskCount === 1 ? '' : 's'} in "${clearListConfirm?.listName}"? This cannot be undone.`}
+        confirmLabel="Clear List"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        onConfirm={handleClearListConfirm}
+        onCancel={handleClearListCancel}
       />
     </div>
   )

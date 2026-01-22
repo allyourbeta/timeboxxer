@@ -5,6 +5,7 @@ export {
   createTask,
   updateTask,
   deleteTask,
+  clearTasksInList,
   completeTask,
   uncompleteTask,
   scheduleTask,

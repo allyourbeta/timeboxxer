@@ -22,9 +22,6 @@ interface UIStore {
   showNewListInput: boolean
   setShowNewListInput: (show: boolean) => void
   
-  // Duplicate list
-  duplicatingListId: string | null
-  setDuplicatingListId: (listId: string | null) => void
   
   // Collapsible lists
   expandedListIds: Set<string>
@@ -57,8 +54,6 @@ export const useUIStore = create<UIStore>((set) => ({
   showNewListInput: false,
   setShowNewListInput: (show) => set({ showNewListInput: show }),
   
-  duplicatingListId: null,
-  setDuplicatingListId: (listId) => set({ duplicatingListId: listId }),
   
   expandedListIds: new Set<string>(),
   toggleListExpanded: (listId) => set((state) => {

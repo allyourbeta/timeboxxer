@@ -12,7 +12,6 @@ interface ListPanelProps {
   tasks: Task[]
   paletteId: string
   editingListId: string | null
-  duplicatingListId: string | null
   showNewListInput: boolean
   expandedListIds: Set<string>
   scheduledTaskIds: string[]
@@ -20,9 +19,8 @@ interface ListPanelProps {
   onCreateList: (name: string) => void
   onEditList: (listId: string, name: string) => void
   onDeleteList: (listId: string) => void
-  onDuplicateList: (listId: string, newName: string) => void
+  onClearList: (listId: string) => void
   onSetEditingListId: (listId: string | null) => void
-  onSetDuplicatingListId: (listId: string | null) => void
   onToggleListExpanded: (listId: string) => void
   onTaskDurationChange: (taskId: string, duration: number) => void
   onTaskDelete: (taskId: string) => void
@@ -41,7 +39,6 @@ export function ListPanel({
   tasks,
   paletteId,
   editingListId,
-  duplicatingListId,
   showNewListInput,
   expandedListIds,
   scheduledTaskIds,
@@ -49,9 +46,8 @@ export function ListPanel({
   onCreateList,
   onEditList,
   onDeleteList,
-  onDuplicateList,
+  onClearList,
   onSetEditingListId,
-  onSetDuplicatingListId,
   onToggleListExpanded,
   onTaskDurationChange,
   onTaskDelete,
@@ -129,7 +125,6 @@ export function ListPanel({
               tasks={getTasksForList(list.id)}
               paletteId={paletteId}
               isEditing={editingListId === list.id}
-              isDuplicating={duplicatingListId === list.id}
               isExpanded={isExpanded}
               scheduledTaskIds={scheduledTaskIds}
               onToggleExpand={() => onToggleListExpanded(list.id)}
@@ -139,12 +134,7 @@ export function ListPanel({
                 onSetEditingListId(null)
               }}
               onCancelEdit={() => onSetEditingListId(null)}
-              onStartDuplicate={() => onSetDuplicatingListId(list.id)}
-              onFinishDuplicate={(name) => {
-                onDuplicateList(list.id, name)
-                onSetDuplicatingListId(null)
-              }}
-              onCancelDuplicate={() => onSetDuplicatingListId(null)}
+              onClearList={() => onClearList(list.id)}
               onDelete={() => onDeleteList(list.id)}
               onTaskDurationClick={(taskId, duration, reverse) => 
                 onTaskDurationChange(taskId, cycleDuration(duration, reverse))

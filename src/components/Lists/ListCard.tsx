@@ -18,16 +18,13 @@ interface ListCardProps {
   tasks: Task[]
   paletteId: string
   isEditing: boolean
-  isDuplicating: boolean
   isExpanded: boolean
   scheduledTaskIds: string[]
   onToggleExpand: () => void
   onStartEdit: () => void
   onFinishEdit: (newName: string) => void
   onCancelEdit: () => void
-  onStartDuplicate: () => void
-  onFinishDuplicate: (newName: string) => void
-  onCancelDuplicate: () => void
+  onClearList: () => void
   onDelete: () => void
   onTaskDurationClick: (taskId: string, currentDuration: number, reverse: boolean) => void
   onTaskDelete: (taskId: string) => void
@@ -49,16 +46,13 @@ export function ListCard({
   tasks,
   paletteId,
   isEditing,
-  isDuplicating,
   isExpanded,
   scheduledTaskIds,
   onToggleExpand,
   onStartEdit,
   onFinishEdit,
   onCancelEdit,
-  onStartDuplicate,
-  onFinishDuplicate,
-  onCancelDuplicate,
+  onClearList,
   onDelete,
   onTaskDurationClick,
   onTaskDelete,
@@ -71,7 +65,6 @@ export function ListCard({
   onRollOver,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
-  const [duplicateName, setDuplicateName] = useState(`${name} Copy`)
 
   const canDeleteList = (): boolean => {
     // System lists (Limbo, Parked Items) - never deletable
@@ -163,8 +156,9 @@ export function ListCard({
               <ListCardMenu
                 isSystemList={isSystemList}
                 canDelete={canDeleteList()}
+                taskCount={tasks.length}
                 onEdit={onStartEdit}
-                onDuplicate={onStartDuplicate}
+                onClearList={onClearList}
                 onDelete={onDelete}
               />
             )}
@@ -255,30 +249,6 @@ export function ListCard({
           </div>
         )}
       </Droppable>
-      
-      {/* Duplicate input */}
-      {isDuplicating && (
-        <div className="px-4 pb-4">
-          <Input
-            type="text"
-            placeholder="New list name..."
-            value={duplicateName}
-            onChange={(e) => setDuplicateName(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') onFinishDuplicate(duplicateName)
-              if (e.key === 'Escape') onCancelDuplicate()
-            }}
-            onBlur={() => {
-              if (duplicateName.trim()) {
-                onFinishDuplicate(duplicateName)
-              } else {
-                onCancelDuplicate()
-              }
-            }}
-            autoFocus
-          />
-        </div>
-      )}
     </div>
   )
 }
