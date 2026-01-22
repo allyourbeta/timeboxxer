@@ -13,7 +13,8 @@ import {
   getCurrentTimePixels,
   getInitialScrollPosition,
   formatSlotId,
-  generateAllSlotIds
+  generateAllSlotIds,
+  calculateTaskWidths
 } from '@/lib/calendarUtils'
 
 interface CalendarViewProps {
@@ -51,6 +52,13 @@ export function CalendarView({
   // Filter scheduled tasks for today
   const scheduledTasks = tasks.filter(task => task.scheduled_at && !task.completed_at)
 
+  // Calculate task layouts for overlap handling
+  const taskLayouts = calculateTaskWidths(scheduledTasks.map(task => ({
+    id: task.id,
+    scheduled_at: task.scheduled_at!,
+    duration_minutes: task.duration_minutes
+  })))
+
   // Generate all slot IDs for the 24-hour period (96 slots with 15-min intervals)
   const slotIds = generateAllSlotIds()
   
@@ -70,7 +78,7 @@ export function CalendarView({
       {/* Calendar grid */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-auto relative"
+        className="flex-1 overflow-y-auto overflow-x-hidden relative"
         data-testid="calendar-container"
       >
         {/* Container for all calendar content */}
@@ -148,13 +156,19 @@ export function CalendarView({
               const height = (task.duration_minutes / 60) * SLOT_HEIGHT
               const backgroundColor = getColor(paletteId, task.color_index)
 
+              // Get layout for overlap handling
+              const layout = taskLayouts.get(task.id) || { width: 100, column: 0 }
+              const leftPercent = layout.column * 50  // 0% or 50%
+
               return (
                 <div
                   key={task.id}
-                  className="absolute left-0 right-0 mx-1 rounded-md shadow-sm border border-white/20 overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
+                  className="absolute mx-1 rounded-md shadow-sm border border-white/20 overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
                   style={{
                     top: `${startPixels}px`,
                     height: `${Math.max(height, 28)}px`, // Minimum height for readability
+                    width: `${layout.width}%`,
+                    left: `${leftPercent}%`,
                     backgroundColor,
                   }}
                   onClick={() => {

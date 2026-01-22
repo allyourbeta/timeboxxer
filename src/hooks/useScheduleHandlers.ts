@@ -2,6 +2,7 @@
 
 import { useTaskStore, useListStore } from '@/state'
 import { getLocalTodayISO, createLocalTimestamp } from '@/lib/dateUtils'
+import { canScheduleTask } from '@/lib/calendarUtils'
 
 
 
@@ -16,6 +17,13 @@ export function useScheduleHandlers() {
     const today = new Date().toISOString().split('T')[0]
     const scheduledAt = createLocalTimestamp(today, time)
     
+    // Check if scheduling is allowed (max 2 overlapping tasks)
+    const validation = canScheduleTask(tasks, taskId, scheduledAt, task.duration_minutes)
+    if (!validation.allowed) {
+      alert(validation.message)
+      return
+    }
+    
     // Schedule the task for this time slot
     await scheduleTask(taskId, scheduledAt)
   }
@@ -25,6 +33,14 @@ export function useScheduleHandlers() {
     if (task?.scheduled_at) {
       const date = task.scheduled_at.split('T')[0]
       const newScheduledAt = createLocalTimestamp(date, newTime)
+      
+      // Check if move is allowed (max 2 overlapping tasks)
+      const validation = canScheduleTask(tasks, taskId, newScheduledAt, task.duration_minutes)
+      if (!validation.allowed) {
+        alert(validation.message)
+        return
+      }
+      
       await scheduleTask(taskId, newScheduledAt)
     }
   }
@@ -50,6 +66,15 @@ export function useScheduleHandlers() {
     // Schedule it for the specified time
     const today = new Date().toISOString().split('T')[0]
     const scheduledAt = createLocalTimestamp(today, time)
+    
+    // Check if scheduling is allowed (max 2 overlapping tasks)
+    const validation = canScheduleTask(updatedTasks, newTask.id, scheduledAt, newTask.duration_minutes)
+    if (!validation.allowed) {
+      alert(validation.message)
+      // If we can't schedule it, leave it in parked list
+      return
+    }
+    
     await scheduleTask(newTask.id, scheduledAt)
   }
 

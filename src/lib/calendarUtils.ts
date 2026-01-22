@@ -207,3 +207,127 @@ export function generateAllSlotIds(): string[] {
   
   return slots
 }
+
+/**
+ * Convert scheduled_at timestamp to slot index for overlap detection
+ * @param scheduledAt - Timestamp like "2026-01-22T09:30:00"
+ * @returns Slot index (0-95)
+ */
+export function timeToSlotIndex(scheduledAt: string): number {
+  const time = scheduledAt.split('T')[1]  // "09:30:00"
+  const [hours, minutes] = time.split(':').map(Number)
+  return hours * 4 + Math.floor(minutes / 15)  // 9:30 -> 38
+}
+
+interface TaskLayout {
+  width: number
+  column: number
+}
+
+interface ScheduledTask {
+  id: string
+  scheduled_at: string
+  duration_minutes: number
+}
+
+/**
+ * Calculate widths and columns for overlapping tasks
+ * Tasks that overlap should display side-by-side at 50% width each
+ * @param tasks - Array of scheduled tasks
+ * @returns Map of task ID to layout info (width %, column 0/1)
+ */
+export function calculateTaskWidths(tasks: ScheduledTask[]): Map<string, TaskLayout> {
+  const result = new Map<string, TaskLayout>()
+  
+  // Step 1: Build a map of which tasks occupy which 15-min slots
+  const slotOccupancy: Map<number, string[]> = new Map()  // slot index -> task IDs
+  
+  for (const task of tasks) {
+    const startSlot = timeToSlotIndex(task.scheduled_at)  // e.g., 9:00 -> 36
+    const endSlot = startSlot + Math.ceil(task.duration_minutes / 15)
+    
+    for (let slot = startSlot; slot < endSlot; slot++) {
+      if (!slotOccupancy.has(slot)) {
+        slotOccupancy.set(slot, [])
+      }
+      slotOccupancy.get(slot)!.push(task.id)
+    }
+  }
+  
+  // Step 2: For each task, check if it shares ANY slot with another task
+  for (const task of tasks) {
+    const startSlot = timeToSlotIndex(task.scheduled_at)
+    const endSlot = startSlot + Math.ceil(task.duration_minutes / 15)
+    
+    let hasOverlap = false
+    let overlapPartner: string | null = null
+    
+    for (let slot = startSlot; slot < endSlot; slot++) {
+      const tasksInSlot = slotOccupancy.get(slot) || []
+      if (tasksInSlot.length > 1) {
+        hasOverlap = true
+        // Find the other task in this slot
+        overlapPartner = tasksInSlot.find(id => id !== task.id) || null
+        break
+      }
+    }
+    
+    if (hasOverlap) {
+      // 50% width, assign column based on start time
+      const partnerTask = tasks.find(t => t.id === overlapPartner)
+      const thisStart = new Date(task.scheduled_at).getTime()
+      const partnerStart = partnerTask ? new Date(partnerTask.scheduled_at).getTime() : Infinity
+      
+      // Earlier task gets column 0 (left), later gets column 1 (right)
+      const column = thisStart <= partnerStart ? 0 : 1
+      result.set(task.id, { width: 50, column })
+    } else {
+      // 100% width, column 0
+      result.set(task.id, { width: 100, column: 0 })
+    }
+  }
+  
+  return result
+}
+
+/**
+ * Check if a task can be scheduled at a given time without violating overlap rules
+ * Maximum of 2 tasks can occupy any 15-minute slot
+ * @param tasks - Current scheduled tasks
+ * @param newTaskId - ID of task being scheduled (to exclude it from checks)
+ * @param scheduledAt - Proposed schedule time
+ * @param durationMinutes - Duration of the task
+ * @returns Object with allowed flag and optional message
+ */
+export function canScheduleTask(
+  tasks: { id: string; scheduled_at: string | null; duration_minutes: number }[],
+  newTaskId: string,
+  scheduledAt: string,
+  durationMinutes: number
+): { allowed: boolean; message?: string } {
+  
+  const startSlot = timeToSlotIndex(scheduledAt)
+  const endSlot = startSlot + Math.ceil(durationMinutes / 15)
+  
+  // Count tasks in each slot (excluding the task being moved)
+  for (let slot = startSlot; slot < endSlot; slot++) {
+    const tasksInSlot = tasks.filter(t => {
+      if (t.id === newTaskId) return false  // Don't count itself
+      if (!t.scheduled_at) return false
+      
+      const tStart = timeToSlotIndex(t.scheduled_at)
+      const tEnd = tStart + Math.ceil(t.duration_minutes / 15)
+      
+      return slot >= tStart && slot < tEnd
+    })
+    
+    if (tasksInSlot.length >= 2) {
+      return { 
+        allowed: false, 
+        message: 'Maximum 2 tasks can overlap. Move or complete a task first.' 
+      }
+    }
+  }
+  
+  return { allowed: true }
+}
