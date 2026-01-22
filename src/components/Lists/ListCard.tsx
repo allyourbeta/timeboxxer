@@ -85,6 +85,23 @@ export function ListCard({
     return true
   }
 
+  const isProtectedList = (): boolean => {
+    // Parked Items - always protected
+    if (isSystemList && !isDateList) return true
+    
+    // Date lists - protected if today or future
+    if (isDateList) {
+      const listDate = new Date(name)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      listDate.setHours(0, 0, 0, 0)
+      return listDate >= today  // Protected if NOT in the past
+    }
+    
+    // User-created lists - not protected
+    return false
+  }
+
 
   
   // Get the first task's color for accent bar
@@ -154,7 +171,7 @@ export function ListCard({
             {/* Three dots menu - only when expanded */}
             {isExpanded && !isEditing && (
               <ListCardMenu
-                isSystemList={isSystemList}
+                isProtectedList={isProtectedList()}
                 canDelete={canDeleteList()}
                 taskCount={tasks.length}
                 onEdit={onStartEdit}

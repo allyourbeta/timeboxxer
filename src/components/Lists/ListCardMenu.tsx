@@ -5,7 +5,7 @@ import { MoreVertical, Trash2, Eraser, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface ListCardMenuProps {
-  isSystemList: boolean
+  isProtectedList: boolean
   canDelete: boolean
   taskCount: number
   onEdit: () => void
@@ -14,7 +14,7 @@ interface ListCardMenuProps {
 }
 
 export function ListCardMenu({
-  isSystemList,
+  isProtectedList,
   canDelete,
   taskCount,
   onEdit,
@@ -81,7 +81,7 @@ export function ListCardMenu({
             left: menuPosition.left,
           }}
         >
-          {!isSystemList && (
+          {!isProtectedList && (
             <>
               <button
                 onClick={(e) => {
@@ -143,7 +143,7 @@ export function ListCardMenu({
             </button>
           )}
           
-          {isSystemList && !canDelete && (
+          {isProtectedList && !canDelete && (
             <div className="px-3 py-2 text-sm text-muted-foreground italic">
               System list
             </div>
