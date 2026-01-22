@@ -173,7 +173,7 @@ export function ListCard({
               <ListCardMenu
                 isProtectedList={isProtectedList()}
                 canDelete={canDeleteList()}
-                taskCount={tasks.filter(t => !t.is_completed).length}
+                taskCount={tasks.length}
                 onEdit={onStartEdit}
                 onClearList={onClearList}
                 onDelete={onDelete}
