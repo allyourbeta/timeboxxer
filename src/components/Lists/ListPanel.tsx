@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
 import { formatDateForDisplay } from '@/lib/dateList'
 import { List, Task } from '@/types/app'
+import { DURATION_OPTIONS } from '@/lib/constants'
 
 
 interface ListPanelProps {
@@ -82,7 +83,7 @@ export function ListPanel({
   }
   
   const cycleDuration = (current: number, reverse: boolean) => {
-    const durations = [15, 30, 45, 60]
+    const durations = [...DURATION_OPTIONS] as number[]
     const idx = durations.indexOf(current)
     if (idx === -1) return 30 // Default if current not in list
     

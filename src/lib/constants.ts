@@ -23,3 +23,6 @@ export const MAX_HIGHLIGHTS_PER_DAY = 5
 
 // Duration Options (also exported from types/app.ts for type safety)
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const
+
+// Default Palette
+export const DEFAULT_PALETTE_ID = 'rainbow-bright'

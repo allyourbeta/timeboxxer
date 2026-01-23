@@ -88,7 +88,6 @@ export function useScheduleHandlers() {
 
   const handleReorderTasks = async (taskIds: string[]) => {
     // Reordering removed in new schema
-    console.log('Reordering not supported in new schema')
   }
 
   return {

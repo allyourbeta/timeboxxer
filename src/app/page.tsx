@@ -9,10 +9,8 @@ import { ListPanel } from '@/components/Lists'
 import { CalendarView } from '@/components/Calendar'
 import { Toast, ConfirmDialog } from '@/components/ui'
 import { FocusMode } from '@/components/Focus'
-import { TOAST_DURATION_MS } from '@/lib/constants'
+import { TOAST_DURATION_MS, DEFAULT_PALETTE_ID } from '@/lib/constants'
 import { getTodayListName, getLocalTodayISO } from '@/lib/dateList'
-
-const PALETTE_ID = 'rainbow-bright'
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
@@ -74,28 +72,18 @@ export default function Home() {
 
   // Load data on mount (only when authenticated)
   useEffect(() => {
-    console.log('🔄 [page.tsx] Data loading useEffect triggered', { 
-      hasUser: !!user, 
-      userId: user?.id 
-    })
-    
     if (!user) {
-      console.log('⏭️ [page.tsx] Skipping data load - no user')
       return
     }
     
-    console.log('📊 [page.tsx] Starting data initialization...')
-    
     const init = async () => {
       try {
-        console.log('📚 [page.tsx] Loading fresh data...')
         await Promise.all([
           loadLists(),
           loadTasks()
         ])
-        console.log('✅ [page.tsx] All data loaded successfully')
       } catch (err) {
-        console.error('💥 [page.tsx] Data loading failed:', err)
+        console.error('Data loading failed:', err)
       }
     }
     
@@ -193,7 +181,7 @@ export default function Home() {
           weekData={getWeekData()}
         />
         <CompletedView
-            paletteId={PALETTE_ID}
+            paletteId={DEFAULT_PALETTE_ID}
             onRestore={handleTaskUncomplete}
         />
       </div>
@@ -237,7 +225,7 @@ export default function Home() {
               <ListPanel
                 lists={visibleLists}
                 tasks={tasks}
-                paletteId={PALETTE_ID}
+                paletteId={DEFAULT_PALETTE_ID}
                 editingListId={editingListId}
                 showNewListInput={showNewListInput}
                 expandedListIds={expandedListIds}
@@ -268,7 +256,7 @@ export default function Home() {
             <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border flex flex-col`}>
               <CalendarView
                 tasks={tasks}
-                paletteId={PALETTE_ID}
+                paletteId={DEFAULT_PALETTE_ID}
                 onExternalDrop={handleExternalDrop}
                 onEventMove={handleEventMove}
                 onUnschedule={handleUnschedule}
@@ -291,7 +279,7 @@ export default function Home() {
       {focusTask && (
         <FocusMode
           task={focusTask}
-          paletteId={PALETTE_ID}
+          paletteId={DEFAULT_PALETTE_ID}
           onExit={handleExitFocus}
           onComplete={handleFocusComplete}
         />

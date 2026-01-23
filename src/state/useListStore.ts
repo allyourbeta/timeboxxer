@@ -29,22 +29,17 @@ export const useListStore = create<ListStore>((set, get) => ({
   loading: true,
   
   loadLists: async () => {
-    console.log('📚 [useListStore] loadLists called')
     try {
       set({ loading: true })
       
-      console.log('📅 [useListStore] Ensuring system lists exist...')
       await getParkedList()
       await getCompletedList()
       
-      console.log('📋 [useListStore] Fetching all lists...')
       const data = await getLists()
       
-      console.log('🔄 [useListStore] Sorting lists for display...')
       // const sortedLists = sortListsForDisplay(data || [])
       const sortedLists = data || []
       
-      console.log('✅ [useListStore] Lists loaded and sorted:', { count: sortedLists.length })
       set({ lists: sortedLists, loading: false })
     } catch (err) {
       console.error('💥 [useListStore] loadLists failed:', err)

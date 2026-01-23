@@ -71,7 +71,6 @@ export function ListCard({
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       listDate.setHours(0, 0, 0, 0)
-      console.log('canDeleteList:', { name, listDate, today, canDelete: listDate < today })
       return listDate < today
     }
     

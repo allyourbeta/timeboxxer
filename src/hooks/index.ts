@@ -1,3 +1,8 @@
 export { useAppHandlers } from './useAppHandlers'
+export { useTaskHandlers } from './useTaskHandlers'
+export { useListHandlers } from './useListHandlers'
+export { useFocusHandlers } from './useFocusHandlers'
+export { useDragHandlers } from './useDragHandlers'
+export { useRolloverHandlers } from './useRolloverHandlers'
 export { useAuth } from './useAuth'
 export { useScheduleHandlers } from './useScheduleHandlers'
