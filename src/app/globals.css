@@ -32,13 +32,62 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
     
-    /* Legacy theme variables for existing components */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8fafc;
-    --bg-tertiary: #f1f5f9;
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
+    /* Timeboxxer Design System - Inspired by Morgen/Akiflow */
+    
+    /* Background colors - calm, professional hierarchy */
+    --bg-primary: #fafafa;        /* Main app background - warm off-white */
+    --bg-secondary: #ffffff;      /* Cards, elevated surfaces */
+    --bg-tertiary: #f5f5f5;       /* Hover states, subtle highlights */
+    --bg-elevated: #ffffff;       /* Modal, dropdown overlays */
+    
+    /* Text colors - soft, readable hierarchy */
+    --text-primary: #171717;      /* Main text - warm dark gray */
+    --text-secondary: #737373;    /* Muted text - medium gray */
+    --text-tertiary: #a3a3a3;     /* Disabled, placeholders - light gray */
+    --text-inverse: #ffffff;      /* Text on dark backgrounds */
+    
+    /* Accent colors - muted, professional */
+    --accent-primary: #2563eb;    /* Primary actions - calm blue */
+    --accent-primary-hover: #1d4ed8;
+    --accent-success: #16a34a;    /* Complete actions - soft green */
+    --accent-success-hover: #15803d;
+    --accent-danger: #dc2626;     /* Delete actions - soft red */
+    --accent-danger-hover: #b91c1c;
+    --accent-warning: #d97706;    /* Warning states - muted orange */
+    
+    /* Borders - subtle definition */
+    --border-subtle: #f5f5f5;     /* Very light, panel separators */
+    --border-default: #e5e5e5;    /* Card borders, inputs */
+    --border-emphasis: #d4d4d4;   /* Focus states, active elements */
+    
+    /* Shadows - soft elevation */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    
+    /* Interactive states */
+    --interactive-hover: var(--bg-tertiary);
+    --interactive-active: #eeeeee;
+    --interactive-disabled: var(--bg-tertiary);
+    
+    /* Status colors - muted versions */
+    --status-info: #0ea5e9;
+    --status-info-bg: #e0f2fe;
+    --status-success: var(--accent-success);
+    --status-success-bg: #f0fdf4;
+    --status-warning: var(--accent-warning);
+    --status-warning-bg: #fffbeb;
+    --status-error: var(--accent-danger);
+    --status-error-bg: #fef2f2;
+    
+    /* Legacy compatibility */
+    --border-color: var(--border-default);
+    --bg-primary-old: var(--bg-primary);
+    --bg-secondary-old: var(--bg-secondary);
+    --bg-tertiary-old: var(--bg-tertiary);
+    --text-primary-old: var(--text-primary);
+    --text-secondary-old: var(--text-secondary);
   }
 
 .dark {
@@ -90,13 +139,86 @@
   }
 }
 
-/* Utility classes that use CSS variables */
+/* Design System Utility Classes */
 .bg-theme-primary { background-color: var(--bg-primary); }
 .bg-theme-secondary { background-color: var(--bg-secondary); }
 .bg-theme-tertiary { background-color: var(--bg-tertiary); }
+.bg-theme-elevated { background-color: var(--bg-elevated); }
+
 .text-theme-primary { color: var(--text-primary); }
 .text-theme-secondary { color: var(--text-secondary); }
-.border-theme { border-color: var(--border-color); }
+.text-theme-tertiary { color: var(--text-tertiary); }
+.text-theme-inverse { color: var(--text-inverse); }
+
+.border-theme { border-color: var(--border-default); }
+.border-theme-subtle { border-color: var(--border-subtle); }
+.border-theme-emphasis { border-color: var(--border-emphasis); }
+
+.shadow-theme-sm { box-shadow: var(--shadow-sm); }
+.shadow-theme-md { box-shadow: var(--shadow-md); }
+
+/* Interactive state helpers */
+.hover-theme:hover { background-color: var(--interactive-hover); }
+.active-theme:active { background-color: var(--interactive-active); }
+
+/* Button variants using design system */
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 150ms ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-primary-hover);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 150ms ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.btn-icon {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  transition: all 150ms ease;
+}
+
+.btn-icon:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  transition: all 150ms ease;
+}
+
+.btn-danger:hover {
+  background-color: var(--accent-danger);
+  color: var(--text-inverse);
+}
 
 /* Animations for modern list cards */
 @keyframes slide-in-from-top {

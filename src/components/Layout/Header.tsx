@@ -68,23 +68,23 @@ export function Header({
   }
 
   return (
-    <header className="h-14 px-4 border-b flex items-center justify-between bg-background">
-      <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Timeboxxer</h1>
+    <header className="h-16 px-6 border-theme bg-theme-secondary shadow-theme-sm flex items-center justify-between">
+      <div className="flex items-center gap-6">
+        <h1 className="text-xl font-semibold text-theme-primary tracking-tight">Timeboxxer</h1>
         
         {/* Streak section */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <WeekStreak weekData={weekData} />
           {completedToday > 0 && (
-            <div className="flex items-center gap-1 text-sm text-emerald-500 font-medium">
-              <span>✓</span>
-              <span>{completedToday}</span>
+            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-theme-tertiary">
+              <span className="text-sm text-green-600">✓</span>
+              <span className="text-sm font-medium text-theme-primary">{completedToday}</span>
             </div>
           )}
         </div>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Park a Thought quick capture */}
         <div className="flex items-center gap-2">
           {showParkInput ? (
@@ -94,161 +94,166 @@ export function Header({
                 onChange={(e) => setParkText(e.target.value)}
                 onKeyDown={handleParkKeyDown}
                 placeholder="Quick save a thought..."
-                className="w-48 h-9"
+                className="w-48 h-8 text-sm border-theme bg-theme-secondary"
                 autoFocus
               />
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
                 onClick={() => { setShowParkInput(false); setParkText(''); }}
-                className="h-9 w-9"
+                className="btn-icon h-8 w-8"
+                title="Cancel"
               >
                 <X className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => setShowParkInput(true)}
-              className="h-9"
+              className="btn-secondary h-8 text-sm"
               title="Quickly save a thought to TBD Grab Bag"
             >
               <Plus className="h-4 w-4 mr-1" />
               Quick Save
-            </Button>
+            </button>
           )}
         </div>
         
         {/* Collapse All button - only show on main view */}
         {currentView === 'main' && (
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={onCollapseAll}
-            className="h-9"
+            className="btn-icon h-8 w-8"
             title="Collapse all lists"
           >
             <ChevronsDownUp className="h-4 w-4" />
-          </Button>
+          </button>
         )}
 
         {/* Column toggle - only show on main view when lists are visible */}
         {currentView === 'main' && (panelMode === 'both' || panelMode === 'lists-only') && (
-          <div className="flex h-9 items-center bg-muted rounded-lg p-1">
-            <Button
-              variant={listColumnCount === 1 ? 'default' : 'ghost'}
-              size="sm"
+          <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
+            <button
               onClick={() => onListColumnCountChange(1)}
-              className="h-7 px-2"
+              className={`h-6 px-2 rounded text-xs transition-all ${
+                listColumnCount === 1
+                  ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                  : 'text-theme-secondary hover:text-theme-primary'
+              }`}
               title="Single column"
             >
-              <Rows3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={listColumnCount === 2 ? 'default' : 'ghost'}
-              size="sm"
+              <Rows3 className="h-3 w-3" />
+            </button>
+            <button
               onClick={() => onListColumnCountChange(2)}
-              className="h-7 px-2"
+              className={`h-6 px-2 rounded text-xs transition-all ${
+                listColumnCount === 2
+                  ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                  : 'text-theme-secondary hover:text-theme-primary'
+              }`}
               title="Two columns"
             >
-              <Columns2 className="h-4 w-4" />
-            </Button>
+              <Columns2 className="h-3 w-3" />
+            </button>
           </div>
         )}
 
         {/* Panel Mode Controls - only show on main view */}
         {currentView === 'main' && (
-          <div className="flex h-9 items-center bg-muted rounded-lg p-1 gap-1">
-            <Toggle
-              pressed={panelMode === 'lists-only'}
-              onPressedChange={() => onPanelModeChange('lists-only')}
-              size="sm"
-              variant="outline"
-              className="h-7 px-2"
+          <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
+            <button
+              onClick={() => onPanelModeChange('lists-only')}
+              className={`h-6 px-3 rounded text-xs transition-all ${
+                panelMode === 'lists-only'
+                  ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                  : 'text-theme-secondary hover:text-theme-primary'
+              }`}
+              title="Lists only"
             >
-              <List className="h-4 w-4 mr-1" />
+              <List className="h-3 w-3 mr-1" />
               Lists
-            </Toggle>
-            <Toggle
-              pressed={panelMode === 'both'}
-              onPressedChange={() => onPanelModeChange('both')}
-              size="sm"
-              variant="outline"
-              className="h-7 px-2"
+            </button>
+            <button
+              onClick={() => onPanelModeChange('both')}
+              className={`h-6 px-3 rounded text-xs transition-all ${
+                panelMode === 'both'
+                  ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                  : 'text-theme-secondary hover:text-theme-primary'
+              }`}
+              title="Both panels"
             >
-              <LayoutGrid className="h-4 w-4 mr-1" />
+              <LayoutGrid className="h-3 w-3 mr-1" />
               Both
-            </Toggle>
-            <Toggle
-              pressed={panelMode === 'calendar-only'}
-              onPressedChange={() => onPanelModeChange('calendar-only')}
-              size="sm"
-              variant="outline"
-              className="h-7 px-2"
+            </button>
+            <button
+              onClick={() => onPanelModeChange('calendar-only')}
+              className={`h-6 px-3 rounded text-xs transition-all ${
+                panelMode === 'calendar-only'
+                  ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                  : 'text-theme-secondary hover:text-theme-primary'
+              }`}
+              title="Calendar only"
             >
-              <Calendar className="h-4 w-4 mr-1" />
+              <Calendar className="h-3 w-3 mr-1" />
               Calendar
-            </Toggle>
+            </button>
           </div>
         )}
         
         {/* Just Start button - only show on main view */}
         {currentView === 'main' && (
-          <Button
-            variant="default"
-            size="sm"
+          <button
             onClick={onJustStart}
-            className="h-9 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+            className="btn-primary h-8 text-sm"
+            title="Just Start"
           >
             <Shuffle className="h-4 w-4 mr-1" />
             Just Start
-          </Button>
+          </button>
         )}
         
         {/* Theme Toggle */}
-        <Button
-          variant="outline"
-          size="icon"
+        <button
           onClick={handleThemeToggle}
-          className="h-9 w-9"
+          className="btn-icon h-8 w-8"
+          title="Toggle theme"
         >
           {theme === 'dark' ? (
             <Sun className="h-4 w-4" />
           ) : (
             <Moon className="h-4 w-4" />
           )}
-        </Button>
+        </button>
         
         {/* Sign Out Button */}
-        <Button
-          variant="outline"
-          size="icon"
+        <button
           onClick={handleSignOut}
-          className="h-9 w-9"
+          className="btn-icon h-8 w-8"
           title="Sign out"
         >
           <LogOut className="h-4 w-4" />
-        </Button>
+        </button>
         
         {/* View Controls */}
-        <div className="flex h-9 items-center bg-muted rounded-lg p-1 gap-1">
-          <Button
-            variant={currentView === 'main' ? 'default' : 'ghost'}
-            size="sm"
+        <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
+          <button
             onClick={() => onViewChange('main')}
-            className="h-7 px-3"
+            className={`h-6 px-3 rounded text-xs font-medium transition-all ${
+              currentView === 'main'
+                ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                : 'text-theme-secondary hover:text-theme-primary'
+            }`}
           >
             Today
-          </Button>
-          <Button
-            variant={currentView === 'completed' ? 'default' : 'ghost'}
-            size="sm"
+          </button>
+          <button
             onClick={() => onViewChange('completed')}
-            className="h-7 px-3"
+            className={`h-6 px-3 rounded text-xs font-medium transition-all ${
+              currentView === 'completed'
+                ? 'bg-theme-secondary text-theme-primary shadow-theme-xs'
+                : 'text-theme-secondary hover:text-theme-primary'
+            }`}
           >
             Completed
-          </Button>
+          </button>
         </div>
       </div>
     </header>

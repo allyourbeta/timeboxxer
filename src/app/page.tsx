@@ -107,8 +107,8 @@ export default function Home() {
   // Show loading while checking auth
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-theme-primary">
+        <p className="text-theme-secondary">Loading...</p>
       </div>
     )
   }
@@ -153,15 +153,15 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-theme-primary">
+        <p className="text-theme-secondary">Loading...</p>
       </div>
     )
   }
 
   if (currentView === 'completed') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-theme-primary">
         <Header
           currentView={currentView}
           panelMode={panelMode}
@@ -189,7 +189,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-theme-primary">
       <Header
         currentView={currentView}
         panelMode={panelMode}
@@ -218,10 +218,10 @@ export default function Home() {
           }
         }}
       >
-        <div className="flex h-[calc(100vh-3.5rem)]">
+        <div className="flex h-[calc(100vh-4rem)]">
           {/* Lists Panel */}
           {(panelMode === 'both' || panelMode === 'lists-only') && (
-            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} overflow-auto p-4`}>
+            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} overflow-auto p-6 bg-theme-primary`}>
               <ListPanel
                 lists={visibleLists}
                 tasks={tasks}
@@ -253,7 +253,7 @@ export default function Home() {
 
           {/* Calendar Panel */}
           {(panelMode === 'both' || panelMode === 'calendar-only') && (
-            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-border flex flex-col`}>
+            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-theme-subtle bg-theme-primary flex flex-col`}>
               <CalendarView
                 tasks={tasks}
                 paletteId={DEFAULT_PALETTE_ID}

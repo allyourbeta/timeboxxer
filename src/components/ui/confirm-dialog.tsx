@@ -34,9 +34,9 @@ export function ConfirmDialog({
       />
       
       {/* Dialog */}
-      <div className="relative bg-popover border rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <h2 className="text-lg font-semibold mb-2">{title}</h2>
-        <p className="text-muted-foreground mb-6">{message}</p>
+      <div className="relative bg-theme-elevated border-theme shadow-lg max-w-md w-full mx-4 p-6 rounded-lg">
+        <h2 className="text-lg font-medium text-theme-primary mb-2">{title}</h2>
+        <p className="text-theme-secondary mb-6">{message}</p>
         
         <div className="flex justify-end gap-3">
           <Button

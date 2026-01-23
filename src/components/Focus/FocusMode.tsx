@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Play, Pause, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Task } from '@/types/app'
+import { getColor } from '@/lib/palettes'
 
 interface FocusModeProps {
   task: Task
@@ -44,8 +45,7 @@ export function FocusMode({
 
   // Get task color
   const getTaskColor = () => {
-    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']
-    return colors[task.color_index] || colors[0]
+    return getColor(paletteId, task.color_index)
   }
 
   // Format time display

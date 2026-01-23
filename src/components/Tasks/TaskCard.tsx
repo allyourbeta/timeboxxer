@@ -71,8 +71,8 @@ export function TaskCard({
   
   return (
     <div
-      className={`fc-event px-3 py-2 rounded-lg group relative ${
-        isHighlight ? 'ring-2 ring-yellow-400' : ''
+      className={`fc-event px-3 py-2 rounded-md group relative transition-all ${
+        isHighlight ? 'ring-1 ring-yellow-400' : ''
       } ${
         isCompleted ? 'opacity-50' : 
         isScheduled && !isInPurgatory ? 'opacity-60' : ''
@@ -86,15 +86,15 @@ export function TaskCard({
       data-color={bgColor}
     >
       {/* Single horizontal line layout */}
-      <div className="flex items-center gap-2">
-        {/* Color dot - click to open color picker could be added later */}
+      <div className="flex items-center gap-2.5">
+        {/* Color dot - visual indicator */}
         <div
-          className="w-3 h-3 rounded-full border border-white/30 flex-shrink-0"
+          className="w-2.5 h-2.5 rounded-full border border-white/20 flex-shrink-0"
           style={{ backgroundColor: bgColor }}
         />
         
         {/* Title - takes remaining space */}
-        <span className={`flex-1 text-white font-medium truncate ${
+        <span className={`flex-1 text-white font-medium text-sm truncate ${
           isCompleted ? 'line-through' : ''
         }`}>
           {title}
@@ -106,7 +106,7 @@ export function TaskCard({
             e.stopPropagation()
             onDurationClick(e.shiftKey)
           }}
-          className="text-white/80 hover:text-white text-sm font-medium min-w-[32px] text-right"
+          className="text-white/80 hover:text-white text-xs font-medium min-w-[28px] text-right transition-colors"
           title="Click to change duration (Shift+click to decrease)"
         >
           {durationLabel}
@@ -115,7 +115,7 @@ export function TaskCard({
         {/* Energy - tap to cycle */}
         <button
           onClick={handleEnergyClick}
-          className="text-sm hover:scale-110 transition-transform"
+          className="text-xs hover:scale-105 transition-transform"
           title={`Energy: ${energyLevel} (click to change)`}
         >
           {ENERGY_ICONS[energyLevel]}
@@ -131,7 +131,7 @@ export function TaskCard({
             type="checkbox"
             checked={isDaily}
             onChange={onDailyToggle}
-            className="w-3.5 h-3.5 rounded border-white/50 accent-white"
+            className="w-3 h-3 rounded border-white/50 accent-white"
           />
         </label>
         
@@ -139,8 +139,8 @@ export function TaskCard({
         {canHighlight && (
           <button
             onClick={(e) => { e.stopPropagation(); onHighlightToggle(); }}
-            className={`text-sm transition-opacity ${
-              isHighlight ? 'opacity-100' : 'opacity-40 hover:opacity-100'
+            className={`text-xs transition-all ${
+              isHighlight ? 'opacity-100 scale-105' : 'opacity-40 hover:opacity-100 hover:scale-105'
             }`}
             title={isHighlight ? 'Remove highlight' : 'Set as highlight'}
           >
@@ -154,10 +154,10 @@ export function TaskCard({
             e.stopPropagation()
             onComplete()
           }}
-          className="opacity-40 hover:opacity-100 transition-all hover:scale-110"
+          className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
           title="Mark as complete"
         >
-          <CheckCircle className="h-5 w-5 text-white hover:text-green-400 hover:drop-shadow-[0_0_4px_rgba(74,222,128,0.8)]" />
+          <CheckCircle className="h-4 w-4 text-white hover:text-green-300" />
         </button>
 
         {/* Delete - visible on hover */}
@@ -166,10 +166,10 @@ export function TaskCard({
             e.stopPropagation()
             onDelete()
           }}
-          className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/80 hover:text-white transition-opacity"
+          className="opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-all hover:scale-105"
           title="Delete task"
         >
-          <Trash2 className="h-4 w-4 text-white/60 hover:text-white" />
+          <Trash2 className="h-3.5 w-3.5 text-white/70 hover:text-white" />
         </button>
       </div>
     </div>

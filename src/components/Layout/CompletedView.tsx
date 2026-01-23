@@ -65,10 +65,10 @@ export function CompletedView({ paletteId, onRestore }: CompletedViewProps) {
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Completed Tasks</h2>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-medium text-theme-primary">Completed Tasks</h2>
+          <p className="text-sm text-theme-secondary">Loading...</p>
         </div>
       </div>
     )
@@ -76,13 +76,13 @@ export function CompletedView({ paletteId, onRestore }: CompletedViewProps) {
 
   if (error) {
     return (
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Completed Tasks</h2>
-          <p className="text-sm text-red-500">Error: {error}</p>
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-medium text-theme-primary">Completed Tasks</h2>
+          <p className="text-sm text-red-600">Error: {error}</p>
           <button 
             onClick={fetchCompletedTasks}
-            className="mt-2 px-3 py-1 bg-primary text-primary-foreground rounded text-sm"
+            className="btn-primary mt-2"
           >
             Retry
           </button>
@@ -92,10 +92,10 @@ export function CompletedView({ paletteId, onRestore }: CompletedViewProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Completed Tasks</h2>
-        <p className="text-sm text-muted-foreground">
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-theme-primary">Completed Tasks</h2>
+        <p className="text-sm text-theme-secondary">
           {tasks.length} task{tasks.length !== 1 ? 's' : ''} completed
         </p>
       </div>
@@ -104,16 +104,16 @@ export function CompletedView({ paletteId, onRestore }: CompletedViewProps) {
         {tasks.map(task => (
           <div
             key={task.id}
-            className="p-3 rounded-lg bg-card border border-border flex items-center justify-between"
+            className="p-4 rounded-lg bg-theme-secondary border border-theme-subtle shadow-theme-sm flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
               <div
-                className="w-4 h-4 rounded-full flex-shrink-0"
+                className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: getColor(paletteId, task.color_index) }}
               />
               <div>
-                <div className="font-medium text-card-foreground">{task.title}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="font-medium text-theme-primary">{task.title}</div>
+                <div className="text-xs text-theme-secondary">
                   {task.duration_minutes} min • 
                   Completed {new Date(task.completed_at).toLocaleString()}
                 </div>
@@ -121,7 +121,7 @@ export function CompletedView({ paletteId, onRestore }: CompletedViewProps) {
             </div>
             <button
               onClick={() => handleRestore(task.id)}
-              className="px-2 py-1 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded"
+              className="btn-secondary text-xs"
             >
               Restore
             </button>
@@ -129,7 +129,7 @@ export function CompletedView({ paletteId, onRestore }: CompletedViewProps) {
         ))}
 
         {tasks.length === 0 && (
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-theme-secondary py-12">
             <p>No completed tasks yet.</p>
           </div>
         )}

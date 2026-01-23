@@ -159,10 +159,22 @@ export const PALETTES: Palette[] = [
       '#4D9494', '#5DAEAE', '#E8E2DA', '#D4CCC2',
       '#2D6A6A', '#C9C1B7', '#B8AEA4', '#6DC8C8'
     ]
+  },
+  {
+    id: 'professional',
+    name: 'Professional',
+    category: 'muted',
+    background: '#FAFAFA',
+    border: '#2563EB',
+    colors: [
+      '#2563EB', '#059669', '#DC2626', '#D97706',  // Primary blues, greens, reds, oranges
+      '#7C3AED', '#0891B2', '#BE185D', '#65A30D',  // Purples, cyans, magentas, limes  
+      '#4B5563', '#374151', '#6B7280', '#9CA3AF'   // Sophisticated grays
+    ]
   }
 ];
 
-export const DEFAULT_PALETTE_ID = 'ocean-bold';
+export const DEFAULT_PALETTE_ID = 'professional';
 
 /**
  * Get a palette by ID, falling back to default if not found

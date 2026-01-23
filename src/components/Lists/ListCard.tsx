@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { Task } from '@/types/app'
+import { getColor } from '@/lib/palettes'
 
 interface ListCardProps {
   id: string
@@ -99,22 +100,21 @@ export function ListCard({
   
   // Get the first task's color for accent bar
   const getFirstTaskColor = () => {
-    if (tasks.length === 0) return 'hsl(var(--primary))' // Default primary color
+    if (tasks.length === 0) return 'var(--accent-primary)' // Default primary color
     const firstTask = tasks[0]
-    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']
-    return colors[firstTask.color_index] || 'hsl(var(--primary))'
+    return getColor(paletteId, firstTask.color_index)
   }
   
   return (
     <div 
       className={`
-        rounded-xl overflow-hidden border-2 border-border shadow-lg bg-card transition-all duration-200
+        rounded-lg overflow-hidden border border-theme-subtle bg-theme-secondary transition-all duration-200
         ${isExpanded 
-          ? 'shadow-xl' 
-          : 'hover:shadow-xl'
+          ? 'shadow-theme-md border-theme-emphasis' 
+          : 'shadow-theme-sm hover:shadow-theme-md hover:border-theme-emphasis'
         }
       `}
-      style={{ breakInside: 'avoid', marginBottom: '1rem' }}
+      style={{ breakInside: 'avoid', marginBottom: '0.875rem' }}
     >
       {/* Header - always visible */}
       {isEditing ? (
@@ -128,15 +128,16 @@ export function ListCard({
               if (e.key === 'Escape') onCancelEdit()
             }}
             onBlur={() => onFinishEdit(editName)}
+            className="border-theme bg-theme-secondary text-theme-primary"
             autoFocus
           />
         </div>
       ) : (
-        <div className="p-4 flex items-center justify-between border-b border-border">
+        <div className="p-4 flex items-center justify-between border-b border-theme-subtle">
           {/* Left side - clickable to toggle expand */}
           <button
             onClick={onToggleExpand}
-            className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 flex-1 text-left transition-all hover-theme rounded-md p-1 -m-1"
           >
             {/* Colored accent bar */}
             <div 
@@ -145,7 +146,7 @@ export function ListCard({
             />
             <div>
               <h3 
-                className="font-semibold text-card-foreground"
+                className="font-medium text-theme-primary"
                 onDoubleClick={(e) => {
                   e.stopPropagation()
                   if (!isSystemList) {
@@ -155,7 +156,7 @@ export function ListCard({
               >
                 {name}
               </h3>
-              <p className="text-sm text-muted-foreground">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-theme-secondary">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
             </div>
           </button>
           
@@ -176,9 +177,9 @@ export function ListCard({
             {/* Expand/collapse icon */}
             <button
               onClick={onToggleExpand}
-              className={`w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+              className={`w-7 h-7 rounded-md bg-theme-tertiary hover:bg-interactive-hover flex items-center justify-center transition-all duration-200 ${isExpanded ? 'rotate-180' : ''}`}
             >
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              <ChevronDown className="w-4 h-4 text-theme-secondary" />
             </button>
           </div>
         </div>
@@ -192,13 +193,13 @@ export function ListCard({
             {...provided.droppableProps}
             className={`
               transition-colors duration-150
-              ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50 ring-4 ring-blue-400 dark:ring-blue-500 ring-inset' : ''}
-              ${isExpanded ? 'px-4 pb-4' : 'min-h-[32px] mx-4 mb-2 rounded-lg border-2 border-dashed border-border/30 hover:border-blue-300'}
+              ${snapshot.isDraggingOver ? 'bg-blue-50 ring-2 ring-blue-300 ring-inset' : ''}
+              ${isExpanded ? 'px-4 pb-4' : 'min-h-[24px] mx-4 mb-2 rounded-md border border-dashed border-theme-default/30 hover:border-blue-300'}
             `}
           >
             {isExpanded && (
               <>
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
                   {tasks
                     .filter(t => !t.completed_at)
                     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
@@ -244,7 +245,7 @@ export function ListCard({
                 {isDateList && !isInbox && tasks.filter(t => !t.completed_at).length > 0 && onRollOver && (
                   <button
                     onClick={onRollOver}
-                    className="w-full mt-2 mb-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md border border-dashed border-slate-300 dark:border-slate-600 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-3 mb-2 px-3 py-2 text-sm text-theme-secondary hover:text-theme-primary hover-theme rounded-md border border-dashed border-theme-default/50 transition-all flex items-center justify-center gap-2"
                   >
                     <span>→</span>
                     <span>Roll over to tomorrow</span>
