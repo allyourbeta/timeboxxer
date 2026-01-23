@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, List, Calendar, LayoutGrid, Plus, X, Shuffle, ChevronsDownUp, Rows3, Columns2, LogOut } from 'lucide-react'
+import { Sun, Moon, List, Calendar, LayoutGrid, X, ChevronsDownUp, Rows3, Columns2, LogOut, Plus, Shuffle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/utils/supabase/client'
-import { WeekStreak } from './WeekStreak'
 
 interface HeaderProps {
   currentView: 'main' | 'completed'
@@ -20,7 +19,6 @@ interface HeaderProps {
   onCollapseAll: () => void
   onJustStart: () => void
   completedToday: number
-  weekData: number[]
 }
 
 export function Header({ 
@@ -34,7 +32,6 @@ export function Header({
   onCollapseAll,
   onJustStart,
   completedToday,
-  weekData,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [showParkInput, setShowParkInput] = useState(false)
@@ -71,8 +68,7 @@ export function Header({
     <header className="h-14 px-4 bg-theme-secondary border-b border-theme flex items-center">
       {/* LEFT GROUP: Branding & Stats */}
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold text-theme-primary">Timeboxxer</h1>
-        <WeekStreak weekData={weekData} />
+        <h1 className="text-2xl font-bold text-theme-primary tracking-tight">Timeboxxer</h1>
         {completedToday > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent-success/10">
             <span className="text-sm text-accent-success">✓</span>
@@ -177,16 +173,16 @@ export function Header({
                 </button>
               </div>
             ) : (
-              <button onClick={() => setShowParkInput(true)} className="btn-secondary h-8 text-sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Quick Save
+              <button onClick={() => setShowParkInput(true)} className="btn-secondary h-8 px-2 sm:px-4 text-sm">
+                <Plus className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Quick Save</span>
               </button>
             )}
             
             {/* Just Start - PRIMARY ACTION, make it stand out */}
-            <button onClick={onJustStart} className="btn-primary h-8 text-sm">
-              <Shuffle className="h-4 w-4 mr-1" />
-              Just Start
+            <button onClick={onJustStart} className="btn-primary h-8 px-2 sm:px-4 text-sm">
+              <Shuffle className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Just Start</span>
             </button>
           </>
         )}

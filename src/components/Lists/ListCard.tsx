@@ -32,7 +32,8 @@ interface ListCardProps {
   onTaskAdd: (title: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskComplete: (taskId: string) => void
-  onRollOver?: () => void
+  onRollOver?: (destination: 'today' | 'tomorrow') => void
+  isToday?: boolean
 }
 
 export function ListCard({
@@ -58,6 +59,7 @@ export function ListCard({
   onTaskEnergyChange,
   onTaskComplete,
   onRollOver,
+  isToday,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
 
@@ -241,15 +243,33 @@ export function ListCard({
                       ))}
                 </div>
                 
-                {/* Roll Over button - only for date lists with incomplete tasks */}
+                {/* Roll Over pills - only for date lists with incomplete tasks */}
                 {isDateList && !isInbox && tasks.filter(t => !t.completed_at).length > 0 && onRollOver && (
-                  <button
-                    onClick={onRollOver}
-                    className="w-full mt-3 mb-2 px-3 py-2 text-sm text-theme-secondary hover:text-theme-primary hover-theme rounded-md border border-dashed border-theme-default/50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>→</span>
-                    <span>Roll over to tomorrow</span>
-                  </button>
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-theme">
+                    <span className="text-xs text-theme-secondary">Roll Over:</span>
+                    
+                    {/* Today pill - hide if viewing today's list */}
+                    {!isToday && (
+                      <button
+                        onClick={() => onRollOver('today')}
+                        className="px-2 py-1 text-xs rounded-full bg-theme-tertiary hover:bg-accent-primary hover:text-white transition-colors"
+                      >
+                        {new Date().toLocaleDateString('en-US', { weekday: 'short' })}
+                      </button>
+                    )}
+                    
+                    {/* Tomorrow pill */}
+                    <button
+                      onClick={() => onRollOver('tomorrow')}
+                      className="px-2 py-1 text-xs rounded-full bg-theme-tertiary hover:bg-accent-primary hover:text-white transition-colors"
+                    >
+                      {(() => {
+                        const tomorrow = new Date()
+                        tomorrow.setDate(tomorrow.getDate() + 1)
+                        return tomorrow.toLocaleDateString('en-US', { weekday: 'short' })
+                      })()}
+                    </button>
+                  </div>
                 )}
 
                 {/* Add task input */}

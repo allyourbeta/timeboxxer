@@ -1,26 +1,28 @@
 'use client'
 
 import { useTaskStore, useListStore } from '@/state'
-import { getLocalTomorrowISO } from '@/lib/dateUtils'
+import { getLocalTodayISO, getLocalTomorrowISO } from '@/lib/dateUtils'
 
 export function useRolloverHandlers() {
   const { tasks, moveTask, createParkedThought } = useTaskStore()
   const { lists, ensureDateList } = useListStore()
 
-  const handleRollOverTasks = async (fromListId: string) => {
+  const handleRollOverTasks = async (fromListId: string, destination: 'today' | 'tomorrow' = 'tomorrow') => {
     const fromList = lists.find(l => l.id === fromListId)
     if (!fromList?.list_date) return
     
-    const toDate = getLocalTomorrowISO()
+    const targetDate = destination === 'today' 
+      ? getLocalTodayISO() 
+      : getLocalTomorrowISO()
     
     try {
-      const tomorrowList = await ensureDateList(toDate)
+      const targetList = await ensureDateList(targetDate)
       const tasksToMove = tasks.filter(t => 
         t.list_id === fromListId && !t.completed_at
       )
       
       for (const task of tasksToMove) {
-        await moveTask(task.id, tomorrowList.id)
+        await moveTask(task.id, targetList.id)
       }
     } catch (error) {
       console.error('Roll over failed:', error)

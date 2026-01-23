@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus } from 'lucide-react'
 import { ListCard } from './ListCard'
-import { formatDateForDisplay } from '@/lib/dateList'
+import { formatDateForDisplay, getLocalTodayISO } from '@/lib/dateList'
 import { List, Task } from '@/types/app'
 import { DURATION_OPTIONS } from '@/lib/constants'
 
@@ -28,7 +28,7 @@ interface ListPanelProps {
   onTaskCreate: (listId: string, title: string) => void
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskComplete: (taskId: string) => void
-  onRollOverTasks: (fromListId: string) => void
+  onRollOverTasks: (fromListId: string, destination: 'today' | 'tomorrow') => void
   columnCount: 1 | 2
 }
 
@@ -132,9 +132,10 @@ export function ListPanel({
               onTaskComplete={onTaskComplete}
               onRollOver={
                 list.list_type === 'date' 
-                  ? () => onRollOverTasks(list.id)
+                  ? (destination) => onRollOverTasks(list.id, destination)
                   : undefined
               }
+              isToday={list.list_type === 'date' && list.list_date === getLocalTodayISO()}
             />
           )
         })}

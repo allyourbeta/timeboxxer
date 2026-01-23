@@ -35,7 +35,7 @@
     /* Timeboxxer Design System - Inspired by Morgen/Akiflow */
     
     /* Background colors - calm, professional hierarchy */
-    --bg-primary: #fafafa;        /* Main app background - warm off-white */
+    --bg-primary: #e5e5e5;       /* Main app background - warm off-white */
     --bg-secondary: #ffffff;      /* Cards, elevated surfaces */
     --bg-tertiary: #f5f5f5;       /* Hover states, subtle highlights */
     --bg-elevated: #ffffff;       /* Modal, dropdown overlays */
@@ -126,7 +126,7 @@
   --chart-5: 340 75% 55%;
   
   /* Timeboxxer Design System - Dark Mode */
-  --bg-primary: #171717;
+  --bg-primary: #0a0a0a;
   --bg-secondary: #262626;
   --bg-tertiary: #404040;
   --bg-elevated: #303030;

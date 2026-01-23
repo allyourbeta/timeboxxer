@@ -157,7 +157,7 @@ export function CalendarView({
   return (
     <div className="flex flex-col h-full bg-background" onClick={() => setSelectedTaskId(null)}>
       {/* Calendar header */}
-      <div className="flex-shrink-0 p-4 border-b border-border">
+      <div className="flex-shrink-0 p-4 border-b border-theme">
         <h2 className="text-lg font-semibold text-foreground">
           Today's Schedule
         </h2>
@@ -179,7 +179,7 @@ export function CalendarView({
             {hourLabels.map((hour, index) => (
               <div
                 key={hour}
-                className="absolute w-full border-b border-border/30"
+                className="absolute w-full border-b border-theme/30"
                 style={{ 
                   top: `${index * SLOT_HEIGHT}px`,
                   height: `${SLOT_HEIGHT}px`
@@ -207,7 +207,7 @@ export function CalendarView({
                       {...provided.droppableProps}
                       className={`
                         absolute w-full border-b cursor-pointer
-                        ${isHourBoundary ? 'border-border/50' : 'border-border/20'}
+                        ${isHourBoundary ? 'border-theme' : 'border-theme-subtle'}
                         ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 ring-inset' : ''}
                         transition-colors duration-150
                       `}
@@ -261,7 +261,7 @@ export function CalendarView({
               return (
                 <div
                   key={task.id}
-                  className="absolute mx-1 rounded-lg bg-theme-secondary border border-theme overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
+                  className="absolute mx-1 rounded-lg bg-theme-secondary border border-theme shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
                   style={{
                     top: `${startPixels}px`,
                     height: `${Math.max(height, 28)}px`, // Minimum height for readability
@@ -281,19 +281,23 @@ export function CalendarView({
                     <span className="truncate text-sm font-medium text-theme-primary flex-1">
                       {task.title}
                     </span>
+                    
+                    {/* Complete - always visible, matching TaskCard behavior */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onComplete(task.id)
+                        setSelectedTaskId(null)
+                      }}
+                      className="opacity-50 hover:opacity-100 transition-all hover:scale-105 ml-2"
+                      title="Mark as complete"
+                    >
+                      <CheckCircle className="h-4 w-4 text-theme-secondary hover:text-accent-success" />
+                    </button>
+                    
+                    {/* Additional actions only visible when selected */}
                     {selectedTaskId === task.id && (
-                      <div className="flex gap-1 ml-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onComplete(task.id)
-                            setSelectedTaskId(null)
-                          }}
-                          className="p-1 bg-accent-success hover:bg-accent-success-hover rounded text-white"
-                          title="Complete"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </button>
+                      <div className="flex gap-1 ml-1">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()

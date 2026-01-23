@@ -133,21 +133,6 @@ export default function Home() {
     return completedDate === today
   }).length
 
-  const getWeekData = (): number[] => {
-    const result: number[] = []
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      const dateStr = date.toDateString()
-      const count = tasks.filter(t => {
-        if (!t.completed_at) return false
-        return new Date(t.completed_at).toDateString() === dateStr
-      }).length
-      result.push(count)
-    }
-    return result
-  }
-
   
   const focusTask = focusTaskId ? tasks.find(t => t.id === focusTaskId) : null
 
@@ -178,7 +163,6 @@ export default function Home() {
           listColumnCount={listColumnCount}
           onListColumnCountChange={setListColumnCount}
           completedToday={completedToday}
-          weekData={getWeekData()}
         />
         <CompletedView
             paletteId={DEFAULT_PALETTE_ID}
@@ -206,7 +190,6 @@ export default function Home() {
         listColumnCount={listColumnCount}
         onListColumnCountChange={setListColumnCount}
         completedToday={completedToday}
-        weekData={getWeekData()}
       />
 
       <DragDropContext 

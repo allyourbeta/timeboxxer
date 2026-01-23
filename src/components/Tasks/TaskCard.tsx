@@ -154,13 +154,13 @@ export function TaskCard({
           <CheckCircle className="h-4 w-4 text-theme-secondary hover:text-accent-success" />
         </button>
 
-        {/* Delete - visible on hover */}
+        {/* Delete - always visible */}
         <button
           onClick={(e) => {
             e.stopPropagation()
             onDelete()
           }}
-          className="opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-all hover:scale-105"
+          className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
           title="Delete task"
         >
           <Trash2 className="h-3.5 w-3.5 text-theme-tertiary hover:text-accent-danger" />
