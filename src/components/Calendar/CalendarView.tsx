@@ -261,13 +261,14 @@ export function CalendarView({
               return (
                 <div
                   key={task.id}
-                  className="absolute mx-1 rounded-md shadow-sm border border-white/20 overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
+                  className="absolute mx-1 rounded-lg bg-theme-secondary border border-theme overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
                   style={{
                     top: `${startPixels}px`,
                     height: `${Math.max(height, 28)}px`, // Minimum height for readability
                     width: `${layout.width}%`,
                     left: `${leftPercent}%`,
-                    backgroundColor,
+                    borderLeftWidth: '4px',
+                    borderLeftColor: backgroundColor,
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -277,7 +278,7 @@ export function CalendarView({
                   data-scheduled-time={startTime}
                 >
                   <div className="flex items-center h-full px-2">
-                    <span className="truncate text-sm font-semibold text-white drop-shadow-sm flex-1">
+                    <span className="truncate text-sm font-medium text-theme-primary flex-1">
                       {task.title}
                     </span>
                     {selectedTaskId === task.id && (
@@ -288,7 +289,7 @@ export function CalendarView({
                             onComplete(task.id)
                             setSelectedTaskId(null)
                           }}
-                          className="p-1 bg-green-500 hover:bg-green-600 rounded text-white"
+                          className="p-1 bg-accent-success hover:bg-accent-success-hover rounded text-white"
                           title="Complete"
                         >
                           <CheckCircle className="h-4 w-4" />
@@ -299,7 +300,7 @@ export function CalendarView({
                             onUnschedule(task.id)
                             setSelectedTaskId(null)
                           }}
-                          className="p-1 bg-gray-500 hover:bg-gray-600 rounded text-white"
+                          className="p-1 bg-theme-tertiary hover:bg-interactive-hover rounded text-theme-primary"
                           title="Remove from calendar"
                         >
                           <CalendarX className="h-4 w-4" />

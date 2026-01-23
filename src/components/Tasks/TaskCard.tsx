@@ -71,13 +71,13 @@ export function TaskCard({
   
   return (
     <div
-      className={`fc-event px-3 py-2 rounded-md group relative transition-all ${
+      className={`px-3 py-2 rounded-lg bg-theme-secondary border border-theme relative overflow-hidden group transition-all ${
         isHighlight ? 'ring-1 ring-yellow-400' : ''
       } ${
         isCompleted ? 'opacity-50' : 
         isScheduled && !isInPurgatory ? 'opacity-60' : ''
       }`}
-      style={{ backgroundColor: bgColor }}
+      style={{ borderLeftWidth: '4px', borderLeftColor: bgColor }}
       title={title}
       data-task-id={id}
       data-title={title}
@@ -87,14 +87,8 @@ export function TaskCard({
     >
       {/* Single horizontal line layout */}
       <div className="flex items-center gap-2.5">
-        {/* Color dot - visual indicator */}
-        <div
-          className="w-2.5 h-2.5 rounded-full border border-white/20 flex-shrink-0"
-          style={{ backgroundColor: bgColor }}
-        />
-        
         {/* Title - takes remaining space */}
-        <span className={`flex-1 text-white font-medium text-sm truncate ${
+        <span className={`flex-1 text-theme-primary font-medium text-sm truncate ${
           isCompleted ? 'line-through' : ''
         }`}>
           {title}
@@ -106,7 +100,7 @@ export function TaskCard({
             e.stopPropagation()
             onDurationClick(e.shiftKey)
           }}
-          className="text-white/80 hover:text-white text-xs font-medium min-w-[28px] text-right transition-colors"
+          className="text-theme-secondary hover:text-theme-primary text-xs font-medium min-w-[28px] text-right transition-colors"
           title="Click to change duration (Shift+click to decrease)"
         >
           {durationLabel}
@@ -131,7 +125,7 @@ export function TaskCard({
             type="checkbox"
             checked={isDaily}
             onChange={onDailyToggle}
-            className="w-3 h-3 rounded border-white/50 accent-white"
+            className="w-3 h-3 rounded border-theme accent-accent-primary"
           />
         </label>
         
@@ -157,7 +151,7 @@ export function TaskCard({
           className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
           title="Mark as complete"
         >
-          <CheckCircle className="h-4 w-4 text-white hover:text-green-300" />
+          <CheckCircle className="h-4 w-4 text-theme-secondary hover:text-accent-success" />
         </button>
 
         {/* Delete - visible on hover */}
@@ -169,7 +163,7 @@ export function TaskCard({
           className="opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-all hover:scale-105"
           title="Delete task"
         >
-          <Trash2 className="h-3.5 w-3.5 text-white/70 hover:text-white" />
+          <Trash2 className="h-3.5 w-3.5 text-theme-tertiary hover:text-accent-danger" />
         </button>
       </div>
     </div>

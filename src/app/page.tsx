@@ -218,11 +218,13 @@ export default function Home() {
           }
         }}
       >
-        <div className="flex h-[calc(100vh-4rem)]">
-          {/* Lists Panel */}
+        {/* Main content area */}
+        <div className="flex-1 flex gap-4 p-4 bg-theme-primary min-h-0 h-[calc(100vh-3.5rem)]">
+          {/* List Panel Container */}
           {(panelMode === 'both' || panelMode === 'lists-only') && (
-            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} overflow-auto p-6 bg-theme-primary`}>
-              <ListPanel
+            <div className={`${panelMode === 'both' ? 'flex-1' : 'w-full'} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm`}>
+              <div className="p-6 h-full overflow-auto">
+                <ListPanel
                 lists={visibleLists}
                 tasks={tasks}
                 paletteId={DEFAULT_PALETTE_ID}
@@ -246,14 +248,15 @@ export default function Home() {
                 onTaskEnergyChange={handleTaskEnergyChange}
                 onTaskComplete={handleTaskComplete}
                 onRollOverTasks={handleRollOverTasks}
-                columnCount={listColumnCount}
-              />
+                  columnCount={listColumnCount}
+                />
+              </div>
             </div>
           )}
-
-          {/* Calendar Panel */}
+          
+          {/* Calendar Panel Container */}
           {(panelMode === 'both' || panelMode === 'calendar-only') && (
-            <div className={`${panelMode === 'both' ? 'w-1/2' : 'w-full'} border-l border-theme-subtle bg-theme-primary flex flex-col`}>
+            <div className={`${panelMode === 'both' ? 'flex-1' : 'w-full'} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm flex flex-col`}>
               <CalendarView
                 tasks={tasks}
                 paletteId={DEFAULT_PALETTE_ID}
