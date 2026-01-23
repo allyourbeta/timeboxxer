@@ -193,10 +193,8 @@ export default function Home() {
           weekData={getWeekData()}
         />
         <CompletedView
-          tasks={tasks.filter(t => t.completed_at)}
-          lists={lists}
-          paletteId={PALETTE_ID}
-          onRestore={handleTaskUncomplete}
+            paletteId={PALETTE_ID}
+            onRestore={handleTaskUncomplete}
         />
       </div>
     )

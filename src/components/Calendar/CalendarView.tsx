@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
-import { Check, X } from 'lucide-react'
+import { CheckCircle, CalendarX } from 'lucide-react'
 import { getColor } from '@/lib/palettes'
 import { Task } from '@/types/app'
 import { 
@@ -291,7 +291,7 @@ export function CalendarView({
                           className="p-1 bg-green-500 hover:bg-green-600 rounded text-white"
                           title="Complete"
                         >
-                          <Check className="h-3 w-3" />
+                          <CheckCircle className="h-4 w-4" />
                         </button>
                         <button
                           onClick={(e) => {
@@ -302,7 +302,7 @@ export function CalendarView({
                           className="p-1 bg-gray-500 hover:bg-gray-600 rounded text-white"
                           title="Remove from calendar"
                         >
-                          <X className="h-3 w-3" />
+                          <CalendarX className="h-4 w-4" />
                         </button>
                       </div>
                     )}

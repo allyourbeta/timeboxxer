@@ -95,7 +95,7 @@ export function ListPanel({
   return (
     <div ref={containerRef} className="border-r border-theme overflow-y-auto">
         <div className="p-4" style={{ columnCount: columnCount, columnGap: '1rem' }}>
-          {lists.map((list) => {
+          {lists.filter(l => l.list_type !== 'completed').map((list) => {
           const isExpanded = expandedListIds.has(list.id)
           const displayName = list.list_type === 'date' && list.list_date
             ? formatDateForDisplay(list.list_date)
