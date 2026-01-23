@@ -156,40 +156,52 @@ export function Header({
       <div className="flex items-center gap-2">
         {/* Primary Actions */}
         {currentView === 'main' && (
-          <>
-            {/* Quick Save */}
-            {showParkInput ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={parkText}
-                  onChange={(e) => setParkText(e.target.value)}
-                  onKeyDown={handleParkKeyDown}
-                  placeholder="Quick save a thought..."
-                  className="w-48 h-8 text-sm"
-                  autoFocus
-                />
-                <button onClick={() => { setShowParkInput(false); setParkText(''); }} className="btn-icon h-8 w-8">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setShowParkInput(true)} className="btn-secondary h-8 px-2 sm:px-4 text-sm">
-                <Plus className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Quick Save</span>
+            <>
+              {/* Quick Save */}
+              {showParkInput ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                        value={parkText}
+                        onChange={(e) => setParkText(e.target.value)}
+                        onKeyDown={handleParkKeyDown}
+                        placeholder="Quick save a thought..."
+                        className="w-48 h-8 text-sm"
+                        autoFocus
+                    />
+                    <button onClick={() => {
+                      setShowParkInput(false);
+                      setParkText('');
+                    }} className="btn-icon h-8 w-8">
+                      <X className="h-4 w-4"/>
+                    </button>
+                  </div>
+              ) : (
+                  <button
+                      onClick={() => setShowParkInput(true)}
+                      className="btn-secondary h-8 px-4 text-sm"
+                      title="Quick Save"
+                  >
+                    <Plus className="h-4 w-4 lg:hidden"/>
+                    <span className="hidden lg:inline">Quick Save</span>
+                  </button>
+              )}
+
+              {/* Just Start - PRIMARY ACTION, make it stand out */}
+              <button
+                  onClick={onJustStart}
+                  className="btn-primary h-8 px-4 text-sm"
+                  title="Just Start"
+              >
+                <Shuffle className="h-4 w-4 lg:hidden"/>
+                <span className="hidden lg:inline">Just Start</span>
               </button>
-            )}
-            
-            {/* Just Start - PRIMARY ACTION, make it stand out */}
-            <button onClick={onJustStart} className="btn-primary h-8 px-2 sm:px-4 text-sm">
-              <Shuffle className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Just Start</span>
-            </button>
-          </>
+
+            </>
         )}
-        
+
         {/* Divider */}
-        <div className="h-5 w-px bg-border-default mx-1" />
-        
+        <div className="h-5 w-px bg-border-default mx-1"/>
+
         {/* Navigation: Today / Completed */}
         <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
           <button
