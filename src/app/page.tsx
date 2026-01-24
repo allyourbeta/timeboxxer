@@ -1,32 +1,38 @@
-'use client'
+"use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { DragDropContext } from '@hello-pangea/dnd'
-import { useTaskStore, useListStore, useUIStore } from '@/state'
-import { useAppHandlers, useAuth, useScheduleHandlers } from '@/hooks'
-import { Header, CompletedView } from '@/components/Layout'
-import { ListPanel } from '@/components/Lists'
-import { CalendarView } from '@/components/Calendar'
-import { Toast, ConfirmDialog } from '@/components/ui'
-import { FocusMode } from '@/components/Focus'
-import { TOAST_DURATION_MS, DEFAULT_PALETTE_ID } from '@/lib/constants'
-import { getTodayListName, getLocalTodayISO } from '@/lib/dateList'
+import { useEffect, useRef, useState, useCallback } from "react";
+import { DragDropContext } from "@hello-pangea/dnd";
+import { useTaskStore, useListStore, useUIStore } from "@/state";
+import { useAppHandlers, useAuth, useScheduleHandlers } from "@/hooks";
+import { Header, CompletedView } from "@/components/Layout";
+import { ListPanel } from "@/components/Lists";
+import { CalendarView } from "@/components/Calendar";
+import { Toast, ConfirmDialog } from "@/components/ui";
+import { FocusMode } from "@/components/Focus";
+import { TOAST_DURATION_MS, DEFAULT_PALETTE_ID } from "@/lib/constants";
+import { getTodayListName, getLocalTodayISO } from "@/lib/dateList";
 
 export default function Home() {
-  const { user, loading: authLoading } = useAuth()
-  
+  const { user, loading: authLoading } = useAuth();
+
   // Stores (data only)
-  const { tasks, loading: tasksLoading, loadTasks } = useTaskStore()
-  const { lists, loading: listsLoading, loadLists } = useListStore()
+  const { tasks, loading: tasksLoading, loadTasks } = useTaskStore();
+  const { lists, loading: listsLoading, loadLists } = useListStore();
   const {
-    currentView, setCurrentView,
-    panelMode, setPanelMode,
-    editingListId, setEditingListId,
-    showNewListInput, setShowNewListInput,
-    expandedListIds, toggleListExpanded,
+    currentView,
+    setCurrentView,
+    panelMode,
+    setPanelMode,
+    editingListId,
+    setEditingListId,
+    showNewListInput,
+    setShowNewListInput,
+    expandedListIds,
+    toggleListExpanded,
     collapseAllLists,
-    listColumnCount, setListColumnCount,
-  } = useUIStore()
+    listColumnCount,
+    setListColumnCount,
+  } = useUIStore();
 
   // All handlers from custom hook
   const {
@@ -58,7 +64,7 @@ export default function Home() {
     handleTaskDiscardClick,
     handleTaskDiscardConfirm,
     handleTaskDiscardCancel,
-  } = useAppHandlers()
+  } = useAppHandlers();
 
   // Schedule handlers with proper overlap validation
   const {
@@ -66,107 +72,105 @@ export default function Home() {
     handleEventMove,
     handleUnschedule,
     handleCreateCalendarTask,
-  } = useScheduleHandlers()
+  } = useScheduleHandlers();
 
   // Ref to track calendar editing cancellation
-  const cancelEditingRef = useRef<(() => void) | null>(null)
+  const cancelEditingRef = useRef<(() => void) | null>(null);
 
   // Track whether a Hello-Pangea DnD gesture is active.
   // Calendar uses this to temporarily disable pointer interactions on scheduled blocks
   // so slot droppables remain reliable while dragging from lists.
-  const [isDndDragging, setIsDndDragging] = useState(false)
+  const [isDndDragging, setIsDndDragging] = useState(false);
 
   const handleDndStart = useCallback(() => {
-    setIsDndDragging(true)
+    setIsDndDragging(true);
     // Cancel any ongoing slot editing when drag starts
     if (cancelEditingRef.current) {
-      cancelEditingRef.current()
+      cancelEditingRef.current();
     }
-  }, [])
+  }, []);
 
   const handleDndEnd = useCallback(
     (result: any) => {
-      setIsDndDragging(false)
-      handleDragEnd(result)
+      setIsDndDragging(false);
+      handleDragEnd(result);
     },
-    [handleDragEnd]
-  )
+    [handleDragEnd],
+  );
 
   // Load data on mount (only when authenticated)
   useEffect(() => {
     if (!user) {
-      return
+      return;
     }
-    
+
     const init = async () => {
       try {
-        await Promise.all([
-          loadLists(),
-          loadTasks()
-        ])
+        await Promise.all([loadLists(), loadTasks()]);
       } catch (err) {
-        console.error('Data loading failed:', err)
+        console.error("Data loading failed:", err);
       }
-    }
-    
-    init()
-  }, [user, loadLists, loadTasks])
+    };
+
+    init();
+  }, [user, loadLists, loadTasks]);
 
   // Spawn daily tasks after data loads
   useEffect(() => {
-    if (!user) return  // Don't run if not logged in
+    if (!user) return; // Don't run if not logged in
     if (!tasksLoading && !listsLoading && tasks.length > 0) {
       // Find today's date list
-      const todayList = lists.find(l => l.list_date === getLocalTodayISO())
+      const todayList = lists.find((l) => l.list_date === getLocalTodayISO());
       if (todayList) {
         // Daily tasks removed in new schema
       }
     }
-  }, [user, tasksLoading, listsLoading, tasks.length, lists])
+  }, [user, tasksLoading, listsLoading, tasks.length, lists]);
 
   // NOW we can have conditional returns (after all hooks)
-  
+
   // Show loading while checking auth
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-theme-primary">
         <p className="text-theme-secondary">Loading...</p>
       </div>
-    )
+    );
   }
-  
+
   // Redirect to login if not authenticated
   if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
     }
-    return null
+    return null;
   }
 
   // Computed values
-  const loading = tasksLoading || listsLoading
-  const scheduledTasks = tasks.filter(t => t.scheduled_at && !t.completed_at)
-  const visibleLists = lists.filter(l => l.id !== pendingDelete?.listId)
-  
-  const completedToday = tasks.filter(t => {
-    if (!t.completed_at) return false
-    const completedDate = new Date(t.completed_at).toDateString()
-    const today = new Date().toDateString()
-    return completedDate === today
-  }).length
+  const loading = tasksLoading || listsLoading;
+  const scheduledTasks = tasks.filter((t) => t.scheduled_at && !t.completed_at);
+  const visibleLists = lists.filter((l) => l.id !== pendingDelete?.listId);
 
-  
-  const focusTask = focusTaskId ? tasks.find(t => t.id === focusTaskId) : null
+  const completedToday = tasks.filter((t) => {
+    if (!t.completed_at) return false;
+    const completedDate = new Date(t.completed_at).toDateString();
+    const today = new Date().toDateString();
+    return completedDate === today;
+  }).length;
+
+  const focusTask = focusTaskId
+    ? tasks.find((t) => t.id === focusTaskId)
+    : null;
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-theme-primary">
         <p className="text-theme-secondary">Loading...</p>
       </div>
-    )
+    );
   }
 
-  if (currentView === 'completed') {
+  if (currentView === "completed") {
     return (
       <div className="min-h-screen bg-theme-primary">
         <Header
@@ -178,8 +182,10 @@ export default function Home() {
           onCollapseAll={collapseAllLists}
           onJustStart={() => {
             if (scheduledTasks.length > 0) {
-              const randomIndex = Math.floor(Math.random() * scheduledTasks.length)
-              handleStartFocus(scheduledTasks[randomIndex].id)
+              const randomIndex = Math.floor(
+                Math.random() * scheduledTasks.length,
+              );
+              handleStartFocus(scheduledTasks[randomIndex].id);
             }
           }}
           listColumnCount={listColumnCount}
@@ -187,11 +193,11 @@ export default function Home() {
           completedToday={completedToday}
         />
         <CompletedView
-            paletteId={DEFAULT_PALETTE_ID}
-            onRestore={handleTaskUncomplete}
+          paletteId={DEFAULT_PALETTE_ID}
+          onRestore={handleTaskUncomplete}
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -205,8 +211,10 @@ export default function Home() {
         onCollapseAll={collapseAllLists}
         onJustStart={() => {
           if (scheduledTasks.length > 0) {
-            const randomIndex = Math.floor(Math.random() * scheduledTasks.length)
-            handleStartFocus(scheduledTasks[randomIndex].id)
+            const randomIndex = Math.floor(
+              Math.random() * scheduledTasks.length,
+            );
+            handleStartFocus(scheduledTasks[randomIndex].id);
           }
         }}
         listColumnCount={listColumnCount}
@@ -214,50 +222,51 @@ export default function Home() {
         completedToday={completedToday}
       />
 
-      <DragDropContext 
-        onDragEnd={handleDndEnd}
-        onDragStart={handleDndStart}
-      >
+      <DragDropContext onDragEnd={handleDndEnd} onDragStart={handleDndStart}>
         {/* Main content area */}
         <div className="flex-1 flex gap-4 p-4 bg-theme-primary min-h-0 h-[calc(100vh-3.5rem)]">
           {/* List Panel Container */}
-          {(panelMode === 'both' || panelMode === 'lists-only') && (
-            <div className={`${panelMode === 'both' ? 'flex-1' : 'w-full'} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm`}>
+          {(panelMode === "both" || panelMode === "lists-only") && (
+            <div
+              className={`${panelMode === "both" ? "flex-1" : "w-full"} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm`}
+            >
               <div className="p-6 h-full overflow-auto">
                 <ListPanel
-                lists={visibleLists}
-                tasks={tasks}
-                paletteId={DEFAULT_PALETTE_ID}
-                editingListId={editingListId}
-                showNewListInput={showNewListInput}
-                expandedListIds={expandedListIds}
-                scheduledTaskIds={scheduledTasks.map(t => t.id)}
-                onShowNewListInput={() => setShowNewListInput(true)}
-                onCreateList={handleListCreate}
-                onEditList={handleListEdit}
-                onDeleteList={handleDeleteListClick}
-                onClearList={handleClearListClick}
-                onSetEditingListId={setEditingListId}
-                onToggleListExpanded={toggleListExpanded}
-                onTaskDurationChange={async (taskId, newDuration) => {
-                  const { updateTask } = useTaskStore.getState()
-                  await updateTask(taskId, { duration_minutes: newDuration })
-                }}
-                onTaskDelete={handleTaskDelete}
-                onTaskCreate={handleTaskAdd}
-                onTaskEnergyChange={handleTaskEnergyChange}
-                onTaskComplete={handleTaskComplete}
-                onRollOverTasks={handleRollOverTasks}
-                onHighlightToggle={handleHighlightToggle}
+                  lists={visibleLists}
+                  tasks={tasks}
+                  paletteId={DEFAULT_PALETTE_ID}
+                  editingListId={editingListId}
+                  showNewListInput={showNewListInput}
+                  expandedListIds={expandedListIds}
+                  scheduledTaskIds={scheduledTasks.map((t) => t.id)}
+                  onShowNewListInput={() => setShowNewListInput(true)}
+                  onCreateList={handleListCreate}
+                  onEditList={handleListEdit}
+                  onDeleteList={handleDeleteListClick}
+                  onClearList={handleClearListClick}
+                  onSetEditingListId={setEditingListId}
+                  onToggleListExpanded={toggleListExpanded}
+                  onTaskDurationChange={async (taskId, newDuration) => {
+                    const { updateTask } = useTaskStore.getState();
+                    await updateTask(taskId, { duration_minutes: newDuration });
+                  }}
+                  onTaskDelete={handleTaskDelete}
+                  onTaskCreate={handleTaskAdd}
+                  onTaskEnergyChange={handleTaskEnergyChange}
+                  onTaskComplete={handleTaskComplete}
+                  onRollOverTasks={handleRollOverTasks}
+                  onHighlightToggle={handleHighlightToggle}
                   columnCount={listColumnCount}
                 />
               </div>
             </div>
           )}
-          
+
           {/* Calendar Panel Container */}
-          {(panelMode === 'both' || panelMode === 'calendar-only') && (
-            <div className={`${panelMode === 'both' ? 'flex-1' : 'w-full'} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm flex flex-col`}>
+          {(panelMode === "both" || panelMode === "calendar-only") && (
+            <div
+              className={`${panelMode === "both" ? "flex-1" : "w-full"} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm flex flex-col`}
+            >
               <CalendarView
                 tasks={tasks}
                 paletteId={DEFAULT_PALETTE_ID}
@@ -266,13 +275,14 @@ export default function Home() {
                 onEventMove={handleEventMove}
                 onUnschedule={handleUnschedule}
                 onComplete={handleTaskComplete}
+                onDelete={handleTaskDelete}
                 onDurationChange={async (taskId, newDuration) => {
-                  const { updateTask } = useTaskStore.getState()
-                  await updateTask(taskId, { duration_minutes: newDuration })
+                  const { updateTask } = useTaskStore.getState();
+                  await updateTask(taskId, { duration_minutes: newDuration });
                 }}
                 onCreateTask={handleCreateCalendarTask}
                 onDragStart={(cancelCallback) => {
-                  cancelEditingRef.current = cancelCallback
+                  cancelEditingRef.current = cancelCallback;
                 }}
                 isDndDragging={isDndDragging}
               />
@@ -291,20 +301,19 @@ export default function Home() {
         />
       )}
 
-
       {/* Undo Toast */}
       {pendingDelete && (
         <Toast
           message={`"${pendingDelete.listName}" deleted`}
           action={{
-            label: 'Undo',
+            label: "Undo",
             onClick: handleUndoDelete,
           }}
           duration={TOAST_DURATION_MS}
           onClose={() => setPendingDelete(null)}
         />
       )}
-      
+
       {/* Discard Confirmation Dialog */}
       <ConfirmDialog
         isOpen={!!discardConfirm}
@@ -321,7 +330,7 @@ export default function Home() {
       <ConfirmDialog
         isOpen={!!clearListConfirm}
         title="Clear this list?"
-        message={`Delete all ${clearListConfirm?.taskCount} task${clearListConfirm?.taskCount === 1 ? '' : 's'} in "${clearListConfirm?.listName}"? This cannot be undone.`}
+        message={`Delete all ${clearListConfirm?.taskCount} task${clearListConfirm?.taskCount === 1 ? "" : "s"} in "${clearListConfirm?.listName}"? This cannot be undone.`}
         confirmLabel="Clear List"
         cancelLabel="Cancel"
         confirmVariant="destructive"
@@ -329,5 +338,5 @@ export default function Home() {
         onCancel={handleClearListCancel}
       />
     </div>
-  )
+  );
 }

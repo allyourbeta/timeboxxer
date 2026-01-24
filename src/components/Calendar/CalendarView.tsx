@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Droppable } from "@hello-pangea/dnd";
-import { CalendarX, CheckCircle } from "lucide-react";
+import { CheckCircle, Trash2 } from "lucide-react";
 
 import { Task } from "@/types/app";
 import { getColor } from "@/lib/palettes";
@@ -121,6 +121,7 @@ export interface CalendarViewProps {
   onEventMove: (taskId: string, time: string) => void | Promise<void>;
   onUnschedule: (taskId: string) => void | Promise<void>;
   onComplete: (taskId: string) => void | Promise<void>;
+  onDelete: (taskId: string) => void | Promise<void>;
   onCreateTask: (title: string, time: string) => void | Promise<void>;
   onDurationChange: (
     taskId: string,
@@ -140,6 +141,7 @@ export function CalendarView({
   onEventMove,
   onUnschedule,
   onComplete,
+  onDelete,
   onCreateTask,
   onDurationChange,
   onDragStart,
@@ -656,36 +658,35 @@ export function CalendarView({
                       </div>
                     </div>
 
-                    {isSelected && (
-                      <div className="flex items-center gap-1">
-                        {!task.completed_at && (
-                          <button
-                            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void Promise.resolve(onComplete(task.id));
-                              setSelectedTaskId(null);
-                            }}
-                            aria-label="Complete task"
-                            type="button"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </button>
-                        )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {!task.completed_at && (
                         <button
-                          className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
                           onClick={(e) => {
                             e.stopPropagation();
-                            void Promise.resolve(onUnschedule(task.id));
+                            void Promise.resolve(onComplete(task.id));
                             setSelectedTaskId(null);
                           }}
-                          aria-label="Unschedule task"
+                          className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
+                          aria-label="Mark as complete"
                           type="button"
                         >
-                          <CalendarX className="h-4 w-4" />
+                          <CheckCircle className="h-4 w-4 text-theme-secondary hover:text-accent-success" />
                         </button>
-                      </div>
-                    )}
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void Promise.resolve(onDelete(task.id));
+                          setSelectedTaskId(null);
+                        }}
+                        className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
+                        aria-label="Delete task"
+                        type="button"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-theme-tertiary hover:text-accent-danger" />
+                      </button>
+                    </div>
                   </div>
 
                   {!task.completed_at && (
