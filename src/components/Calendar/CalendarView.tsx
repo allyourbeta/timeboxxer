@@ -1,287 +1,709 @@
-'use client'
+"use client";
 
-import { useCallback, useMemo, useRef } from 'react'
-import { Droppable } from '@hello-pangea/dnd'
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Droppable } from "@hello-pangea/dnd";
+import { CalendarX, CheckCircle } from "lucide-react";
+
+import { Task } from "@/types/app";
+import { getColor } from "@/lib/palettes";
 import {
+  SLOT_HEIGHT,
+  SLOTS_PER_HOUR,
+  getHourLabels,
+  getCurrentTimePixels,
+  getInitialScrollPosition,
+  timestampToTime,
   timeToPixels,
   pixelsToTime,
-  timestampToTime,
+  generateAllSlotIds,
+  parseSlotId,
+  calculateTaskWidths,
   canScheduleTask,
-} from '@/lib/calendarUtils'
-import { createLocalTimestamp } from '@/lib/dateUtils'
+} from "@/lib/calendarUtils";
+import { createLocalTimestamp } from "@/lib/dateUtils";
 
-const SLOT_HEIGHT = 180
-const SLOT_PX_15_MIN = SLOT_HEIGHT / 4
+/* --------------------------- Inline SlotInput --------------------------- */
 
-type GestureType = 'none' | 'drag' | 'resize'
-type MaybePromise<T = void> = T | Promise<T>
+function SlotInput({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (title: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-interface GestureState {
-  type: GestureType
-  taskId: string | null
-  startContentY: number
-  startValue: number
-  currentValue: number
-  hasMoved: boolean
-  taskElement: HTMLElement | null
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (value.trim()) onSubmit(value.trim());
+      else onCancel();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    }
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => onCancel(), 100);
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      placeholder="New task..."
+      className="absolute inset-x-0 top-0 h-8 px-2 text-sm bg-white border-2 border-blue-500 rounded shadow-lg focus:outline-none z-50"
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
 }
+
+/* ------------------------------ Constants ------------------------------ */
+
+const DRAG_THRESHOLD_PX = 5;
+const MIN_DURATION_MINUTES = 15;
+const MAX_DURATION_MINUTES = 240;
+const DAY_MINUTES = 24 * 60;
+
+const SLOT_PX_15_MIN = SLOT_HEIGHT / SLOTS_PER_HOUR; // 45px
+
+const getContentY = (container: HTMLElement, clientY: number) => {
+  const rect = container.getBoundingClientRect();
+  return clientY - rect.top + container.scrollTop;
+};
+
+const timeToMinutes = (time: string): number => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+
+type GestureType = "none" | "drag" | "resize";
+
+type GestureState = {
+  type: GestureType;
+  taskId: string | null;
+  startContentY: number;
+  startTopPx: number;
+  startDurationMin: number;
+  currentTopPx: number;
+  currentDurationMin: number;
+  hasMoved: boolean;
+  taskEl: HTMLElement | null;
+};
+
+/* ------------------------------- Props -------------------------------- */
 
 export interface CalendarViewProps {
-  tasks: any[]
-  date?: string // OPTIONAL (caller may omit)
+  tasks: Task[];
+  paletteId: string;
 
-  onEventMove: (taskId: string, newTime: string) => MaybePromise
-  onDurationChange: (taskId: string, newDuration: number) => MaybePromise
+  // ✅ Option B: accept either name (legacy + new)
+  isDndDragging?: boolean;
+  isExternalDndDragging?: boolean;
 
-  paletteId?: string
-  onExternalDrop?: (taskId: string, time: string) => MaybePromise
-  onUnschedule?: (taskId: string) => MaybePromise
-  onComplete?: (taskId: string) => MaybePromise
-  onDragStart?: (cancelCallback: any) => void
-
-  [key: string]: any
+  onExternalDrop: (taskId: string, time: string) => void | Promise<void>;
+  onEventMove: (taskId: string, time: string) => void | Promise<void>;
+  onUnschedule: (taskId: string) => void | Promise<void>;
+  onComplete: (taskId: string) => void | Promise<void>;
+  onCreateTask: (title: string, time: string) => void | Promise<void>;
+  onDurationChange: (
+    taskId: string,
+    newDuration: number,
+  ) => void | Promise<void>;
+  onDragStart?: (cancelCallback: () => void) => void;
 }
+
+/* ------------------------------ Component ------------------------------ */
 
 export function CalendarView({
   tasks,
-  date,
+  paletteId,
+  isDndDragging,
+  isExternalDndDragging: isExternalDndDraggingProp,
+  onExternalDrop, // kept for API compatibility; parent typically handles drop via DnD context
   onEventMove,
+  onUnschedule,
+  onComplete,
+  onCreateTask,
   onDurationChange,
+  onDragStart,
 }: CalendarViewProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const isExternalDndDragging =
+    isExternalDndDraggingProp ?? isDndDragging ?? false;
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const gestureRef = useRef<GestureState>({
-    type: 'none',
+    type: "none",
     taskId: null,
     startContentY: 0,
-    startValue: 0,
-    currentValue: 0,
+    startTopPx: 0,
+    startDurationMin: 0,
+    currentTopPx: 0,
+    currentDurationMin: 0,
     hasMoved: false,
-    taskElement: null,
-  })
+    taskEl: null,
+  });
+
+  const [editingSlot, setEditingSlot] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
+  // Live label during resize (so the “60m” updates while dragging)
+  const [resizePreview, setResizePreview] = useState<{
+    taskId: string;
+    duration: number;
+  } | null>(null);
+
+  const hourLabels = useMemo(() => getHourLabels(), []);
+  const slotIds = useMemo(() => generateAllSlotIds(), []);
+  const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR; // 45px
 
   const scheduledTasks = useMemo(
-    () => tasks.filter(t => t.scheduled_at),
-    [tasks]
-  )
+    () => tasks.filter((t) => t.scheduled_at),
+    [tasks],
+  );
 
-  const getContentY = (clientY: number) => {
-    const el = containerRef.current!
-    const rect = el.getBoundingClientRect()
-    return clientY - rect.top + el.scrollTop
-  }
+  // Avoid stale closures for document listeners (fixes “intermittent”)
+  const tasksRef = useRef<Task[]>(tasks);
+  const scheduledTasksRef = useRef<Task[]>(scheduledTasks);
+  useEffect(() => {
+    tasksRef.current = tasks;
+    scheduledTasksRef.current = scheduledTasks;
+  }, [tasks, scheduledTasks]);
 
-  const clearVisuals = () => {
-    const g = gestureRef.current
-    if (!g.taskElement) return
-    g.taskElement.style.transform = ''
-    g.taskElement.style.zIndex = ''
-    if (g.type === 'resize') g.taskElement.style.height = ''
-  }
+  const taskLayouts = useMemo(() => {
+    return calculateTaskWidths(
+      scheduledTasks.map((task) => ({
+        id: task.id,
+        scheduled_at: task.scheduled_at!,
+        duration_minutes: task.duration_minutes,
+      })),
+    );
+  }, [scheduledTasks]);
 
-  const resetGesture = () => {
+  const clearVisuals = useCallback(() => {
+    const g = gestureRef.current;
+    if (!g.taskEl) return;
+    g.taskEl.style.transform = "";
+    g.taskEl.style.zIndex = "";
+    g.taskEl.style.pointerEvents = "";
+    if (g.type === "resize") g.taskEl.style.height = "";
+  }, []);
+
+  const resetGesture = useCallback(() => {
     gestureRef.current = {
-      type: 'none',
+      type: "none",
       taskId: null,
       startContentY: 0,
-      startValue: 0,
-      currentValue: 0,
+      startTopPx: 0,
+      startDurationMin: 0,
+      currentTopPx: 0,
+      currentDurationMin: 0,
       hasMoved: false,
-      taskElement: null,
-    }
-  }
+      taskEl: null,
+    };
+    setResizePreview(null);
+  }, []);
 
-  const onPointerMove = useCallback(
-    (e: PointerEvent) => {
-      const g = gestureRef.current
-      if (g.type === 'none' || !g.taskId) return
+  const onDocPointerMove = useCallback((e: PointerEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
 
-      const contentY = getContentY(e.clientY)
-      const deltaY = contentY - g.startContentY
+    const g = gestureRef.current;
+    if (g.type === "none" || !g.taskId || !g.taskEl) return;
 
-      if (g.type === 'drag') {
-        if (!g.hasMoved && Math.abs(deltaY) < 5) return
-        g.hasMoved = true
+    const contentY = getContentY(container, e.clientY);
+    const deltaY = contentY - g.startContentY;
 
-        const task = scheduledTasks.find(t => t.id === g.taskId)
-        if (!task) return
+    if (g.type === "drag") {
+      if (!g.hasMoved && Math.abs(deltaY) < DRAG_THRESHOLD_PX) return;
+      g.hasMoved = true;
 
-        const taskHeightPx = (task.duration_minutes / 60) * SLOT_HEIGHT
-        const rawTop = g.startValue + deltaY
-        const snapped = Math.round(rawTop / SLOT_PX_15_MIN) * SLOT_PX_15_MIN
-        const maxTop = 24 * SLOT_HEIGHT - taskHeightPx
+      const task = scheduledTasksRef.current.find((t) => t.id === g.taskId);
+      if (!task) return;
 
-        g.currentValue = Math.max(0, Math.min(snapped, maxTop))
+      const rawTop = g.startTopPx + deltaY;
+      const snappedTop = Math.round(rawTop / SLOT_PX_15_MIN) * SLOT_PX_15_MIN;
 
-        const visualDelta = g.currentValue - g.startValue
-        g.taskElement!.style.transform = `translateY(${visualDelta}px)`
-        g.taskElement!.style.zIndex = '50'
-      }
+      const taskHeightPx = (task.duration_minutes / 60) * SLOT_HEIGHT;
+      const maxTop = 24 * SLOT_HEIGHT - taskHeightPx;
 
-      if (g.type === 'resize') {
-        const task = scheduledTasks.find(t => t.id === g.taskId)
-        if (!task) return
+      g.currentTopPx = Math.max(0, Math.min(snappedTop, maxTop));
 
-        const deltaMinutes = (deltaY / SLOT_HEIGHT) * 60
-        const raw = g.startValue + deltaMinutes
-        const snapped = Math.round(raw / 15) * 15
-
-        const startTime = timestampToTime(task.scheduled_at)
-        const [h, m] = startTime.split(':').map(Number)
-        const startMinutes = h * 60 + m
-        const maxByDay = 24 * 60 - startMinutes
-        const maxDuration = Math.min(240, maxByDay)
-
-        g.currentValue = Math.max(15, Math.min(snapped, maxDuration))
-        g.taskElement!.style.height = `${(g.currentValue / 60) * SLOT_HEIGHT}px`
-      }
-    },
-    [scheduledTasks]
-  )
-
-  const cancelGesture = useCallback(() => {
-    document.removeEventListener('pointermove', onPointerMove, true)
-    document.removeEventListener('pointerup', endGesture, true)
-    document.removeEventListener('pointercancel', cancelGesture, true)
-    clearVisuals()
-    resetGesture()
-  }, [onPointerMove])
-
-  const endGesture = useCallback(() => {
-    document.removeEventListener('pointermove', onPointerMove, true)
-    document.removeEventListener('pointerup', endGesture, true)
-    document.removeEventListener('pointercancel', cancelGesture, true)
-
-    const g = gestureRef.current
-    if (g.type === 'none' || !g.taskId) {
-      resetGesture()
-      return
+      const visualDelta = g.currentTopPx - g.startTopPx;
+      g.taskEl.style.transform = `translateY(${visualDelta}px)`;
+      g.taskEl.style.zIndex = "100";
+      // Let underlying droppables “see” pointer during drag
+      g.taskEl.style.pointerEvents = "none";
+      return;
     }
 
-    clearVisuals()
+    if (g.type === "resize") {
+      const task = scheduledTasksRef.current.find((t) => t.id === g.taskId);
+      if (!task) return;
 
-    const task = scheduledTasks.find(t => t.id === g.taskId)
+      const deltaMinutes = (deltaY / SLOT_HEIGHT) * 60;
+      const raw = g.startDurationMin + deltaMinutes;
+      const snapped = Math.round(raw / 15) * 15;
+
+      const startTime = timestampToTime(task.scheduled_at!);
+      const startMin = timeToMinutes(startTime);
+      const maxByDay = DAY_MINUTES - startMin;
+      const maxDur = Math.min(MAX_DURATION_MINUTES, maxByDay);
+
+      g.currentDurationMin = Math.max(
+        MIN_DURATION_MINUTES,
+        Math.min(snapped, maxDur),
+      );
+
+      g.taskEl.style.height = `${(g.currentDurationMin / 60) * SLOT_HEIGHT}px`;
+    }
+  }, []);
+
+  const onDocPointerUp = useCallback(() => {
+    const g = gestureRef.current;
+    if (g.type === "none" || !g.taskId) {
+      clearVisuals();
+      resetGesture();
+      return;
+    }
+
+    const task = scheduledTasksRef.current.find((t) => t.id === g.taskId);
+    clearVisuals();
+
     if (!task) {
-      resetGesture()
-      return
+      resetGesture();
+      return;
     }
 
-    if (g.type === 'drag' && g.hasMoved) {
-      const newTime = pixelsToTime(g.currentValue)
-      const taskDate = (date ?? String(task.scheduled_at).split('T')[0]) as string
-      const ts = createLocalTimestamp(taskDate, newTime)
+    if (g.type === "drag") {
+      if (!g.hasMoved) {
+        setSelectedTaskId((prev) => (prev === g.taskId ? null : g.taskId));
+      } else {
+        const newTime = pixelsToTime(g.currentTopPx);
+        const date = task.scheduled_at!.split("T")[0];
+        const newTs = createLocalTimestamp(date, newTime);
 
-      if (canScheduleTask(tasks, task.id, ts, task.duration_minutes).allowed) {
-        void Promise.resolve(onEventMove(task.id, newTime))
+        const ok = canScheduleTask(
+          tasksRef.current,
+          task.id,
+          newTs,
+          task.duration_minutes,
+        ).allowed;
+        if (ok) void Promise.resolve(onEventMove(task.id, newTime));
       }
+
+      resetGesture();
+      return;
     }
 
-    if (g.type === 'resize' && g.currentValue !== g.startValue) {
-      if (
-        canScheduleTask(tasks, task.id, task.scheduled_at, g.currentValue).allowed
-      ) {
-        void Promise.resolve(onDurationChange(task.id, g.currentValue))
+    if (g.type === "resize") {
+      if (g.currentDurationMin !== g.startDurationMin) {
+        const ok = canScheduleTask(
+          tasksRef.current,
+          task.id,
+          task.scheduled_at!,
+          g.currentDurationMin,
+        ).allowed;
+        if (ok)
+          void Promise.resolve(onDurationChange(task.id, g.currentDurationMin));
       }
+
+      resetGesture();
+      return;
     }
 
-    resetGesture()
-  }, [onPointerMove, scheduledTasks, tasks, date, onEventMove, onDurationChange, cancelGesture])
+    resetGesture();
+  }, [clearVisuals, resetGesture, onEventMove, onDurationChange]);
 
-  const startDrag = (e: React.PointerEvent, task: any) => {
-    if (task.completed_at) return
-    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+  const onDocPointerCancel = useCallback(() => {
+    clearVisuals();
+    resetGesture();
+  }, [clearVisuals, resetGesture]);
 
-    const contentY = getContentY(e.clientY)
-    const startPixels = timeToPixels(timestampToTime(task.scheduled_at))
+  const attachDocListeners = useCallback(() => {
+    document.addEventListener("pointermove", onDocPointerMove, {
+      capture: true,
+    });
+    document.addEventListener("pointerup", onDocPointerUp, { capture: true });
+    document.addEventListener("pointercancel", onDocPointerCancel, {
+      capture: true,
+    });
+  }, [onDocPointerMove, onDocPointerUp, onDocPointerCancel]);
 
-    gestureRef.current = {
-      type: 'drag',
-      taskId: task.id,
-      startContentY: contentY,
-      startValue: startPixels,
-      currentValue: startPixels,
-      hasMoved: false,
-      taskElement: e.currentTarget as HTMLElement,
-    }
+  const detachDocListeners = useCallback(() => {
+    document.removeEventListener("pointermove", onDocPointerMove, true);
+    document.removeEventListener("pointerup", onDocPointerUp, true);
+    document.removeEventListener("pointercancel", onDocPointerCancel, true);
+  }, [onDocPointerMove, onDocPointerUp, onDocPointerCancel]);
 
-    document.addEventListener('pointermove', onPointerMove, { capture: true })
-    document.addEventListener('pointerup', endGesture, { capture: true })
-    document.addEventListener('pointercancel', cancelGesture, { capture: true })
-  }
+  // Detach listeners on unmount (hard safety)
+  useEffect(() => {
+    return () => {
+      detachDocListeners();
+    };
+  }, [detachDocListeners]);
 
-  const startResize = (e: React.PointerEvent, task: any) => {
-    if (task.completed_at) return
-    e.stopPropagation()
-    e.preventDefault()
+  const startDrag = useCallback(
+    (e: React.PointerEvent, task: Task) => {
+      if (isExternalDndDragging) return;
+      if (task.completed_at) return;
+      if (!task.scheduled_at) return;
+      if ((e.target as HTMLElement).closest("[data-resize-handle]")) return;
+      if ((e.target as HTMLElement).closest("button")) return;
 
-    const contentY = getContentY(e.clientY)
-    const el = (e.currentTarget as HTMLElement).closest('[data-task-id]') as
-      | HTMLElement
-      | null
-    if (!el) return
+      const container = containerRef.current;
+      if (!container) return;
 
-    gestureRef.current = {
-      type: 'resize',
-      taskId: task.id,
-      startContentY: contentY,
-      startValue: task.duration_minutes,
-      currentValue: task.duration_minutes,
-      hasMoved: true,
-      taskElement: el,
-    }
+      e.preventDefault();
+      e.stopPropagation();
 
-    document.addEventListener('pointermove', onPointerMove, { capture: true })
-    document.addEventListener('pointerup', endGesture, { capture: true })
-    document.addEventListener('pointercancel', cancelGesture, { capture: true })
-  }
+      const contentY = getContentY(container, e.clientY);
+      const startTime = timestampToTime(task.scheduled_at);
+      const startTopPx = timeToPixels(startTime);
+
+      gestureRef.current = {
+        type: "drag",
+        taskId: task.id,
+        startContentY: contentY,
+        startTopPx,
+        startDurationMin: task.duration_minutes,
+        currentTopPx: startTopPx,
+        currentDurationMin: task.duration_minutes,
+        hasMoved: false,
+        taskEl: e.currentTarget as HTMLElement,
+      };
+
+      attachDocListeners();
+    },
+    [attachDocListeners, isExternalDndDragging],
+  );
+
+  const startResize = useCallback(
+    (e: React.PointerEvent, task: Task) => {
+      if (isExternalDndDragging) return;
+      if (task.completed_at) return;
+      if (!task.scheduled_at) return;
+
+      const container = containerRef.current;
+      if (!container) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const contentY = getContentY(container, e.clientY);
+
+      const taskEl = (e.currentTarget as HTMLElement).closest(
+        `[data-testid="scheduled-task-${task.id}"]`,
+      ) as HTMLElement | null;
+      if (!taskEl) return;
+
+      const startTime = timestampToTime(task.scheduled_at);
+      const startTopPx = timeToPixels(startTime);
+
+      gestureRef.current = {
+        type: "resize",
+        taskId: task.id,
+        startContentY: contentY,
+        startTopPx,
+        startDurationMin: task.duration_minutes,
+        currentTopPx: startTopPx,
+        currentDurationMin: task.duration_minutes,
+        hasMoved: true,
+        taskEl,
+      };
+
+      setResizePreview({ taskId: task.id, duration: task.duration_minutes });
+
+      attachDocListeners();
+    },
+    [attachDocListeners, isExternalDndDragging],
+  );
+
+  // Keep duration label in sync during resize (RAF throttled)
+  useEffect(() => {
+    let raf = 0;
+
+    const tick = () => {
+      const g = gestureRef.current;
+      const taskId = g.taskId;
+      const duration = g.currentDurationMin;
+      if (g.type === "resize" && taskId) {
+        setResizePreview((prev) => {
+          if (prev?.taskId === taskId && prev.duration === duration)
+            return prev;
+          return { taskId, duration };
+        });
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Parent hook (used in your app to cancel inline editing on drag start)
+  useEffect(() => {
+    if (onDragStart) onDragStart(() => setEditingSlot(null));
+  }, [onDragStart]);
+
+  // initial scroll
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.scrollTop = Math.max(0, getInitialScrollPosition());
+  }, []);
+
+  const handleSlotClick = (e: React.MouseEvent, slotId: string) => {
+    if (e.target !== e.currentTarget) return;
+
+    const parsed = parseSlotId(slotId);
+    if (!parsed) return;
+
+    const slotTime = `${parsed.hours.toString().padStart(2, "0")}:${parsed.minutes
+      .toString()
+      .padStart(2, "0")}`;
+
+    const tasksInSlot = scheduledTasks.filter((task) => {
+      if (!task.scheduled_at) return false;
+      return timestampToTime(task.scheduled_at) === slotTime;
+    });
+
+    if (tasksInSlot.length >= 2) return;
+    setEditingSlot(slotTime);
+  };
 
   return (
-    <div ref={containerRef} className="relative h-full overflow-y-auto">
-      <Droppable droppableId="calendar" type="TASK">
-        {provided => (
+    <div
+      className="flex flex-col h-full bg-background"
+      onClick={() => setSelectedTaskId(null)}
+    >
+      <div className="flex-shrink-0 p-4 border-b border-theme">
+        <h2 className="text-lg font-semibold text-foreground">
+          Today's Schedule
+        </h2>
+      </div>
+
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden relative"
+        data-testid="calendar-container"
+      >
+        <div className="relative" style={{ height: `${24 * SLOT_HEIGHT}px` }}>
+          {/* Hour labels */}
+          <div className="absolute left-0 top-0 w-16 h-full">
+            {hourLabels.map((hour, index) => (
+              <div
+                key={hour}
+                className="absolute w-full border-b border-theme/30"
+                style={{
+                  top: `${index * SLOT_HEIGHT}px`,
+                  height: `${SLOT_HEIGHT}px`,
+                }}
+              >
+                <div className="absolute left-2 top-1 text-xs text-muted-foreground font-mono">
+                  {hour}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Droppable slots */}
+          <div className="absolute left-16 right-0 top-0 h-full">
+            {slotIds.map((slotId, index) => {
+              const hour = Math.floor(index / 4);
+              const quarter = index % 4;
+              const isHourBoundary = quarter === 0;
+
+              const slotTime = `${hour.toString().padStart(2, "0")}:${(
+                quarter * 15
+              )
+                .toString()
+                .padStart(2, "0")}`;
+
+              return (
+                <Droppable key={slotId} droppableId={slotId}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`
+                        absolute w-full border-b cursor-pointer
+                        ${isHourBoundary ? "border-theme" : "border-theme-subtle"}
+                        ${
+                          snapshot.isDraggingOver
+                            ? "bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 ring-inset"
+                            : ""
+                        }
+                        transition-colors duration-150
+                      `}
+                      style={{
+                        top: `${index * slotHeightPx}px`,
+                        height: `${slotHeightPx}px`,
+                      }}
+                      data-droppable-id={slotId}
+                      onClick={(e) => handleSlotClick(e, slotId)}
+                    >
+                      {provided.placeholder}
+
+                      {editingSlot === slotTime && (
+                        <SlotInput
+                          onSubmit={(title) => {
+                            void Promise.resolve(
+                              onCreateTask(title, editingSlot),
+                            );
+                            setEditingSlot(null);
+                          }}
+                          onCancel={() => setEditingSlot(null)}
+                        />
+                      )}
+                    </div>
+                  )}
+                </Droppable>
+              );
+            })}
+          </div>
+
+          {/* Current time line */}
           <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="relative"
-            style={{ height: 24 * SLOT_HEIGHT }}
+            className="absolute w-full h-0.5 bg-red-500 z-20 pointer-events-none"
+            style={{ top: `${getCurrentTimePixels()}px`, left: "64px" }}
           >
-            {scheduledTasks.map(task => {
-              const top = timeToPixels(timestampToTime(task.scheduled_at))
-              const height =
-                (task.duration_minutes / 60) * SLOT_HEIGHT || SLOT_PX_15_MIN
+            <div className="absolute left-0 -top-2 w-4 h-4 bg-red-500 rounded-full -ml-2" />
+          </div>
+
+          {/* Scheduled tasks */}
+          <div className="absolute left-16 right-0 top-0 h-full pointer-events-none">
+            {scheduledTasks.map((task) => {
+              const startTime = timestampToTime(task.scheduled_at!);
+              const top = timeToPixels(startTime);
+              const height = (task.duration_minutes / 60) * SLOT_HEIGHT;
+
+              const layout = taskLayouts.get(task.id) || {
+                width: 100,
+                column: 0,
+              };
+              const leftPercent = layout.column * 50;
+
+              const colorIndex =
+                typeof (task as any).color_index === "number"
+                  ? (task as any).color_index
+                  : 0;
+              const accent = getColor(paletteId, colorIndex) || "#3b82f6";
+
+              const previewDuration =
+                resizePreview?.taskId === task.id
+                  ? resizePreview.duration
+                  : task.duration_minutes;
+
+              const isSelected = selectedTaskId === task.id;
 
               return (
                 <div
                   key={task.id}
-                  data-task-id={task.id}
-                  className="absolute left-2 right-2 rounded bg-blue-600 text-white text-xs"
+                  data-testid={`scheduled-task-${task.id}`}
+                  className={`
+                    absolute mx-1 rounded-lg border border-theme shadow-sm overflow-hidden
+                    cursor-pointer hover:shadow-md transition-shadow select-none touch-none
+                    ${isExternalDndDragging ? "pointer-events-none" : "pointer-events-auto"}
+                    bg-theme-secondary
+                  `}
                   style={{
-                    top,
-                    height,
-                    userSelect: 'none',
-                    touchAction: 'manipulation',
+                    top: `${top}px`,
+                    height: `${Math.max(height, 28)}px`,
+                    width: `${layout.width}%`,
+                    left: `${leftPercent}%`,
+                    borderLeftWidth: "4px",
+                    borderLeftColor: accent,
+                    userSelect: "none",
+                    touchAction: "none",
                   }}
-                  onPointerDown={e => startDrag(e, task)}
+                  onPointerDown={(e) => startDrag(e, task)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTaskId((prev) =>
+                      prev === task.id ? null : task.id,
+                    );
+                  }}
                 >
-                  <div className="p-2">{task.title}</div>
+                  {task.completed_at && (
+                    <div className="absolute inset-0 bg-white/60 dark:bg-black/40 rounded-lg flex items-center justify-center pointer-events-none">
+                      <CheckCircle className="h-8 w-8 text-green-500" />
+                    </div>
+                  )}
+
+                  <div className="p-2 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-foreground truncate">
+                        {task.title}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground font-mono">
+                        {startTime} · {previewDuration}m
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div className="flex items-center gap-1">
+                        {!task.completed_at && (
+                          <button
+                            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void Promise.resolve(onComplete(task.id));
+                              setSelectedTaskId(null);
+                            }}
+                            aria-label="Complete task"
+                            type="button"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void Promise.resolve(onUnschedule(task.id));
+                            setSelectedTaskId(null);
+                          }}
+                          aria-label="Unschedule task"
+                          type="button"
+                        >
+                          <CalendarX className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {!task.completed_at && (
                     <div
                       data-resize-handle
                       className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize"
-                      style={{ touchAction: 'none' }}
-                      onPointerDown={e => startResize(e, task)}
+                      style={{ touchAction: "none" }}
+                      onPointerDown={(e) => startResize(e, task)}
                     />
                   )}
                 </div>
-              )
+              );
             })}
-            {provided.placeholder}
           </div>
-        )}
-      </Droppable>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
 
-export default CalendarView
+export default CalendarView;

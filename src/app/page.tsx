@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { useTaskStore, useListStore, useUIStore } from '@/state'
 import { useAppHandlers, useAuth, useScheduleHandlers } from '@/hooks'
@@ -70,6 +70,27 @@ export default function Home() {
 
   // Ref to track calendar editing cancellation
   const cancelEditingRef = useRef<(() => void) | null>(null)
+
+  // Track whether a Hello-Pangea DnD gesture is active.
+  // Calendar uses this to temporarily disable pointer interactions on scheduled blocks
+  // so slot droppables remain reliable while dragging from lists.
+  const [isDndDragging, setIsDndDragging] = useState(false)
+
+  const handleDndStart = useCallback(() => {
+    setIsDndDragging(true)
+    // Cancel any ongoing slot editing when drag starts
+    if (cancelEditingRef.current) {
+      cancelEditingRef.current()
+    }
+  }, [])
+
+  const handleDndEnd = useCallback(
+    (result: any) => {
+      setIsDndDragging(false)
+      handleDragEnd(result)
+    },
+    [handleDragEnd]
+  )
 
   // Load data on mount (only when authenticated)
   useEffect(() => {
@@ -194,13 +215,8 @@ export default function Home() {
       />
 
       <DragDropContext 
-        onDragEnd={handleDragEnd}
-        onDragStart={() => {
-          // Cancel any ongoing slot editing when drag starts
-          if (cancelEditingRef.current) {
-            cancelEditingRef.current()
-          }
-        }}
+        onDragEnd={handleDndEnd}
+        onDragStart={handleDndStart}
       >
         {/* Main content area */}
         <div className="flex-1 flex gap-4 p-4 bg-theme-primary min-h-0 h-[calc(100vh-3.5rem)]">
@@ -245,6 +261,7 @@ export default function Home() {
               <CalendarView
                 tasks={tasks}
                 paletteId={DEFAULT_PALETTE_ID}
+                isExternalDndDragging={isDndDragging}
                 onExternalDrop={handleExternalDrop}
                 onEventMove={handleEventMove}
                 onUnschedule={handleUnschedule}
@@ -257,6 +274,7 @@ export default function Home() {
                 onDragStart={(cancelCallback) => {
                   cancelEditingRef.current = cancelCallback
                 }}
+                isDndDragging={isDndDragging}
               />
             </div>
           )}
