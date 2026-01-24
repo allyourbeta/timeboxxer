@@ -29,6 +29,7 @@ interface ListPanelProps {
   onTaskEnergyChange: (taskId: string, level: 'high' | 'medium' | 'low') => void
   onTaskComplete: (taskId: string) => void
   onRollOverTasks: (fromListId: string, destination: 'today' | 'tomorrow') => void
+  onHighlightToggle: (taskId: string, listId: string) => void
   columnCount: 1 | 2
 }
 
@@ -53,6 +54,7 @@ export function ListPanel({
   onTaskEnergyChange,
   onTaskComplete,
   onRollOverTasks,
+  onHighlightToggle,
   columnCount,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState('')
@@ -136,6 +138,7 @@ export function ListPanel({
                   : undefined
               }
               isToday={list.list_type === 'date' && list.list_date === getLocalTodayISO()}
+              onHighlightToggle={(taskId) => onHighlightToggle(taskId, list.id)}
             />
           )
         })}

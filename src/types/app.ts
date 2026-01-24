@@ -38,6 +38,7 @@ export interface Task {
   duration_minutes: number;
   color_index: number;
   energy_level: 'high' | 'medium' | 'low';
+  is_highlight: boolean;
   
   // Scheduling - if set, task appears on calendar (but stays in its list)
   scheduled_at: string | null;  // Local timestamp: '2026-01-18T14:00:00'

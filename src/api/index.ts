@@ -12,6 +12,7 @@ export {
   scheduleTask,
   unscheduleTask,
   createParkedThought,
+  toggleHighlight,
 } from './tasks'
 
 // List operations

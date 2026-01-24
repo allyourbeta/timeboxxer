@@ -168,7 +168,6 @@ export async function completeTask(taskId: string): Promise<void> {
       previous_list_id: task.list_id,
       list_id: completedList.id,
       completed_at: new Date().toISOString(),
-      scheduled_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', taskId)
@@ -297,4 +296,28 @@ export async function createParkedThought(title: string): Promise<Task> {
   if (!parkedList) throw new Error('Parked list not found')
   
   return createTask(parkedList.id, title)
+}
+
+export async function toggleHighlight(taskId: string): Promise<Task> {
+  const supabase = createClient()
+  
+  // Get current value
+  const { data: current, error: fetchError } = await supabase
+    .from('tasks')
+    .select('is_highlight')
+    .eq('id', taskId)
+    .single()
+  
+  if (fetchError) throw fetchError
+  
+  // Toggle it
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({ is_highlight: !current.is_highlight })
+    .eq('id', taskId)
+    .select()
+    .single()
+  
+  if (error) throw error
+  return data
 }

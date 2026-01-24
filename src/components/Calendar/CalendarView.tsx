@@ -116,7 +116,7 @@ export function CalendarView({
   }, [])
 
   // Filter scheduled tasks for today
-  const scheduledTasks = tasks.filter(task => task.scheduled_at && !task.completed_at)
+  const scheduledTasks = tasks.filter(task => task.scheduled_at)
 
   // Calculate task layouts for overlap handling
   const taskLayouts = calculateTaskWidths(scheduledTasks.map(task => ({
@@ -277,6 +277,13 @@ export function CalendarView({
                   data-testid={`scheduled-task-${task.id}`}
                   data-scheduled-time={startTime}
                 >
+                  {/* Completed overlay */}
+                  {task.completed_at && (
+                    <div className="absolute inset-0 bg-white/60 dark:bg-black/40 rounded-lg flex items-center justify-center pointer-events-none">
+                      <CheckCircle className="h-8 w-8 text-green-500" />
+                    </div>
+                  )}
+                  
                   <div className="flex items-center h-full px-2">
                     <span className="truncate text-sm font-medium text-theme-primary flex-1">
                       {task.title}

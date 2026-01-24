@@ -16,6 +16,8 @@ export function useTaskHandlers() {
     deleteTask,
     completeTask,
     uncompleteTask,
+    toggleHighlight,
+    tasks,
   } = useTaskStore()
 
   const [discardConfirm, setDiscardConfirm] = useState<DiscardConfirm | null>(null)
@@ -96,6 +98,29 @@ export function useTaskHandlers() {
     }
   }
 
+  const handleHighlightToggle = async (taskId: string, listId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    // Check 5-limit before toggling ON
+    if (!task.is_highlight) {
+      const highlightedCount = tasks.filter(t => 
+        t.list_id === listId && t.is_highlight
+      ).length
+
+      if (highlightedCount >= 5) {
+        // Already at limit, do nothing
+        return
+      }
+    }
+
+    try {
+      await toggleHighlight(taskId)
+    } catch (error) {
+      console.error('Failed to toggle highlight:', error)
+    }
+  }
+
   return {
     handleTaskAdd,
     handleTaskDelete,
@@ -103,6 +128,7 @@ export function useTaskHandlers() {
     handleTaskComplete,
     handleTaskUncomplete,
     handleTaskEnergyChange,
+    handleHighlightToggle,
     discardConfirm,
     handleTaskDiscardClick,
     handleTaskDiscardConfirm,

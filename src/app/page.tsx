@@ -39,6 +39,7 @@ export default function Home() {
     handleTaskComplete,
     handleTaskUncomplete,
     handleTaskEnergyChange,
+    handleHighlightToggle,
     handleDragEnd,
     handleListCreate,
     handleListEdit,
@@ -231,6 +232,7 @@ export default function Home() {
                 onTaskEnergyChange={handleTaskEnergyChange}
                 onTaskComplete={handleTaskComplete}
                 onRollOverTasks={handleRollOverTasks}
+                onHighlightToggle={handleHighlightToggle}
                   columnCount={listColumnCount}
                 />
               </div>

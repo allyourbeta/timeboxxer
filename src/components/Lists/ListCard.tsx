@@ -34,6 +34,7 @@ interface ListCardProps {
   onTaskComplete: (taskId: string) => void
   onRollOver?: (destination: 'today' | 'tomorrow') => void
   isToday?: boolean
+  onHighlightToggle: (taskId: string) => void
 }
 
 export function ListCard({
@@ -60,6 +61,7 @@ export function ListCard({
   onTaskComplete,
   onRollOver,
   isToday,
+  onHighlightToggle,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name)
 
@@ -226,14 +228,14 @@ export function ListCard({
                                 isScheduled={scheduledTaskIds.includes(task.id)}
                                 isDaily={false}
                                 isInPurgatory={isInbox}
-                                isHighlight={false}
-                                canHighlight={false}
+                                isHighlight={task.is_highlight || false}
+                                canHighlight={isDateList}
                                 energyLevel={task.energy_level || 'medium'}
                                 paletteId={paletteId}
                                 onDurationClick={(reverse) => onTaskDurationClick(task.id, task.duration_minutes, reverse)}
                                 onEnergyChange={(level) => onTaskEnergyChange(task.id, level)}
                                 onDailyToggle={() => {}}
-                                onHighlightToggle={() => {}}
+                                onHighlightToggle={() => onHighlightToggle(task.id)}
                                 onComplete={() => onTaskComplete(task.id)}
                                 onDelete={() => onTaskDelete(task.id)}
                               />

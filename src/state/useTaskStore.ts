@@ -12,6 +12,7 @@ import {
   scheduleTask as apiScheduleTask,
   unscheduleTask as apiUnscheduleTask,
   createParkedThought as apiCreateParkedThought,
+  toggleHighlight as apiToggleHighlight,
 } from '@/api'
 import type { Task } from '@/types/app'
 
@@ -34,6 +35,7 @@ interface TaskStore {
   scheduleTask: (taskId: string, scheduledAt: string) => Promise<void>
   unscheduleTask: (taskId: string) => Promise<void>
   createParkedThought: (title: string) => Promise<void>
+  toggleHighlight: (taskId: string) => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -126,7 +128,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
               ...t,
               previous_list_id: t.list_id,
               completed_at: new Date().toISOString(),
-              scheduled_at: null,
             }
           : t
       )
@@ -212,5 +213,22 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set({ tasks: [...get().tasks, newTask] })
   },
 
+  toggleHighlight: async (taskId) => {
+    const task = get().tasks.find(t => t.id === taskId)
+    if (!task) return
 
+    // Optimistic update
+    set(state => ({
+      tasks: state.tasks.map(t =>
+        t.id === taskId ? { ...t, is_highlight: !t.is_highlight } : t
+      )
+    }))
+
+    try {
+      await apiToggleHighlight(taskId)
+    } catch (error) {
+      await get().loadTasks()
+      throw error
+    }
+  },
 }))
