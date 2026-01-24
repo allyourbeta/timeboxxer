@@ -1,330 +1,287 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
-import { CheckCircle, CalendarX } from 'lucide-react'
-import { getColor } from '@/lib/palettes'
-import { Task } from '@/types/app'
-import { 
-  SLOT_HEIGHT, 
-  SLOTS_PER_HOUR,
-  getHourLabels, 
-  timestampToTime, 
+import {
   timeToPixels,
-  getCurrentTimePixels,
-  getInitialScrollPosition,
-  formatSlotId,
-  generateAllSlotIds,
-  calculateTaskWidths,
-  parseSlotId
+  pixelsToTime,
+  timestampToTime,
+  canScheduleTask,
 } from '@/lib/calendarUtils'
+import { createLocalTimestamp } from '@/lib/dateUtils'
 
-// SlotInput component for inline task creation
-function SlotInput({ 
-  onSubmit, 
-  onCancel 
-}: { 
-  onSubmit: (title: string) => void
-  onCancel: () => void 
-}) {
-  const [value, setValue] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
-  
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (value.trim()) {
-        onSubmit(value.trim())
-      } else {
-        onCancel()
-      }
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      onCancel()
-    }
-  }
-  
-  const handleBlur = () => {
-    // Small delay to allow click events to process first
-    setTimeout(() => {
-      onCancel()
-    }, 100)
-  }
-  
-  return (
-    <input
-      ref={inputRef}
-      type="text"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onKeyDown={handleKeyDown}
-      onBlur={handleBlur}
-      placeholder="New task..."
-      className="absolute inset-x-0 top-0 h-8 px-2 text-sm bg-white border-2 border-blue-500 rounded shadow-lg focus:outline-none z-50"
-      onClick={(e) => e.stopPropagation()}
-    />
-  )
+const SLOT_HEIGHT = 180
+const SLOT_PX_15_MIN = SLOT_HEIGHT / 4
+
+type GestureType = 'none' | 'drag' | 'resize'
+type MaybePromise<T = void> = T | Promise<T>
+
+interface GestureState {
+  type: GestureType
+  taskId: string | null
+  startContentY: number
+  startValue: number
+  currentValue: number
+  hasMoved: boolean
+  taskElement: HTMLElement | null
 }
 
-interface CalendarViewProps {
-  tasks: Task[]
-  paletteId: string
-  onExternalDrop: (taskId: string, time: string) => void
-  onEventMove: (taskId: string, time: string) => void
-  onUnschedule: (taskId: string) => void
-  onComplete: (taskId: string) => void
-  onCreateTask: (title: string, time: string) => void
-  onDurationChange: (taskId: string, newDuration: number) => void
-  onDragStart?: (cancelCallback: () => void) => void
+export interface CalendarViewProps {
+  tasks: any[]
+  date?: string // OPTIONAL (caller may omit)
+
+  onEventMove: (taskId: string, newTime: string) => MaybePromise
+  onDurationChange: (taskId: string, newDuration: number) => MaybePromise
+
+  paletteId?: string
+  onExternalDrop?: (taskId: string, time: string) => MaybePromise
+  onUnschedule?: (taskId: string) => MaybePromise
+  onComplete?: (taskId: string) => MaybePromise
+  onDragStart?: (cancelCallback: any) => void
+
+  [key: string]: any
 }
 
 export function CalendarView({
   tasks,
-  paletteId,
-  onExternalDrop,
+  date,
   onEventMove,
-  onUnschedule,
-  onComplete,
-  onCreateTask,
   onDurationChange,
-  onDragStart,
 }: CalendarViewProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const hourLabels = getHourLabels()
-  
-  // State for inline task creation
-  const [editingSlot, setEditingSlot] = useState<string | null>(null)
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
-  // Register cancel callback with parent for drag start handling
-  useEffect(() => {
-    if (onDragStart) {
-      onDragStart(() => setEditingSlot(null))
-    }
-  }, [onDragStart])
+  const gestureRef = useRef<GestureState>({
+    type: 'none',
+    taskId: null,
+    startContentY: 0,
+    startValue: 0,
+    currentValue: 0,
+    hasMoved: false,
+    taskElement: null,
+  })
 
-  // Scroll to "now minus 1.5 hours" on mount
-  useEffect(() => {
-    if (containerRef.current) {
-      const scrollPosition = getInitialScrollPosition()
-      containerRef.current.scrollTop = Math.max(0, scrollPosition)
-    }
-  }, [])
+  const scheduledTasks = useMemo(
+    () => tasks.filter(t => t.scheduled_at),
+    [tasks]
+  )
 
-  // Filter scheduled tasks for today
-  const scheduledTasks = tasks.filter(task => task.scheduled_at)
-
-  // Calculate task layouts for overlap handling
-  const taskLayouts = calculateTaskWidths(scheduledTasks.map(task => ({
-    id: task.id,
-    scheduled_at: task.scheduled_at!,
-    duration_minutes: task.duration_minutes
-  })))
-
-  // Generate all slot IDs for the 24-hour period (96 slots with 15-min intervals)
-  const slotIds = generateAllSlotIds()
-  
-  // Click handler for creating tasks inline
-  const handleSlotClick = (e: React.MouseEvent, slotId: string) => {
-    // Only trigger if clicking the slot background, not a task
-    if (e.target !== e.currentTarget) return
-    
-    // Parse slot ID to get time
-    const parsed = parseSlotId(slotId)
-    if (!parsed) return
-    
-    const slotTime = `${parsed.hours.toString().padStart(2, '0')}:${parsed.minutes.toString().padStart(2, '0')}`
-    
-    // Check max 2 rule - count tasks at this exact time
-    const tasksInSlot = scheduledTasks.filter(task => {
-      if (!task.scheduled_at) return false
-      const taskTime = timestampToTime(task.scheduled_at)
-      return taskTime === slotTime
-    })
-    
-    if (tasksInSlot.length >= 2) return
-    
-    setEditingSlot(slotTime)
+  const getContentY = (clientY: number) => {
+    const el = containerRef.current!
+    const rect = el.getBoundingClientRect()
+    return clientY - rect.top + el.scrollTop
   }
 
-  // Helper to get slot height in pixels
-  const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR // 45px per 15-min slot
+  const clearVisuals = () => {
+    const g = gestureRef.current
+    if (!g.taskElement) return
+    g.taskElement.style.transform = ''
+    g.taskElement.style.zIndex = ''
+    if (g.type === 'resize') g.taskElement.style.height = ''
+  }
+
+  const resetGesture = () => {
+    gestureRef.current = {
+      type: 'none',
+      taskId: null,
+      startContentY: 0,
+      startValue: 0,
+      currentValue: 0,
+      hasMoved: false,
+      taskElement: null,
+    }
+  }
+
+  const onPointerMove = useCallback(
+    (e: PointerEvent) => {
+      const g = gestureRef.current
+      if (g.type === 'none' || !g.taskId) return
+
+      const contentY = getContentY(e.clientY)
+      const deltaY = contentY - g.startContentY
+
+      if (g.type === 'drag') {
+        if (!g.hasMoved && Math.abs(deltaY) < 5) return
+        g.hasMoved = true
+
+        const task = scheduledTasks.find(t => t.id === g.taskId)
+        if (!task) return
+
+        const taskHeightPx = (task.duration_minutes / 60) * SLOT_HEIGHT
+        const rawTop = g.startValue + deltaY
+        const snapped = Math.round(rawTop / SLOT_PX_15_MIN) * SLOT_PX_15_MIN
+        const maxTop = 24 * SLOT_HEIGHT - taskHeightPx
+
+        g.currentValue = Math.max(0, Math.min(snapped, maxTop))
+
+        const visualDelta = g.currentValue - g.startValue
+        g.taskElement!.style.transform = `translateY(${visualDelta}px)`
+        g.taskElement!.style.zIndex = '50'
+      }
+
+      if (g.type === 'resize') {
+        const task = scheduledTasks.find(t => t.id === g.taskId)
+        if (!task) return
+
+        const deltaMinutes = (deltaY / SLOT_HEIGHT) * 60
+        const raw = g.startValue + deltaMinutes
+        const snapped = Math.round(raw / 15) * 15
+
+        const startTime = timestampToTime(task.scheduled_at)
+        const [h, m] = startTime.split(':').map(Number)
+        const startMinutes = h * 60 + m
+        const maxByDay = 24 * 60 - startMinutes
+        const maxDuration = Math.min(240, maxByDay)
+
+        g.currentValue = Math.max(15, Math.min(snapped, maxDuration))
+        g.taskElement!.style.height = `${(g.currentValue / 60) * SLOT_HEIGHT}px`
+      }
+    },
+    [scheduledTasks]
+  )
+
+  const cancelGesture = useCallback(() => {
+    document.removeEventListener('pointermove', onPointerMove, true)
+    document.removeEventListener('pointerup', endGesture, true)
+    document.removeEventListener('pointercancel', cancelGesture, true)
+    clearVisuals()
+    resetGesture()
+  }, [onPointerMove])
+
+  const endGesture = useCallback(() => {
+    document.removeEventListener('pointermove', onPointerMove, true)
+    document.removeEventListener('pointerup', endGesture, true)
+    document.removeEventListener('pointercancel', cancelGesture, true)
+
+    const g = gestureRef.current
+    if (g.type === 'none' || !g.taskId) {
+      resetGesture()
+      return
+    }
+
+    clearVisuals()
+
+    const task = scheduledTasks.find(t => t.id === g.taskId)
+    if (!task) {
+      resetGesture()
+      return
+    }
+
+    if (g.type === 'drag' && g.hasMoved) {
+      const newTime = pixelsToTime(g.currentValue)
+      const taskDate = (date ?? String(task.scheduled_at).split('T')[0]) as string
+      const ts = createLocalTimestamp(taskDate, newTime)
+
+      if (canScheduleTask(tasks, task.id, ts, task.duration_minutes).allowed) {
+        void Promise.resolve(onEventMove(task.id, newTime))
+      }
+    }
+
+    if (g.type === 'resize' && g.currentValue !== g.startValue) {
+      if (
+        canScheduleTask(tasks, task.id, task.scheduled_at, g.currentValue).allowed
+      ) {
+        void Promise.resolve(onDurationChange(task.id, g.currentValue))
+      }
+    }
+
+    resetGesture()
+  }, [onPointerMove, scheduledTasks, tasks, date, onEventMove, onDurationChange, cancelGesture])
+
+  const startDrag = (e: React.PointerEvent, task: any) => {
+    if (task.completed_at) return
+    if ((e.target as HTMLElement).closest('[data-resize-handle]')) return
+
+    const contentY = getContentY(e.clientY)
+    const startPixels = timeToPixels(timestampToTime(task.scheduled_at))
+
+    gestureRef.current = {
+      type: 'drag',
+      taskId: task.id,
+      startContentY: contentY,
+      startValue: startPixels,
+      currentValue: startPixels,
+      hasMoved: false,
+      taskElement: e.currentTarget as HTMLElement,
+    }
+
+    document.addEventListener('pointermove', onPointerMove, { capture: true })
+    document.addEventListener('pointerup', endGesture, { capture: true })
+    document.addEventListener('pointercancel', cancelGesture, { capture: true })
+  }
+
+  const startResize = (e: React.PointerEvent, task: any) => {
+    if (task.completed_at) return
+    e.stopPropagation()
+    e.preventDefault()
+
+    const contentY = getContentY(e.clientY)
+    const el = (e.currentTarget as HTMLElement).closest('[data-task-id]') as
+      | HTMLElement
+      | null
+    if (!el) return
+
+    gestureRef.current = {
+      type: 'resize',
+      taskId: task.id,
+      startContentY: contentY,
+      startValue: task.duration_minutes,
+      currentValue: task.duration_minutes,
+      hasMoved: true,
+      taskElement: el,
+    }
+
+    document.addEventListener('pointermove', onPointerMove, { capture: true })
+    document.addEventListener('pointerup', endGesture, { capture: true })
+    document.addEventListener('pointercancel', cancelGesture, { capture: true })
+  }
 
   return (
-    <div className="flex flex-col h-full bg-background" onClick={() => setSelectedTaskId(null)}>
-      {/* Calendar header */}
-      <div className="flex-shrink-0 p-4 border-b border-theme">
-        <h2 className="text-lg font-semibold text-foreground">
-          Today's Schedule
-        </h2>
-      </div>
-
-      {/* Calendar grid */}
-      <div 
-        ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden relative"
-        data-testid="calendar-container"
-      >
-        {/* Container for all calendar content */}
-        <div 
-          className="relative"
-          style={{ height: `${24 * SLOT_HEIGHT}px` }}
-        >
-          {/* Hour labels */}
-          <div className="absolute left-0 top-0 w-16 h-full">
-            {hourLabels.map((hour, index) => (
-              <div
-                key={hour}
-                className="absolute w-full border-b border-theme/30"
-                style={{ 
-                  top: `${index * SLOT_HEIGHT}px`,
-                  height: `${SLOT_HEIGHT}px`
-                }}
-              >
-                <div className="absolute left-2 top-1 text-xs text-muted-foreground font-mono">
-                  {hour}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Time slot grid - 96 individual droppable slots */}
-          <div className="absolute left-16 right-0 top-0 h-full">
-            {slotIds.map((slotId, index) => {
-              const hour = Math.floor(index / 4)
-              const quarter = index % 4
-              const isHourBoundary = quarter === 0
-              
-              return (
-                <Droppable key={slotId} droppableId={slotId}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`
-                        absolute w-full border-b cursor-pointer
-                        ${isHourBoundary ? 'border-theme' : 'border-theme-subtle'}
-                        ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 ring-inset' : ''}
-                        transition-colors duration-150
-                      `}
-                      style={{
-                        top: `${index * slotHeightPx}px`,
-                        height: `${slotHeightPx}px`
-                      }}
-                      data-droppable-id={slotId}
-                      onClick={(e) => handleSlotClick(e, slotId)}
-                    >
-                      {provided.placeholder}
-                      {editingSlot && editingSlot === `${hour.toString().padStart(2, '0')}:${(quarter * 15).toString().padStart(2, '0')}` && (
-                        <SlotInput
-                          onSubmit={(title) => {
-                            onCreateTask(title, editingSlot)
-                            setEditingSlot(null)
-                          }}
-                          onCancel={() => setEditingSlot(null)}
-                        />
-                      )}
-                    </div>
-                  )}
-                </Droppable>
-              )
-            })}
-          </div>
-
-          {/* Current time line */}
+    <div ref={containerRef} className="relative h-full overflow-y-auto">
+      <Droppable droppableId="calendar" type="TASK">
+        {provided => (
           <div
-            className="absolute w-full h-0.5 bg-red-500 z-20 pointer-events-none"
-            style={{ 
-              top: `${getCurrentTimePixels()}px`,
-              left: '64px' // offset for hour labels
-            }}
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className="relative"
+            style={{ height: 24 * SLOT_HEIGHT }}
           >
-            <div className="absolute left-0 -top-2 w-4 h-4 bg-red-500 rounded-full -ml-2" />
-          </div>
-
-          {/* Scheduled tasks layer */}
-          <div className="absolute left-16 right-0 top-0 h-full pointer-events-none">
-            {scheduledTasks.map((task, index) => {
-              const startTime = timestampToTime(task.scheduled_at!)
-              const startPixels = timeToPixels(startTime)
-              const height = (task.duration_minutes / 60) * SLOT_HEIGHT
-              const backgroundColor = getColor(paletteId, task.color_index)
-
-              // Get layout for overlap handling
-              const layout = taskLayouts.get(task.id) || { width: 100, column: 0 }
-              const leftPercent = layout.column * 50  // 0% or 50%
+            {scheduledTasks.map(task => {
+              const top = timeToPixels(timestampToTime(task.scheduled_at))
+              const height =
+                (task.duration_minutes / 60) * SLOT_HEIGHT || SLOT_PX_15_MIN
 
               return (
                 <div
                   key={task.id}
-                  className="absolute mx-1 rounded-lg bg-theme-secondary border border-theme shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow pointer-events-auto"
+                  data-task-id={task.id}
+                  className="absolute left-2 right-2 rounded bg-blue-600 text-white text-xs"
                   style={{
-                    top: `${startPixels}px`,
-                    height: `${Math.max(height, 28)}px`, // Minimum height for readability
-                    width: `${layout.width}%`,
-                    left: `${leftPercent}%`,
-                    borderLeftWidth: '4px',
-                    borderLeftColor: backgroundColor,
+                    top,
+                    height,
+                    userSelect: 'none',
+                    touchAction: 'manipulation',
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedTaskId(selectedTaskId === task.id ? null : task.id)
-                  }}
-                  data-testid={`scheduled-task-${task.id}`}
-                  data-scheduled-time={startTime}
+                  onPointerDown={e => startDrag(e, task)}
                 >
-                  {/* Completed overlay */}
-                  {task.completed_at && (
-                    <div className="absolute inset-0 bg-white/60 dark:bg-black/40 rounded-lg flex items-center justify-center pointer-events-none">
-                      <CheckCircle className="h-8 w-8 text-green-500" />
-                    </div>
+                  <div className="p-2">{task.title}</div>
+
+                  {!task.completed_at && (
+                    <div
+                      data-resize-handle
+                      className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize"
+                      style={{ touchAction: 'none' }}
+                      onPointerDown={e => startResize(e, task)}
+                    />
                   )}
-                  
-                  <div className="flex items-center h-full px-2">
-                    <span className="truncate text-sm font-medium text-theme-primary flex-1">
-                      {task.title}
-                    </span>
-                    
-                    {/* Complete - always visible, matching TaskCard behavior */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onComplete(task.id)
-                        setSelectedTaskId(null)
-                      }}
-                      className="opacity-50 hover:opacity-100 transition-all hover:scale-105 ml-2"
-                      title="Mark as complete"
-                    >
-                      <CheckCircle className="h-4 w-4 text-theme-secondary hover:text-accent-success" />
-                    </button>
-                    
-                    {/* Additional actions only visible when selected */}
-                    {selectedTaskId === task.id && (
-                      <div className="flex gap-1 ml-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onUnschedule(task.id)
-                            setSelectedTaskId(null)
-                          }}
-                          className="p-1 bg-theme-tertiary hover:bg-interactive-hover rounded text-theme-primary"
-                          title="Remove from calendar"
-                        >
-                          <CalendarX className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )
             })}
+            {provided.placeholder}
           </div>
-        </div>
-      </div>
+        )}
+      </Droppable>
     </div>
   )
 }
+
+export default CalendarView
