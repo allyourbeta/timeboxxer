@@ -167,9 +167,9 @@ export const PALETTES: Palette[] = [
     background: '#FAFAFA',
     border: '#2563EB',
     colors: [
-      '#2563EB', '#059669', '#DC2626', '#D97706',  // Primary blues, greens, reds, oranges
-      '#7C3AED', '#0891B2', '#BE185D', '#65A30D',  // Purples, cyans, magentas, limes  
-      '#4B5563', '#374151', '#6B7280', '#9CA3AF'   // Sophisticated grays
+      'transparent', 'transparent', 'transparent', 'transparent',
+      'transparent', 'transparent', 'transparent', 'transparent',
+      'transparent', 'transparent', 'transparent', 'transparent'
     ]
   }
 ];

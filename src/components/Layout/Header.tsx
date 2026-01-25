@@ -186,14 +186,14 @@ export function Header({
                   </button>
               )}
 
-              {/* Just Start - PRIMARY ACTION, make it stand out */}
+              {/* FOCUS - PRIMARY ACTION, make it stand out */}
               <button
                   onClick={onJustStart}
                   className="btn-primary h-8 px-4 text-sm"
-                  title="Just Start"
+                  title="FOCUS"
               >
                 <Shuffle className="h-4 w-4 lg:hidden"/>
-                <span className="hidden lg:inline">Just Start</span>
+                <span className="hidden lg:inline">FOCUS</span>
               </button>
 
             </>

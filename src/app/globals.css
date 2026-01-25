@@ -83,6 +83,9 @@
     --status-error: var(--accent-danger);
     --status-error-bg: #fef2f2;
 
+    /* Task backgrounds - light blue tint for better visual hierarchy */
+    --task-bg: #eff6ff;
+
     /* ========================================
        CENTRALIZED COLOR SYSTEM - Phase 1
        ======================================== */
@@ -214,6 +217,9 @@
 
     /* Calendar - Dark Mode */
     --completed-overlay: rgba(0, 0, 0, 0.4);
+
+    /* Task backgrounds - darker blue tint for dark mode */
+    --task-bg: #1e3a5f;
 
     /* Toast - Dark Mode (same or adjust as needed) */
     --toast-action-hover: #404040;

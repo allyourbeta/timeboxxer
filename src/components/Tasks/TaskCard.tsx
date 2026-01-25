@@ -72,7 +72,7 @@ export function TaskCard({
 
   return (
     <div
-      className={`px-3 py-2 rounded-lg bg-theme-secondary border border-theme relative overflow-hidden group transition-all ${
+      className={`px-3 py-2 rounded-lg bg-[var(--task-bg)] border border-theme relative overflow-hidden group transition-all ${
         isHighlight ? "ring-1 ring-[var(--highlight-ring)]" : ""
       } ${
         isCompleted

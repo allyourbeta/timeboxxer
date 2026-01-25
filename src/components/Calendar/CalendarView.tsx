@@ -623,7 +623,8 @@ export function CalendarView({
                     absolute mx-1 rounded-lg border border-theme shadow-sm overflow-hidden
                     cursor-pointer hover:shadow-md transition-shadow select-none touch-none
                     ${isExternalDndDragging ? "pointer-events-none" : "pointer-events-auto"}
-                    bg-theme-secondary
+                    ${task.completed_at ? "opacity-50" : ""}
+                    bg-[var(--task-bg)]
                   `}
                   style={{
                     top: `${top}px`,
@@ -643,11 +644,6 @@ export function CalendarView({
                     );
                   }}
                 >
-                  {task.completed_at && (
-                    <div className="absolute inset-0 bg-[var(--completed-overlay)] rounded-lg flex items-center justify-center pointer-events-none">
-                      <CheckCircle className="h-8 w-8 text-[var(--accent-success)]" />
-                    </div>
-                  )}
 
                   <div className="p-2 flex items-start justify-between gap-2">
                     <div className="min-w-0">
