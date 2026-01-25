@@ -124,7 +124,11 @@ export function ListCard({
             : "shadow-theme-sm hover:shadow-theme-md hover:border-theme-emphasis"
         }
       `}
-      style={{ breakInside: "avoid", marginBottom: "0.875rem" }}
+      style={{ 
+        breakInside: "avoid", 
+        marginBottom: "0.875rem",
+        boxShadow: 'var(--shadow-card)'
+      }}
     >
       {/* Header - always visible */}
       {isEditing ? (

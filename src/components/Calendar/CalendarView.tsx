@@ -491,7 +491,8 @@ export function CalendarView({
 
   return (
     <div
-      className="flex flex-col h-full bg-background"
+      className="flex flex-col h-full bg-background rounded-xl"
+      style={{ boxShadow: 'var(--shadow-panel)' }}
       onClick={() => setSelectedTaskId(null)}
     >
       <div className="flex-shrink-0 p-4 border-b border-theme">
@@ -502,7 +503,7 @@ export function CalendarView({
 
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden relative"
+        className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[var(--calendar-grid-bg)]"
         data-testid="calendar-container"
       >
         <div className="relative" style={{ height: `${24 * SLOT_HEIGHT}px` }}>
@@ -635,6 +636,7 @@ export function CalendarView({
                     borderLeftColor: accent,
                     userSelect: "none",
                     touchAction: "none",
+                    boxShadow: 'var(--shadow-task)',
                   }}
                   onPointerDown={(e) => startDrag(e, task)}
                   onClick={(e) => {

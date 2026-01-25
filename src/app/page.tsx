@@ -228,9 +228,10 @@ export default function Home() {
           {/* List Panel Container */}
           {(panelMode === "both" || panelMode === "lists-only") && (
             <div
-              className={`${panelMode === "both" ? "flex-1" : "w-full"} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm`}
+              className={`${panelMode === "both" ? "flex-1 min-w-0" : "w-full"} bg-theme-secondary rounded-xl border border-theme`}
+              style={{ boxShadow: 'var(--shadow-panel)' }}
             >
-              <div className="p-6 h-full overflow-auto">
+              <div className="p-6 h-full overflow-auto overflow-x-hidden">
                 <ListPanel
                   lists={visibleLists}
                   tasks={tasks}
@@ -265,7 +266,8 @@ export default function Home() {
           {/* Calendar Panel Container */}
           {(panelMode === "both" || panelMode === "calendar-only") && (
             <div
-              className={`${panelMode === "both" ? "flex-1" : "w-full"} bg-theme-secondary rounded-xl border border-theme overflow-hidden shadow-theme-sm flex flex-col`}
+              className={`${panelMode === "both" ? "flex-1 min-w-0" : "w-full"} bg-theme-secondary rounded-xl border border-theme flex flex-col`}
+              style={{ boxShadow: 'var(--shadow-panel)' }}
             >
               <CalendarView
                 tasks={tasks}

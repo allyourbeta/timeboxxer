@@ -65,7 +65,10 @@ export function Header({
   }
 
   return (
-    <header className="h-14 px-4 bg-theme-secondary border-b border-theme flex items-center">
+    <header 
+      className="h-14 px-4 bg-theme-secondary border-b border-theme flex items-center"
+      style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}
+    >
       {/* LEFT GROUP: Branding & Stats */}
       <div className="flex items-center gap-4">
         <h1 className="text-2xl font-bold text-theme-primary tracking-tight">Timeboxxer</h1>

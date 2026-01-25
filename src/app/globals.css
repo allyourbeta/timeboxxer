@@ -86,6 +86,14 @@
     /* Task backgrounds - light blue tint for better visual hierarchy */
     --task-bg: #eff6ff;
 
+    /* Depth & Shadows */
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-task: 0 3px 8px rgba(0, 0, 0, 0.2);
+    --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+    /* Calendar grid background - warm tint */
+    --calendar-grid-bg: #fffbeb;
+
     /* ========================================
        CENTRALIZED COLOR SYSTEM - Phase 1
        ======================================== */
@@ -220,6 +228,14 @@
 
     /* Task backgrounds - darker blue tint for dark mode */
     --task-bg: #1e3a5f;
+
+    /* Depth & Shadows - Dark Mode */
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-task: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-panel: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+
+    /* Calendar grid background - warm dark */
+    --calendar-grid-bg: #1c1917;
 
     /* Toast - Dark Mode (same or adjust as needed) */
     --toast-action-hover: #404040;

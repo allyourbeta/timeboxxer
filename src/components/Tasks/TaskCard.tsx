@@ -81,7 +81,11 @@ export function TaskCard({
             ? "opacity-60"
             : ""
       }`}
-      style={{ borderLeftWidth: "4px", borderLeftColor: bgColor }}
+      style={{ 
+        borderLeftWidth: "4px", 
+        borderLeftColor: bgColor,
+        boxShadow: 'var(--shadow-task)'
+      }}
       title={title}
       data-task-id={id}
       data-title={title}
