@@ -649,7 +649,7 @@ export function CalendarView({
 
                   <div className="p-2 flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-xs font-medium text-foreground truncate">
+                      <div className="text-sm font-medium text-foreground truncate">
                         {task.title}
                       </div>
                       <div className="text-[11px] text-muted-foreground font-mono">
