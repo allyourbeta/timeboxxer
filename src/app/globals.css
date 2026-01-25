@@ -31,46 +31,48 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    
+
     /* Timeboxxer Design System - Inspired by Morgen/Akiflow */
-    
+
     /* Background colors - calm, professional hierarchy */
-    --bg-primary: #e5e5e5;       /* Main app background - warm off-white */
-    --bg-secondary: #ffffff;      /* Cards, elevated surfaces */
-    --bg-tertiary: #f5f5f5;       /* Hover states, subtle highlights */
-    --bg-elevated: #ffffff;       /* Modal, dropdown overlays */
-    
+    --bg-primary: #e5e5e5; /* Main app background - warm off-white */
+    --bg-secondary: #ffffff; /* Cards, elevated surfaces */
+    --bg-tertiary: #f5f5f5; /* Hover states, subtle highlights */
+    --bg-elevated: #ffffff; /* Modal, dropdown overlays */
+
     /* Text colors - soft, readable hierarchy */
-    --text-primary: #171717;      /* Main text - warm dark gray */
-    --text-secondary: #737373;    /* Muted text - medium gray */
-    --text-tertiary: #a3a3a3;     /* Disabled, placeholders - light gray */
-    --text-inverse: #ffffff;      /* Text on dark backgrounds */
-    
+    --text-primary: #171717; /* Main text - warm dark gray */
+    --text-secondary: #737373; /* Muted text - medium gray */
+    --text-tertiary: #a3a3a3; /* Disabled, placeholders - light gray */
+    --text-inverse: #ffffff; /* Text on dark backgrounds */
+
     /* Accent colors - muted, professional */
-    --accent-primary: #2563eb;    /* Primary actions - calm blue */
+    --accent-primary: #2563eb; /* Primary actions - calm blue */
     --accent-primary-hover: #1d4ed8;
-    --accent-success: #16a34a;    /* Complete actions - soft green */
+    --accent-success: #16a34a; /* Complete actions - soft green */
     --accent-success-hover: #15803d;
-    --accent-danger: #dc2626;     /* Delete actions - soft red */
+    --accent-danger: #dc2626; /* Delete actions - soft red */
     --accent-danger-hover: #b91c1c;
-    --accent-warning: #d97706;    /* Warning states - muted orange */
-    
+    --accent-warning: #d97706; /* Warning states - muted orange */
+
     /* Borders - subtle definition */
-    --border-subtle: #f5f5f5;     /* Very light, panel separators */
-    --border-default: #e5e5e5;    /* Card borders, inputs */
-    --border-emphasis: #d4d4d4;   /* Focus states, active elements */
-    
+    --border-subtle: #f5f5f5; /* Very light, panel separators */
+    --border-default: #e5e5e5; /* Card borders, inputs */
+    --border-emphasis: #d4d4d4; /* Focus states, active elements */
+
     /* Shadows - soft elevation */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
     /* Interactive states */
     --interactive-hover: var(--bg-tertiary);
     --interactive-active: #eeeeee;
     --interactive-disabled: var(--bg-tertiary);
-    
+
     /* Status colors - muted versions */
     --status-info: #0ea5e9;
     --status-info-bg: #e0f2fe;
@@ -80,7 +82,59 @@
     --status-warning-bg: #fffbeb;
     --status-error: var(--accent-danger);
     --status-error-bg: #fef2f2;
-    
+
+    /* ========================================
+       CENTRALIZED COLOR SYSTEM - Phase 1
+       ======================================== */
+
+    /* Interactive States */
+    --focus-ring: #3b82f6; /* Focus rings on inputs */
+    --drag-highlight: rgba(59, 130, 246, 0.1); /* Drop zone background */
+    --drag-highlight-dark: rgba(
+      59,
+      130,
+      246,
+      0.25
+    ); /* Drop zone bg (dark mode context) */
+    --drag-ring: #60a5fa; /* Drop zone border/ring */
+
+    /* Calendar Specific */
+    --time-indicator: #ef4444; /* Current time line (red) */
+    --completed-overlay: rgba(
+      255,
+      255,
+      255,
+      0.6
+    ); /* Overlay on completed tasks */
+    --completed-overlay-dark: rgba(0, 0, 0, 0.4); /* Dark mode version */
+
+    /* Highlight Feature */
+    --highlight-ring: #facc15; /* Gold ring on highlighted tasks */
+
+    /* Overlays & Modals */
+    --overlay-backdrop: rgba(0, 0, 0, 0.5); /* Modal/dialog backdrop */
+
+    /* Toast Notifications */
+    --toast-bg: #eab308;
+    --toast-border: #facc15;
+    --toast-text: #000000;
+    --toast-action-bg: #171717;
+    --toast-action-text: #eab308;
+    --toast-action-hover: #262626;
+    --toast-progress-bg: #ca8a04;
+    --toast-progress-fill: #171717;
+
+    /* Focus Mode (immersive fullscreen) */
+    --focus-gradient-start: #ea580c;
+    --focus-gradient-mid: #dc2626;
+    --focus-gradient-end: #c2410c;
+    --focus-text: #ffffff;
+    --focus-text-muted: rgba(255, 255, 255, 0.7);
+    --focus-highlight-text: #fde047;
+    --focus-popup-bg: #ffffff;
+    --focus-popup-border: #e5e7eb;
+    --focus-popup-text: #111827;
+
     /* Legacy compatibility */
     --border-color: var(--border-default);
     --bg-primary-old: var(--bg-primary);
@@ -90,70 +144,80 @@
     --text-secondary-old: var(--text-secondary);
   }
 
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
-  
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-  
-  /* Timeboxxer Design System - Dark Mode */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #262626;
-  --bg-tertiary: #404040;
-  --bg-elevated: #303030;
-  
-  --text-primary: #fafafa;
-  --text-secondary: #a3a3a3;
-  --text-tertiary: #737373;
-  --text-inverse: #171717;
-  
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #2563eb;
-  --accent-success: #22c55e;
-  --accent-success-hover: #16a34a;
-  --accent-danger: #ef4444;
-  --accent-danger-hover: #dc2626;
-  --accent-warning: #f59e0b;
-  
-  --border-subtle: #303030;
-  --border-default: #404040;
-  --border-emphasis: #525252;
-  
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
-  
-  --interactive-hover: var(--bg-tertiary);
-  --interactive-active: #525252;
-}
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+
+    /* Timeboxxer Design System - Dark Mode */
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #262626;
+    --bg-tertiary: #404040;
+    --bg-elevated: #303030;
+
+    --text-primary: #fafafa;
+    --text-secondary: #a3a3a3;
+    --text-tertiary: #737373;
+    --text-inverse: #171717;
+
+    --accent-primary: #3b82f6;
+    --accent-primary-hover: #2563eb;
+    --accent-success: #22c55e;
+    --accent-success-hover: #16a34a;
+    --accent-danger: #ef4444;
+    --accent-danger-hover: #dc2626;
+    --accent-warning: #f59e0b;
+
+    --border-subtle: #303030;
+    --border-default: #404040;
+    --border-emphasis: #525252;
+
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+
+    --interactive-hover: var(--bg-tertiary);
+    --interactive-active: #525252;
+
+    /* Interactive States - Dark Mode */
+    --drag-highlight: rgba(59, 130, 246, 0.25);
+    --drag-ring: #3b82f6;
+
+    /* Calendar - Dark Mode */
+    --completed-overlay: rgba(0, 0, 0, 0.4);
+
+    /* Toast - Dark Mode (same or adjust as needed) */
+    --toast-action-hover: #404040;
+  }
 }
 
 @layer base {
@@ -169,26 +233,79 @@
 }
 
 /* Design System Utility Classes */
-.bg-theme-primary { background-color: var(--bg-primary); }
-.bg-theme-secondary { background-color: var(--bg-secondary); }
-.bg-theme-tertiary { background-color: var(--bg-tertiary); }
-.bg-theme-elevated { background-color: var(--bg-elevated); }
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+.bg-theme-tertiary {
+  background-color: var(--bg-tertiary);
+}
+.bg-theme-elevated {
+  background-color: var(--bg-elevated);
+}
 
-.text-theme-primary { color: var(--text-primary); }
-.text-theme-secondary { color: var(--text-secondary); }
-.text-theme-tertiary { color: var(--text-tertiary); }
-.text-theme-inverse { color: var(--text-inverse); }
+.text-theme-primary {
+  color: var(--text-primary);
+}
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+.text-theme-tertiary {
+  color: var(--text-tertiary);
+}
+.text-theme-inverse {
+  color: var(--text-inverse);
+}
 
-.border-theme { border-color: var(--border-default); }
-.border-theme-subtle { border-color: var(--border-subtle); }
-.border-theme-emphasis { border-color: var(--border-emphasis); }
+.border-theme {
+  border-color: var(--border-default);
+}
+.border-theme-subtle {
+  border-color: var(--border-subtle);
+}
+.border-theme-emphasis {
+  border-color: var(--border-emphasis);
+}
 
-.shadow-theme-sm { box-shadow: var(--shadow-sm); }
-.shadow-theme-md { box-shadow: var(--shadow-md); }
+.shadow-theme-sm {
+  box-shadow: var(--shadow-sm);
+}
+.shadow-theme-md {
+  box-shadow: var(--shadow-md);
+}
 
 /* Interactive state helpers */
-.hover-theme:hover { background-color: var(--interactive-hover); }
-.active-theme:active { background-color: var(--interactive-active); }
+.hover-theme:hover {
+  background-color: var(--interactive-hover);
+}
+.active-theme:active {
+  background-color: var(--interactive-active);
+}
+
+/* Interactive state utilities */
+.bg-drag-highlight {
+  background-color: var(--drag-highlight);
+}
+.ring-drag {
+  --tw-ring-color: var(--drag-ring);
+}
+.ring-focus {
+  --tw-ring-color: var(--focus-ring);
+}
+.ring-highlight {
+  --tw-ring-color: var(--highlight-ring);
+}
+.bg-time-indicator {
+  background-color: var(--time-indicator);
+}
+.bg-completed-overlay {
+  background-color: var(--completed-overlay);
+}
+.bg-overlay-backdrop {
+  background-color: var(--overlay-backdrop);
+}
 
 /* Button variants using design system */
 .btn-primary {
@@ -278,7 +395,7 @@
   border-color: hsl(var(--border));
 }
 
-.fc-theme-standard td, 
+.fc-theme-standard td,
 .fc-theme-standard th {
   border-color: hsl(var(--border));
 }
@@ -362,7 +479,7 @@
 .fc-timegrid-axis,
 .fc-timegrid-col,
 .fc-timegrid-bg-harness {
-  background: #FFFBEB !important;
+  background: #fffbeb !important;
 }
 
 .dark .fc-timegrid-slot,
@@ -370,7 +487,7 @@
 .dark .fc-timegrid-axis,
 .dark .fc-timegrid-col,
 .dark .fc-timegrid-bg-harness {
-  background: #DBEAFE !important;
+  background: #dbeafe !important;
 }
 
 /* Time slot hover */

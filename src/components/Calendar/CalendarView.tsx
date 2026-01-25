@@ -68,7 +68,7 @@ function SlotInput({
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
       placeholder="New task..."
-      className="absolute inset-x-0 top-0 h-8 px-2 text-sm bg-white border-2 border-blue-500 rounded shadow-lg focus:outline-none z-50"
+      className="absolute inset-x-0 top-0 h-8 px-2 text-sm bg-[var(--bg-secondary)] border-2 border-[var(--accent-primary)] rounded shadow-lg focus:outline-none z-50"
       onClick={(e) => e.stopPropagation()}
     />
   );
@@ -548,7 +548,7 @@ export function CalendarView({
                         ${isHourBoundary ? "border-theme" : "border-theme-subtle"}
                         ${
                           snapshot.isDraggingOver
-                            ? "bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 ring-inset"
+                            ? "bg-[var(--drag-highlight)] ring-2 ring-[var(--drag-ring)] ring-inset"
                             : ""
                         }
                         transition-colors duration-150
@@ -582,10 +582,10 @@ export function CalendarView({
 
           {/* Current time line */}
           <div
-            className="absolute w-full h-0.5 bg-red-500 z-20 pointer-events-none"
+            className="absolute w-full h-0.5 bg-[var(--time-indicator)] z-20 pointer-events-none"
             style={{ top: `${getCurrentTimePixels()}px`, left: "64px" }}
           >
-            <div className="absolute left-0 -top-2 w-4 h-4 bg-red-500 rounded-full -ml-2" />
+            <div className="absolute left-0 -top-2 w-4 h-4 bg-[var(--time-indicator)] rounded-full -ml-2" />
           </div>
 
           {/* Scheduled tasks */}
@@ -605,7 +605,8 @@ export function CalendarView({
                 typeof (task as any).color_index === "number"
                   ? (task as any).color_index
                   : 0;
-              const accent = getColor(paletteId, colorIndex) || "#3b82f6";
+              const accent =
+                getColor(paletteId, colorIndex) || "var(--accent-primary)";
 
               const previewDuration =
                 resizePreview?.taskId === task.id
@@ -643,8 +644,8 @@ export function CalendarView({
                   }}
                 >
                   {task.completed_at && (
-                    <div className="absolute inset-0 bg-white/60 dark:bg-black/40 rounded-lg flex items-center justify-center pointer-events-none">
-                      <CheckCircle className="h-8 w-8 text-green-500" />
+                    <div className="absolute inset-0 bg-[var(--completed-overlay)] rounded-lg flex items-center justify-center pointer-events-none">
+                      <CheckCircle className="h-8 w-8 text-[var(--accent-success)]" />
                     </div>
                   )}
 

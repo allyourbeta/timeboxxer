@@ -1,41 +1,41 @@
-'use client'
+"use client";
 
-import { Trash2, CheckCircle } from 'lucide-react'
-import { getColor } from '@/lib/palettes'
+import { Trash2, CheckCircle } from "lucide-react";
+import { getColor } from "@/lib/palettes";
 
 interface TaskCardProps {
-  id: string
-  title: string
-  durationMinutes: number
-  colorIndex: number
-  isCompleted: boolean
-  isScheduled: boolean
-  isDaily: boolean
-  isInPurgatory: boolean
-  isHighlight: boolean
-  canHighlight: boolean
-  energyLevel: 'high' | 'medium' | 'low'
-  paletteId: string
-  onDurationClick: (reverse: boolean) => void
-  onEnergyChange: (level: 'high' | 'medium' | 'low') => void
-  onDailyToggle: () => void
-  onHighlightToggle: () => void
-  onComplete: () => void
-  onDelete: () => void
+  id: string;
+  title: string;
+  durationMinutes: number;
+  colorIndex: number;
+  isCompleted: boolean;
+  isScheduled: boolean;
+  isDaily: boolean;
+  isInPurgatory: boolean;
+  isHighlight: boolean;
+  canHighlight: boolean;
+  energyLevel: "high" | "medium" | "low";
+  paletteId: string;
+  onDurationClick: (reverse: boolean) => void;
+  onEnergyChange: (level: "high" | "medium" | "low") => void;
+  onDailyToggle: () => void;
+  onHighlightToggle: () => void;
+  onComplete: () => void;
+  onDelete: () => void;
 }
 
 // Energy cycle: medium -> high -> low -> medium
-const ENERGY_CYCLE: Record<string, 'high' | 'medium' | 'low'> = {
-  medium: 'high',
-  high: 'low',
-  low: 'medium',
-}
+const ENERGY_CYCLE: Record<string, "high" | "medium" | "low"> = {
+  medium: "high",
+  high: "low",
+  low: "medium",
+};
 
 const ENERGY_ICONS: Record<string, string> = {
-  high: '🔥',
-  medium: '⚡',
-  low: '🌙',
-}
+  high: "🔥",
+  medium: "⚡",
+  low: "🌙",
+};
 
 export function TaskCard({
   id,
@@ -57,27 +57,31 @@ export function TaskCard({
   onComplete,
   onDelete,
 }: TaskCardProps) {
-  const bgColor = getColor(paletteId, colorIndex)
-  
+  const bgColor = getColor(paletteId, colorIndex);
+
   const handleEnergyClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onEnergyChange(ENERGY_CYCLE[energyLevel])
-  }
-  
+    e.stopPropagation();
+    onEnergyChange(ENERGY_CYCLE[energyLevel]);
+  };
+
   // Format duration compactly
-  const durationLabel = durationMinutes >= 60 
-    ? `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 > 0 ? durationMinutes % 60 : ''}`
-    : `${durationMinutes}m`
-  
+  const durationLabel =
+    durationMinutes >= 60
+      ? `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 > 0 ? durationMinutes % 60 : ""}`
+      : `${durationMinutes}m`;
+
   return (
     <div
       className={`px-3 py-2 rounded-lg bg-theme-secondary border border-theme relative overflow-hidden group transition-all ${
-        isHighlight ? 'ring-1 ring-yellow-400' : ''
+        isHighlight ? "ring-1 ring-[var(--highlight-ring)]" : ""
       } ${
-        isCompleted ? 'opacity-50' : 
-        isScheduled && !isInPurgatory ? 'opacity-60' : ''
+        isCompleted
+          ? "opacity-50"
+          : isScheduled && !isInPurgatory
+            ? "opacity-60"
+            : ""
       }`}
-      style={{ borderLeftWidth: '4px', borderLeftColor: bgColor }}
+      style={{ borderLeftWidth: "4px", borderLeftColor: bgColor }}
       title={title}
       data-task-id={id}
       data-title={title}
@@ -88,24 +92,26 @@ export function TaskCard({
       {/* Single horizontal line layout */}
       <div className="flex items-center gap-2.5">
         {/* Title - takes remaining space */}
-        <span className={`flex-1 text-theme-primary font-medium text-sm truncate ${
-          isCompleted ? 'line-through' : ''
-        }`}>
+        <span
+          className={`flex-1 text-theme-primary font-medium text-sm truncate ${
+            isCompleted ? "line-through" : ""
+          }`}
+        >
           {title}
         </span>
-        
+
         {/* Duration - tap to cycle */}
         <button
           onClick={(e) => {
-            e.stopPropagation()
-            onDurationClick(e.shiftKey)
+            e.stopPropagation();
+            onDurationClick(e.shiftKey);
           }}
           className="text-theme-secondary hover:text-theme-primary text-xs font-medium min-w-[28px] text-right transition-colors"
           title="Click to change duration (Shift+click to decrease)"
         >
           {durationLabel}
         </button>
-        
+
         {/* Energy - tap to cycle */}
         <button
           onClick={handleEnergyClick}
@@ -114,9 +120,9 @@ export function TaskCard({
         >
           {ENERGY_ICONS[energyLevel]}
         </button>
-        
+
         {/* Daily checkbox */}
-        <label 
+        <label
           className="flex items-center cursor-pointer"
           title="Repeat daily"
           onClick={(e) => e.stopPropagation()}
@@ -128,25 +134,30 @@ export function TaskCard({
             className="w-3 h-3 rounded border-theme accent-accent-primary"
           />
         </label>
-        
+
         {/* Highlight star - only for date lists */}
         {canHighlight && (
           <button
-            onClick={(e) => { e.stopPropagation(); onHighlightToggle(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onHighlightToggle();
+            }}
             className={`text-xs transition-all ${
-              isHighlight ? 'opacity-100 scale-105' : 'opacity-40 hover:opacity-100 hover:scale-105'
+              isHighlight
+                ? "opacity-100 scale-105"
+                : "opacity-40 hover:opacity-100 hover:scale-105"
             }`}
-            title={isHighlight ? 'Remove highlight' : 'Set as highlight'}
+            title={isHighlight ? "Remove highlight" : "Set as highlight"}
           >
-            {isHighlight ? '⭐' : '☆'}
+            {isHighlight ? "⭐" : "☆"}
           </button>
         )}
-        
+
         {/* Complete - always visible, more prominent */}
         <button
           onClick={(e) => {
-            e.stopPropagation()
-            onComplete()
+            e.stopPropagation();
+            onComplete();
           }}
           className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
           title="Mark as complete"
@@ -157,8 +168,8 @@ export function TaskCard({
         {/* Delete - always visible */}
         <button
           onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
+            e.stopPropagation();
+            onDelete();
           }}
           className="opacity-50 hover:opacity-100 transition-all hover:scale-105"
           title="Delete task"
@@ -167,5 +178,5 @@ export function TaskCard({
         </button>
       </div>
     </div>
-  )
+  );
 }
