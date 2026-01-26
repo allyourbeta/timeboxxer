@@ -109,7 +109,7 @@ export function useTaskHandlers() {
 
   const handleTaskEnergyChange = async (
     taskId: string,
-    level: "high" | "medium" | "low",
+    level: "high" | "medium",
   ) => {
     try {
       await updateTask(taskId, { energy_level: level });

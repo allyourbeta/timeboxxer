@@ -103,9 +103,8 @@ export function useDragHandlers() {
         break;
 
       case "unschedule":
-        // Date list → Project list: clear schedule AND move to new list
+        // Date list → Project list: move to new list (clears scheduled date automatically)
         if (operation.data?.taskId && operation.data?.listId) {
-          await unscheduleFromDate(operation.data.taskId);
           await moveTask(operation.data.taskId, operation.data.listId);
         }
         break;

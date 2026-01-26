@@ -177,7 +177,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     // Optimistic update
     set((state) => ({
       tasks: state.tasks.map((t) =>
-        t.id === taskId ? { ...t, list_id: newListId } : t,
+        t.id === taskId ? { ...t, list_id: newListId, planned_list_date: null, calendar_slot_time: null } : t,
       ),
     }));
 
@@ -196,12 +196,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     // Optimistic update - move task and update positions
     set((state) => ({
       tasks: state.tasks.map((t) => {
-        // Update the moved task's list_id
+        // Update the moved task's list_id and clear soft-link
         if (t.id === taskId) {
           const newIndex = orderedTaskIds.indexOf(taskId);
           return { 
             ...t, 
-            list_id: newListId, 
+            list_id: newListId,
+            planned_list_date: null, // Clear soft-link when moving
+            calendar_slot_time: null, // Clear schedule when moving
             position: (newIndex + 1) * POSITION_GAP 
           };
         }

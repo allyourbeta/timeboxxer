@@ -151,6 +151,7 @@ export async function moveTask(
     .from("tasks")
     .update({
       list_id: newListId,
+      planned_list_date: null, // Clear soft-link when moving
       calendar_slot_time: null, // Clear schedule when moving
       updated_at: new Date().toISOString(),
     })
@@ -175,6 +176,7 @@ export async function moveTaskWithPosition(
     .from("tasks")
     .update({
       list_id: newListId,
+      planned_list_date: null, // Clear soft-link when moving
       calendar_slot_time: null,
       updated_at: new Date().toISOString(),
     })

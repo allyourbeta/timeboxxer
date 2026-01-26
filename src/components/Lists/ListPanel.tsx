@@ -27,7 +27,7 @@ interface ListPanelProps {
   onTaskCreate: (listId: string, title: string, date?: string) => void;
   onTaskEnergyChange: (
     taskId: string,
-    level: "high" | "medium" | "low",
+    level: "high" | "medium",
   ) => void;
   onTaskComplete: (taskId: string) => void;
   onRollOverTasks: (
@@ -84,9 +84,7 @@ export function ListPanel({
     hasInitializedExpansion.current = true;
 
     const firstWithTasks = lists.find((list) => {
-      const taskCount = tasks.filter(
-        (t) => t.list_id === list.id && !t.completed_at,
-      ).length;
+      const taskCount = getTasksForList(list).length;
       return taskCount > 0;
     });
 

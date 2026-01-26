@@ -36,7 +36,7 @@ interface ListCardProps {
   onTaskAdd: (title: string) => void;
   onTaskEnergyChange: (
     taskId: string,
-    level: "high" | "medium" | "low",
+    level: "high" | "medium",
   ) => void;
   onTaskComplete: (taskId: string) => void;
   onRollOver?: (destination: "today" | "tomorrow") => void;

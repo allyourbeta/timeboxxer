@@ -14,27 +14,25 @@ interface TaskCardProps {
   isInPurgatory: boolean;
   isHighlight: boolean;
   canHighlight: boolean;
-  energyLevel: "high" | "medium" | "low";
+  energyLevel: "high" | "medium";
   paletteId: string;
   onDurationClick: (reverse: boolean) => void;
-  onEnergyChange: (level: "high" | "medium" | "low") => void;
+  onEnergyChange: (level: "high" | "medium") => void;
   onDailyToggle: () => void;
   onHighlightToggle: () => void;
   onComplete: () => void;
   onDelete: () => void;
 }
 
-// Energy cycle: medium -> high -> low -> medium
-const ENERGY_CYCLE: Record<string, "high" | "medium" | "low"> = {
+// Energy cycle: medium -> high -> medium
+const ENERGY_CYCLE: Record<string, "high" | "medium"> = {
   medium: "high",
-  high: "low",
-  low: "medium",
+  high: "medium",
 };
 
 const ENERGY_ICONS: Record<string, string> = {
   high: "🔥",
   medium: "⚡",
-  low: "🌙",
 };
 
 export function TaskCard({
