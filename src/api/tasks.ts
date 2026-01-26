@@ -160,6 +160,45 @@ export async function moveTask(
 }
 
 /**
+ * Move a task to a new list and set its position
+ */
+export async function moveTaskWithPosition(
+  taskId: string,
+  newListId: string,
+  orderedTaskIds: string[],
+): Promise<void> {
+  const supabase = createClient();
+  const POSITION_GAP = 1000;
+
+  // First, move the task to the new list
+  const { error: moveError } = await supabase
+    .from("tasks")
+    .update({
+      list_id: newListId,
+      calendar_slot_time: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", taskId);
+
+  if (moveError) throw moveError;
+
+  // Then update positions for all tasks in the destination list
+  const updates = orderedTaskIds.map((id, index) =>
+    supabase
+      .from("tasks")
+      .update({ position: (index + 1) * POSITION_GAP, updated_at: new Date().toISOString() })
+      .eq("id", id)
+  );
+
+  const results = await Promise.all(updates);
+  const errors = results.filter((r) => r.error);
+  if (errors.length > 0) {
+    console.error("moveTaskWithPosition position update errors:", errors);
+    throw errors[0].error;
+  }
+}
+
+/**
  * Complete a task - move to Completed list
  */
 export async function completeTask(taskId: string): Promise<void> {

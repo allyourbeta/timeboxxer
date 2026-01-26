@@ -177,9 +177,24 @@ export async function processDragEnd(
 
   // === PROJECT LIST → PROJECT LIST (Move) ===
   if (!isSourceDateList && !isDestDateList && destList) {
+    // Get tasks in destination list, sorted by position
+    const destTasks = tasks
+      .filter((t) => t.list_id === destinationId && !t.completed_at)
+      .sort((a, b) => {
+        const posA = a.position ?? Infinity;
+        const posB = b.position ?? Infinity;
+        if (posA !== posB) return posA - posB;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+
+    // Insert the moved task at the drop index
+    const destIndex = result.destination.index;
+    const orderedTaskIds = destTasks.map((t) => t.id);
+    orderedTaskIds.splice(destIndex, 0, taskId);
+
     return {
       type: "move",
-      data: { taskId, listId: destinationId },
+      data: { taskId, listId: destinationId, orderedTaskIds },
     };
   }
 

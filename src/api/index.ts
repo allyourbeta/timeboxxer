@@ -9,6 +9,7 @@ export {
   completeTask,
   uncompleteTask,
   moveTask,
+  moveTaskWithPosition,
   scheduleTask,
   unscheduleTask,
   createInboxTask,

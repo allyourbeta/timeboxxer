@@ -9,6 +9,7 @@ import {
   completeTask as apiCompleteTask,
   uncompleteTask as apiUncompleteTask,
   moveTask as apiMoveTask,
+  moveTaskWithPosition as apiMoveTaskWithPosition,
   scheduleTask as apiScheduleTask,
   unscheduleTask as apiUnscheduleTask,
   createInboxTask as apiCreateInboxTask,
@@ -36,6 +37,7 @@ interface TaskStore {
   completeTask: (taskId: string) => Promise<void>;
   uncompleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, newListId: string) => Promise<void>;
+  moveTaskWithPosition: (taskId: string, newListId: string, orderedTaskIds: string[]) => Promise<void>;
   scheduleTask: (taskId: string, calendarSlotTime: string) => Promise<void>;
   unscheduleTask: (taskId: string) => Promise<void>;
   createInboxTask: (title: string) => Promise<void>;
@@ -174,6 +176,39 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     try {
       await apiMoveTask(taskId, newListId);
+    } catch (error) {
+      await get().loadTasks();
+      set({ error: (error as Error).message });
+      throw error;
+    }
+  },
+
+  moveTaskWithPosition: async (taskId, newListId, orderedTaskIds) => {
+    const POSITION_GAP = 1000;
+    
+    // Optimistic update - move task and update positions
+    set((state) => ({
+      tasks: state.tasks.map((t) => {
+        // Update the moved task's list_id
+        if (t.id === taskId) {
+          const newIndex = orderedTaskIds.indexOf(taskId);
+          return { 
+            ...t, 
+            list_id: newListId, 
+            position: (newIndex + 1) * POSITION_GAP 
+          };
+        }
+        // Update positions for other tasks in destination list
+        const index = orderedTaskIds.indexOf(t.id);
+        if (index !== -1) {
+          return { ...t, position: (index + 1) * POSITION_GAP };
+        }
+        return t;
+      }),
+    }));
+
+    try {
+      await apiMoveTaskWithPosition(taskId, newListId, orderedTaskIds);
     } catch (error) {
       await get().loadTasks();
       set({ error: (error as Error).message });

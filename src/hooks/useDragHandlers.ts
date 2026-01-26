@@ -9,6 +9,7 @@ export function useDragHandlers() {
     tasks,
     scheduleTask,
     moveTask,
+    moveTaskWithPosition,
     scheduleForDate,
     unscheduleFromDate,
     updateTask,
@@ -81,9 +82,18 @@ export function useDragHandlers() {
         break;
 
       case "move":
-        // Project list → Project list: just move (existing behavior)
+        // Project list → Project list: move and set position
         if (operation.data?.taskId && operation.data?.listId) {
-          await moveTask(operation.data.taskId, operation.data.listId);
+          if (operation.data.orderedTaskIds) {
+            await moveTaskWithPosition(
+              operation.data.taskId,
+              operation.data.listId,
+              operation.data.orderedTaskIds
+            );
+          } else {
+            // Fallback to simple move (no position)
+            await moveTask(operation.data.taskId, operation.data.listId);
+          }
         }
         break;
 
