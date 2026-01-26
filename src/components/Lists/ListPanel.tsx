@@ -6,6 +6,7 @@ import { ListCard } from "./ListCard";
 import { formatDateForDisplay, getLocalTodayISO } from "@/lib/dateList";
 import { List, Task } from "@/types/app";
 import { DURATION_OPTIONS } from "@/lib/constants";
+import { useTasksByList } from "@/hooks";
 
 interface ListPanelProps {
   lists: List[];
@@ -27,7 +28,7 @@ interface ListPanelProps {
   onTaskCreate: (listId: string, title: string, date?: string) => void;
   onTaskEnergyChange: (
     taskId: string,
-    level: "high" | "medium",
+    level: "high" | "medium" | "low",
   ) => void;
   onTaskComplete: (taskId: string) => void;
   onRollOverTasks: (
@@ -78,36 +79,23 @@ export function ListPanel({
     .filter((l) => (l.panel_column ?? 0) === 1)
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
+  // Optimized task-to-list mapping - O(1) lookups instead of O(n) filters
+  const { getTasksForList, tasksByListId } = useTasksByList(tasks, lists);
+
   // Initialize expansion state - expand first list with tasks
   useEffect(() => {
     if (hasInitializedExpansion.current || lists.length === 0) return;
     hasInitializedExpansion.current = true;
 
-    const firstWithTasks = lists.find((list) => {
-      const taskCount = getTasksForList(list).length;
-      return taskCount > 0;
+    // Use optimized lookup - O(1) per list instead of O(n) filter
+    const firstWithTasks = visibleLists.find((list) => {
+      return getTasksForList(list).length > 0;
     });
 
     if (firstWithTasks && expandedListIds.size === 0) {
       onToggleListExpanded(firstWithTasks.id);
     }
-  }, [lists, tasks, expandedListIds, onToggleListExpanded]);
-
-  const getTasksForList = (list: List) => {
-    if (list.list_type === "date" && list.list_date) {
-      return tasks.filter(
-        (t) => t.planned_list_date === list.list_date && !t.completed_at,
-      );
-    }
-
-    const today = getLocalTodayISO();
-    return tasks.filter(
-      (t) =>
-        t.list_id === list.id &&
-        !t.completed_at &&
-        (!t.planned_list_date || t.planned_list_date < today),
-    );
-  };
+  }, [lists, tasks, expandedListIds, onToggleListExpanded, tasksByListId]);
 
   const cycleDuration = (current: number, reverse: boolean) => {
     const durations = [...DURATION_OPTIONS] as number[];
