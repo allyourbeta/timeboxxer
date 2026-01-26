@@ -31,8 +31,7 @@ export interface DragOperationResult {
     calendarSlotTime?: string;
     plannedListDate?: string;
     listId?: string;
-    beforePosition?: number | null;
-    afterPosition?: number | null;
+    orderedTaskIds?: string[];
   };
 }
 
@@ -101,25 +100,19 @@ export async function processDragEnd(
     const destIndex = result.destination.index;
     const movedTask = listTasks[result.source.index];
     
-    // Calculate neighbor positions
-    // After reorder, the task will be at destIndex
-    // We need positions of items that will be above and below it
+    // Reorder the array
     const reordered = Array.from(listTasks);
     const [removed] = reordered.splice(result.source.index, 1);
     reordered.splice(destIndex, 0, removed);
     
-    const beforeTask = destIndex > 0 ? reordered[destIndex - 1] : null;
-    const afterTask = destIndex < reordered.length - 1 ? reordered[destIndex + 1] : null;
-    
-    const beforePosition = beforeTask?.position ?? null;
-    const afterPosition = afterTask?.position ?? null;
+    // Return the full ordered list of IDs
+    const orderedTaskIds = reordered.map((t) => t.id);
 
     return {
       type: "reorder",
       data: { 
         taskId: movedTask.id,
-        beforePosition,
-        afterPosition,
+        orderedTaskIds,
       },
     };
   }

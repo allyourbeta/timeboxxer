@@ -43,7 +43,7 @@ interface TaskStore {
   scheduleForDate: (taskId: string, date: string) => Promise<void>;
   unscheduleFromDate: (taskId: string) => Promise<void>;
   createTaskOnDate: (title: string, date: string) => Promise<void>;
-  reorderTask: (taskId: string, beforePosition: number | null, afterPosition: number | null) => Promise<void>;
+  reorderTask: (taskId: string, orderedTaskIds: string[]) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -278,31 +278,24 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  reorderTask: async (taskId, beforePosition, afterPosition) => {
+  reorderTask: async (taskId, orderedTaskIds) => {
     const POSITION_GAP = 1000;
     
-    // Calculate new position for optimistic update
-    let newPosition: number;
-    if (beforePosition === null && afterPosition === null) {
-      newPosition = POSITION_GAP;
-    } else if (beforePosition === null) {
-      newPosition = Math.floor(afterPosition! / 2);
-    } else if (afterPosition === null) {
-      newPosition = beforePosition + POSITION_GAP;
-    } else {
-      newPosition = beforePosition + Math.floor((afterPosition - beforePosition) / 2);
-    }
-
-    // Optimistic update
+    // Optimistic update - assign positions based on order
     set((state) => ({
-      tasks: state.tasks.map((t) =>
-        t.id === taskId ? { ...t, position: newPosition } : t
-      ),
+      tasks: state.tasks.map((t) => {
+        const index = orderedTaskIds.indexOf(t.id);
+        if (index !== -1) {
+          return { ...t, position: (index + 1) * POSITION_GAP };
+        }
+        return t;
+      }),
     }));
 
     try {
-      await apiReorderTask(taskId, beforePosition, afterPosition);
+      await apiReorderTask(taskId, orderedTaskIds);
     } catch (error) {
+      console.error("reorderTask failed:", error);
       await get().loadTasks();
       throw error;
     }

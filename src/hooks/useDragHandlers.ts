@@ -21,11 +21,10 @@ export function useDragHandlers() {
 
     switch (operation.type) {
       case "reorder":
-        if (operation.data?.taskId) {
+        if (operation.data?.taskId && operation.data?.orderedTaskIds) {
           await reorderTask(
             operation.data.taskId,
-            operation.data.beforePosition ?? null,
-            operation.data.afterPosition ?? null
+            operation.data.orderedTaskIds
           );
         }
         break;
