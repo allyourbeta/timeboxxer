@@ -84,7 +84,10 @@ export function Header({
     >
       {/* LEFT GROUP: Branding & Stats */}
       <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold text-theme-primary tracking-tight">
+        <h1 
+          className="text-2xl font-bold text-theme-primary tracking-tight cursor-default"
+          title={`Build: ${process.env.NEXT_PUBLIC_BUILD_ID || 'dev'}\n${new Date(process.env.NEXT_PUBLIC_BUILD_TIME || Date.now()).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
+        >
           Timeboxxer
         </h1>
         {completedToday > 0 && (
