@@ -15,7 +15,9 @@ export async function getLists(): Promise<List[]> {
   const { data, error } = await supabase
     .from("lists")
     .select("*")
-    .order("created_at");
+    .order("panel_column", { ascending: true })
+    .order("position", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
 
   if (error) throw error;
   return data || [];
@@ -258,4 +260,48 @@ export async function deleteList(listId: string): Promise<void> {
   const { error } = await supabase.from("lists").delete().eq("id", listId);
 
   if (error) throw error;
+}
+
+/**
+ * Reorder a list within a column or move to another column
+ * @param listId - The list being moved
+ * @param targetColumn - The column to move to (0 = left, 1 = right)
+ * @param orderedListIds - All list IDs in the target column in their new order
+ */
+export async function reorderList(
+  listId: string,
+  targetColumn: 0 | 1,
+  orderedListIds: string[]
+): Promise<void> {
+  const supabase = createClient();
+  const POSITION_GAP = 1000;
+
+  // Update the moved list's column
+  const { error: moveError } = await supabase
+    .from("lists")
+    .update({ 
+      panel_column: targetColumn, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq("id", listId);
+
+  if (moveError) throw moveError;
+
+  // Update positions for all lists in the target column
+  const updates = orderedListIds.map((id, index) =>
+    supabase
+      .from("lists")
+      .update({ 
+        position: (index + 1) * POSITION_GAP, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq("id", id)
+  );
+
+  const results = await Promise.all(updates);
+  const errors = results.filter((r) => r.error);
+  if (errors.length > 0) {
+    console.error("reorderList errors:", errors);
+    throw errors[0].error;
+  }
 }

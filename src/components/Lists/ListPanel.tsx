@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Plus } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { ListCard } from "./ListCard";
 import { formatDateForDisplay, getLocalTodayISO } from "@/lib/dateList";
 import { List, Task } from "@/types/app";
 import { DURATION_OPTIONS } from "@/lib/constants";
+import { useListStore } from "@/state";
 
 interface ListPanelProps {
   lists: List[];
@@ -65,14 +66,25 @@ export function ListPanel({
   const [newListName, setNewListName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const hasInitializedExpansion = useRef(false);
+  const { reorderList } = useListStore();
+
+  // Filter out completed lists
+  const visibleLists = lists.filter((l) => l.list_type !== "completed");
+
+  // Split lists into columns
+  const leftColumnLists = visibleLists
+    .filter((l) => (l.panel_column ?? 0) === 0)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  
+  const rightColumnLists = visibleLists
+    .filter((l) => (l.panel_column ?? 0) === 1)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
   // Initialize expansion state - expand first list with tasks
   useEffect(() => {
-    // Only run once when lists are first loaded
     if (hasInitializedExpansion.current || lists.length === 0) return;
     hasInitializedExpansion.current = true;
 
-    // Find first list with tasks and expand it
     const firstWithTasks = lists.find((list) => {
       const taskCount = tasks.filter(
         (t) => t.list_id === list.id && !t.completed_at,
@@ -87,27 +99,24 @@ export function ListPanel({
 
   const getTasksForList = (list: List) => {
     if (list.list_type === "date" && list.list_date) {
-      // Date lists show tasks SCHEDULED for that date (not by list_id)
       return tasks.filter(
         (t) => t.planned_list_date === list.list_date && !t.completed_at,
       );
     }
 
-    // Non-date lists show tasks that BELONG to them
-    // Hide tasks that are scheduled for today or future (they appear on date lists)
     const today = getLocalTodayISO();
     return tasks.filter(
       (t) =>
         t.list_id === list.id &&
         !t.completed_at &&
-        (!t.planned_list_date || t.planned_list_date < today), // Show if unscheduled OR past-due
+        (!t.planned_list_date || t.planned_list_date < today),
     );
   };
 
   const cycleDuration = (current: number, reverse: boolean) => {
     const durations = [...DURATION_OPTIONS] as number[];
     const idx = durations.indexOf(current);
-    if (idx === -1) return 30; // Default if current not in list
+    if (idx === -1) return 30;
 
     if (reverse) {
       return durations[(idx - 1 + durations.length) % durations.length];
@@ -115,82 +124,217 @@ export function ListPanel({
     return durations[(idx + 1) % durations.length];
   };
 
+  const handleListDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+    
+    // Determine source and destination columns
+    const sourceColumn = source.droppableId === "column-0" ? 0 : 1;
+    const destColumn = destination.droppableId === "column-0" ? 0 : 1;
+    
+    // Get the lists for the destination column
+    const destColumnLists = destColumn === 0 ? [...leftColumnLists] : [...rightColumnLists];
+    
+    // If same column, remove from current position first
+    if (sourceColumn === destColumn) {
+      const sourceIndex = destColumnLists.findIndex(l => l.id === draggableId);
+      if (sourceIndex !== -1) {
+        destColumnLists.splice(sourceIndex, 1);
+      }
+    }
+    
+    // Insert at new position
+    const movedList = visibleLists.find(l => l.id === draggableId);
+    if (movedList) {
+      destColumnLists.splice(destination.index, 0, movedList);
+    }
+    
+    // Get ordered IDs for the destination column
+    const orderedListIds = destColumnLists.map(l => l.id);
+    
+    // Call reorder
+    await reorderList(draggableId, destColumn as 0 | 1, orderedListIds);
+  };
+
+  const renderListCard = (list: List, index: number) => {
+    const isExpanded = expandedListIds.has(list.id);
+    const displayName =
+      list.list_type === "date" && list.list_date
+        ? formatDateForDisplay(list.list_date)
+        : list.name;
+
+    return (
+      <Draggable key={list.id} draggableId={list.id} index={index}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            style={{
+              ...provided.draggableProps.style,
+              marginBottom: "0.875rem",
+            }}
+          >
+            <ListCard
+              id={list.id}
+              name={displayName}
+              isInbox={false}
+              isSystemList={
+                list.list_type === "inbox" || list.list_type === "completed"
+              }
+              isDateList={list.list_type === "date"}
+              tasks={getTasksForList(list)}
+              paletteId={paletteId}
+              isEditing={editingListId === list.id}
+              isExpanded={isExpanded}
+              scheduledTaskIds={scheduledTaskIds}
+              onToggleExpand={() => onToggleListExpanded(list.id)}
+              onStartEdit={() => onSetEditingListId(list.id)}
+              onFinishEdit={(name) => {
+                onEditList(list.id, name);
+                onSetEditingListId(null);
+              }}
+              onCancelEdit={() => onSetEditingListId(null)}
+              onClearList={() => onClearList(list.id)}
+              onDelete={() => onDeleteList(list.id)}
+              onTaskDurationClick={(taskId, duration, reverse) =>
+                onTaskDurationChange(taskId, cycleDuration(duration, reverse))
+              }
+              onTaskDelete={onTaskDelete}
+              onTaskAdd={(title) =>
+                onTaskCreate(
+                  list.id,
+                  title,
+                  list.list_type === "date" ? list.list_date : undefined,
+                )
+              }
+              onTaskEnergyChange={onTaskEnergyChange}
+              onTaskComplete={onTaskComplete}
+              onRollOver={
+                list.list_type === "date"
+                  ? (destination) => onRollOverTasks(list.id, destination)
+                  : undefined
+              }
+              isToday={
+                list.list_type === "date" &&
+                list.list_date === getLocalTodayISO()
+              }
+              onHighlightToggle={(taskId) =>
+                onHighlightToggle(
+                  taskId,
+                  list.list_type === "date" ? list.list_date || null : null,
+                )
+              }
+            />
+          </div>
+        )}
+      </Draggable>
+    );
+  };
+
+  // Single column mode
+  if (columnCount === 1) {
+    return (
+      <div ref={containerRef} className="border-r border-theme overflow-y-auto">
+        <div className="p-4">
+          <DragDropContext onDragEnd={handleListDragEnd}>
+            <Droppable droppableId="column-0">
+              {(provided) => (
+                <div ref={provided.innerRef} {...provided.droppableProps}>
+                  {visibleLists
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                    .map((list, index) => renderListCard(list, index))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          {/* Add new list */}
+          {showNewListInput ? (
+            <div className="bg-theme-secondary rounded-lg p-3 mb-4">
+              <input
+                type="text"
+                placeholder="List name..."
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && newListName.trim()) {
+                    onCreateList(newListName.trim());
+                    setNewListName("");
+                    onShowNewListInput(false);
+                  }
+                  if (e.key === "Escape") {
+                    setNewListName("");
+                    onShowNewListInput(false);
+                  }
+                }}
+                onBlur={() => {
+                  if (!newListName.trim()) {
+                    onShowNewListInput(false);
+                  }
+                }}
+                autoFocus
+                className="w-full p-2 text-sm bg-theme-tertiary text-theme-primary placeholder-theme-secondary rounded"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => onShowNewListInput(true)}
+              className="w-full p-3 text-left text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary rounded-lg transition-colors border border-dashed border-theme"
+            >
+              + Add List
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Two column mode
   return (
     <div ref={containerRef} className="border-r border-theme overflow-y-auto">
-      <div
-        className="p-4"
-        style={{ columnCount: columnCount, columnGap: "1rem" }}
-      >
-        {lists
-          .filter((l) => l.list_type !== "completed")
-          .map((list) => {
-            const isExpanded = expandedListIds.has(list.id);
-            const displayName =
-              list.list_type === "date" && list.list_date
-                ? formatDateForDisplay(list.list_date)
-                : list.name;
-            return (
-              <ListCard
-                key={list.id}
-                id={list.id}
-                name={displayName}
-                isInbox={false}
-                isSystemList={
-                  list.list_type === "inbox" || list.list_type === "completed"
-                }
-                isDateList={list.list_type === "date"}
-                tasks={getTasksForList(list)}
-                paletteId={paletteId}
-                isEditing={editingListId === list.id}
-                isExpanded={isExpanded}
-                scheduledTaskIds={scheduledTaskIds}
-                onToggleExpand={() => onToggleListExpanded(list.id)}
-                onStartEdit={() => onSetEditingListId(list.id)}
-                onFinishEdit={(name) => {
-                  onEditList(list.id, name);
-                  onSetEditingListId(null);
-                }}
-                onCancelEdit={() => onSetEditingListId(null)}
-                onClearList={() => onClearList(list.id)}
-                onDelete={() => onDeleteList(list.id)}
-                onTaskDurationClick={(taskId, duration, reverse) =>
-                  onTaskDurationChange(taskId, cycleDuration(duration, reverse))
-                }
-                onTaskDelete={onTaskDelete}
-                onTaskAdd={(title) =>
-                  onTaskCreate(
-                    list.id,
-                    title,
-                    list.list_type === "date" ? list.list_date : undefined,
-                  )
-                }
-                onTaskEnergyChange={onTaskEnergyChange}
-                onTaskComplete={onTaskComplete}
-                onRollOver={
-                  list.list_type === "date"
-                    ? (destination) => onRollOverTasks(list.id, destination)
-                    : undefined
-                }
-                isToday={
-                  list.list_type === "date" &&
-                  list.list_date === getLocalTodayISO()
-                }
-                onHighlightToggle={(taskId) =>
-                  onHighlightToggle(
-                    taskId,
-                    list.list_type === "date" ? list.list_date || null : null,
-                  )
-                }
-              />
-            );
-          })}
+      <div className="p-4">
+        <DragDropContext onDragEnd={handleListDragEnd}>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Left Column */}
+            <Droppable droppableId="column-0">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`min-h-[100px] rounded-lg transition-colors ${
+                    snapshot.isDraggingOver ? "bg-theme-tertiary/50" : ""
+                  }`}
+                >
+                  {leftColumnLists.map((list, index) => renderListCard(list, index))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+
+            {/* Right Column */}
+            <Droppable droppableId="column-1">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`min-h-[100px] rounded-lg transition-colors ${
+                    snapshot.isDraggingOver ? "bg-theme-tertiary/50" : ""
+                  }`}
+                >
+                  {rightColumnLists.map((list, index) => renderListCard(list, index))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </div>
+        </DragDropContext>
 
         {/* Add new list */}
         {showNewListInput ? (
-          <div
-            className="bg-theme-secondary rounded-lg p-3"
-            style={{ breakInside: "avoid", marginBottom: "1rem" }}
-          >
+          <div className="bg-theme-secondary rounded-lg p-3 mt-4">
             <input
               type="text"
               placeholder="List name..."
@@ -219,8 +363,7 @@ export function ListPanel({
         ) : (
           <button
             onClick={() => onShowNewListInput(true)}
-            className="w-full p-3 text-left text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary rounded-lg transition-colors border border-dashed border-theme"
-            style={{ breakInside: "avoid", marginBottom: "1rem" }}
+            className="w-full p-3 mt-4 text-left text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary rounded-lg transition-colors border border-dashed border-theme"
           >
             + Add List
           </button>

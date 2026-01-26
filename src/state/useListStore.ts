@@ -7,6 +7,7 @@ import {
   ensureDateList,
   getInboxList,
   getCompletedList,
+  reorderList as apiReorderList,
 } from "@/api";
 // import { sortListsForDisplay } from '@/lib/listSort'
 import { List } from "@/types/app";
@@ -22,6 +23,7 @@ interface ListStore {
   ensureDateList: (date: string) => Promise<List>;
   getCompletedList: () => List | null;
   getInboxList: () => List | null;
+  reorderList: (listId: string, targetColumn: 0 | 1, orderedListIds: string[]) => Promise<void>;
 }
 
 export const useListStore = create<ListStore>((set, get) => ({
@@ -81,5 +83,38 @@ export const useListStore = create<ListStore>((set, get) => ({
 
   getInboxList: () => {
     return get().lists.find((l) => l.list_type === "inbox") || null;
+  },
+
+  reorderList: async (listId, targetColumn, orderedListIds) => {
+    const POSITION_GAP = 1000;
+    
+    // Optimistic update
+    set((state) => ({
+      lists: state.lists.map((list) => {
+        // Update the moved list's column
+        if (list.id === listId) {
+          const newIndex = orderedListIds.indexOf(listId);
+          return { 
+            ...list, 
+            panel_column: targetColumn, 
+            position: (newIndex + 1) * POSITION_GAP 
+          };
+        }
+        // Update positions for other lists in target column
+        const index = orderedListIds.indexOf(list.id);
+        if (index !== -1) {
+          return { ...list, position: (index + 1) * POSITION_GAP };
+        }
+        return list;
+      }),
+    }));
+
+    try {
+      await apiReorderList(listId, targetColumn, orderedListIds);
+    } catch (error) {
+      console.error("reorderList failed:", error);
+      await get().loadLists();
+      throw error;
+    }
   },
 }));

@@ -24,6 +24,8 @@ export interface List {
   name: string;
   list_type: "user" | "date" | "completed" | "inbox"; // Changed 'parked' to 'inbox'
   list_date?: string; // Only for date lists (ISO date string)
+  position: number; // Order within column
+  panel_column: 0 | 1; // 0 = left, 1 = right
   created_at: string;
   updated_at: string;
 }

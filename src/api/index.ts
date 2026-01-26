@@ -29,4 +29,5 @@ export {
   ensureDateList,
   getInboxList,
   getCompletedList,
+  reorderList,
 } from "./lists";
