@@ -56,19 +56,28 @@ export function useScheduleHandlers() {
       // Get today's date in ISO format
       const today = getLocalTodayISO()
       
-      // Ensure today's date list exists
-      const { ensureDateList } = useListStore.getState()
-      const dateList = await ensureDateList(today)
+      // Get the Inbox list as the home list
+      const { getInboxList } = useListStore.getState()
+      const inboxList = getInboxList()
       
-      // Create the task in today's date list
-      const { createTask, scheduleTask } = useTaskStore.getState()
-      await createTask(dateList.id, title.trim())
+      if (!inboxList) {
+        console.error('Inbox list not found')
+        alert('Could not find Inbox list')
+        return
+      }
+      
+      // Create the task in Inbox (its home list)
+      const { createTask, scheduleTask, scheduleForDate } = useTaskStore.getState()
+      await createTask(inboxList.id, title.trim())
       
       // Get the newly created task (it will be the last one)
       const updatedTasks = useTaskStore.getState().tasks
       const newTask = updatedTasks[updatedTasks.length - 1]
       
-      // Schedule it for the specified time
+      // Schedule it for today (soft-link to date list)
+      await scheduleForDate(newTask.id, today)
+      
+      // Schedule it for the specified time on the calendar
       const calendarSlotTime = createLocalTimestamp(today, time)
       
       // Check if scheduling is allowed (max 2 overlapping tasks)
