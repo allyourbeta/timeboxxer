@@ -39,7 +39,7 @@ export interface Task {
   notes: string | null;
   duration_minutes: number;
   color_index: number;
-  energy_level: "high" | "medium" | "low";
+  energy_level: "high" | "medium";
   is_highlight: boolean;
   position: number | null; // Order within list (null = end)
 

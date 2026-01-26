@@ -257,11 +257,7 @@ export function ListCard({
                               isInPurgatory={isInbox}
                               isHighlight={task.is_highlight || false}
                               canHighlight={isDateList}
-                              energyLevel={
-                                (task.energy_level === "low"
-                                  ? "medium"
-                                  : task.energy_level) || "medium"
-                              }
+                              energyLevel={task.energy_level || "medium"}
                               paletteId={paletteId}
                               onDurationClick={(reverse) =>
                                 onTaskDurationClick(

@@ -24,7 +24,7 @@ interface TaskCardProps {
   onDelete: () => void;
 }
 
-// Energy cycle: medium -> high -> medium
+// Energy cycle: medium <-> high (toggle)
 const ENERGY_CYCLE: Record<string, "high" | "medium"> = {
   medium: "high",
   high: "medium",

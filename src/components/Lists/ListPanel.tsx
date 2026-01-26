@@ -28,7 +28,7 @@ interface ListPanelProps {
   onTaskCreate: (listId: string, title: string, date?: string) => void;
   onTaskEnergyChange: (
     taskId: string,
-    level: "high" | "medium" | "low",
+    level: "high" | "medium",
   ) => void;
   onTaskComplete: (taskId: string) => void;
   onRollOverTasks: (
