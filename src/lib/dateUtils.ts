@@ -2,7 +2,7 @@
  * Timezone-safe date utilities for Timeboxxer
  * All functions use LOCAL time, not UTC
  * 
- * IMPORTANT: scheduled_at is stored as TIMESTAMP (no timezone) in the database.
+ * IMPORTANT: calendar_slot_time is stored as TIMESTAMP (no timezone) in the database.
  * This means "2:30 PM" is stored as "2:30 PM" - wall clock time, not an absolute instant.
  */
 

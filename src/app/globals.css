@@ -94,6 +94,11 @@
     /* Calendar grid background - warm tint */
     --calendar-grid-bg: #fffbeb;
 
+    /* Highlight/starred task styling */
+    --highlight-bg: #fffbeb;  /* amber-50, warm golden background */
+    --highlight-ring: #f59e0b;  /* amber-500, golden ring */
+    --highlight-border: #fbbf24;  /* amber-400, golden border */
+
     /* ========================================
        CENTRALIZED COLOR SYSTEM - Phase 1
        ======================================== */
@@ -236,6 +241,11 @@
 
     /* Calendar grid background - warm dark */
     --calendar-grid-bg: #1c1917;
+
+    /* Highlight/starred task styling - Dark Mode */
+    --highlight-bg: #451a03;  /* amber-950, dark warm background */
+    --highlight-ring: #f59e0b;  /* amber-500, bright golden ring */
+    --highlight-border: #d97706;  /* amber-600, darker golden border */
 
     /* Toast - Dark Mode (same or adjust as needed) */
     --toast-action-hover: #404040;

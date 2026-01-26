@@ -1,111 +1,116 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useTaskStore, useListStore, useUIStore } from '@/state'
+import { useState } from "react";
+import { useTaskStore, useListStore, useUIStore } from "@/state";
 
 interface PendingDelete {
-  listId: string
-  listName: string
-  originalTasks: Array<{ id: string; originalListId: string }>
-  timeoutId: NodeJS.Timeout
+  listId: string;
+  listName: string;
+  originalTasks: Array<{ id: string; originalListId: string }>;
+  timeoutId: NodeJS.Timeout;
 }
 
 interface ClearListConfirm {
-  listId: string
-  listName: string
-  taskCount: number
+  listId: string;
+  listName: string;
+  taskCount: number;
 }
 
 export function useListHandlers() {
-  const { tasks, moveTask, clearTasksInList } = useTaskStore()
-  const { lists, createList, deleteList, updateList } = useListStore()
-  const { setEditingListId, setShowNewListInput } = useUIStore()
+  const { tasks, moveTask, clearTasksInList } = useTaskStore();
+  const { lists, createList, deleteList, updateList } = useListStore();
+  const { setEditingListId, setShowNewListInput } = useUIStore();
 
-  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
-  const [clearListConfirm, setClearListConfirm] = useState<ClearListConfirm | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+    null,
+  );
+  const [clearListConfirm, setClearListConfirm] =
+    useState<ClearListConfirm | null>(null);
 
   const handleListCreate = async (name: string) => {
     try {
-      await createList(name)
-      setShowNewListInput(false)
+      await createList(name);
+      setShowNewListInput(false);
     } catch (error) {
-      console.error('Failed to create list:', error)
+      console.error("Failed to create list:", error);
     }
-  }
+  };
 
   const handleListEdit = async (listId: string, newName: string) => {
     try {
-      await updateList(listId, newName)
-      setEditingListId(null)
+      await updateList(listId, newName);
+      setEditingListId(null);
     } catch (error) {
-      console.error('Failed to rename list:', error)
+      console.error("Failed to rename list:", error);
     }
-  }
+  };
 
   const handleClearListClick = (listId: string) => {
-    const list = lists.find(l => l.id === listId)
-    if (!list) return
-    
-    const taskCount = tasks.filter(t => t.list_id === listId).length
-    if (taskCount === 0) return
-    
-    setClearListConfirm({ listId, listName: list.name, taskCount })
-  }
+    const list = lists.find((l) => l.id === listId);
+    if (!list) return;
+
+    const taskCount = tasks.filter((t) => t.list_id === listId).length;
+    if (taskCount === 0) return;
+
+    setClearListConfirm({ listId, listName: list.name, taskCount });
+  };
 
   const handleClearListConfirm = async () => {
-    if (!clearListConfirm) return
+    if (!clearListConfirm) return;
     try {
-      await clearTasksInList(clearListConfirm.listId)
-      setClearListConfirm(null)
+      await clearTasksInList(clearListConfirm.listId);
+      setClearListConfirm(null);
     } catch (error) {
-      console.error('Failed to clear list:', error)
+      console.error("Failed to clear list:", error);
     }
-  }
+  };
 
   const handleClearListCancel = () => {
-    setClearListConfirm(null)
-  }
+    setClearListConfirm(null);
+  };
 
   const handleDeleteListClick = async (listId: string) => {
-    const list = lists.find(l => l.id === listId)
-    if (!list) return
-    
-    if (list.list_type === 'parked' || list.list_type === 'completed') return
+    const list = lists.find((l) => l.id === listId);
+    if (!list) return;
 
-    if (list.list_type === 'date') {
-      const listDate = new Date(list.list_date!)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      listDate.setHours(0, 0, 0, 0)
-      if (listDate >= today) return
+    if (list.list_type === "inbox" || list.list_type === "completed") return;
+
+    if (list.list_type === "date") {
+      const listDate = new Date(list.list_date!);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      listDate.setHours(0, 0, 0, 0);
+      if (listDate >= today) return;
     }
 
-    const taskCount = tasks.filter(t => t.list_id === listId && !t.completed_at).length
+    const taskCount = tasks.filter(
+      (t) => t.list_id === listId && !t.completed_at,
+    ).length;
     if (taskCount > 0) {
-      console.warn('Cannot delete non-empty list. Clear it first.')
-      return
+      console.warn("Cannot delete non-empty list. Clear it first.");
+      return;
     }
-    
+
     try {
-      await deleteList(listId)
+      await deleteList(listId);
     } catch (error) {
-      console.error('Failed to delete list:', error)
+      console.error("Failed to delete list:", error);
     }
-  }
+  };
 
   const handleUndoDelete = async () => {
-    if (!pendingDelete) return
-    clearTimeout(pendingDelete.timeoutId)
-    
+    if (!pendingDelete) return;
+    clearTimeout(pendingDelete.timeoutId);
+
     try {
       for (const task of pendingDelete.originalTasks) {
-        await moveTask(task.id, task.originalListId)
+        await moveTask(task.id, task.originalListId);
       }
-      setPendingDelete(null)
+      setPendingDelete(null);
     } catch (error) {
-      console.error('Failed to undo delete:', error)
+      console.error("Failed to undo delete:", error);
     }
-  }
+  };
 
   return {
     pendingDelete,
@@ -118,5 +123,5 @@ export function useListHandlers() {
     handleClearListClick,
     handleClearListConfirm,
     handleClearListCancel,
-  }
+  };
 }

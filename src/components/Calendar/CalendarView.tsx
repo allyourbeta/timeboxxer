@@ -176,7 +176,7 @@ export function CalendarView({
   const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR; // 45px
 
   const scheduledTasks = useMemo(
-    () => tasks.filter((t) => t.scheduled_at),
+    () => tasks.filter((t) => t.calendar_slot_time),
     [tasks],
   );
 
@@ -192,7 +192,7 @@ export function CalendarView({
     return calculateTaskWidths(
       scheduledTasks.map((task) => ({
         id: task.id,
-        scheduled_at: task.scheduled_at!,
+        calendar_slot_time: task.calendar_slot_time!,
         duration_minutes: task.duration_minutes,
       })),
     );
@@ -263,7 +263,7 @@ export function CalendarView({
       const raw = g.startDurationMin + deltaMinutes;
       const snapped = Math.round(raw / 15) * 15;
 
-      const startTime = timestampToTime(task.scheduled_at!);
+      const startTime = timestampToTime(task.calendar_slot_time!);
       const startMin = timeToMinutes(startTime);
       const maxByDay = DAY_MINUTES - startMin;
       const maxDur = Math.min(MAX_DURATION_MINUTES, maxByDay);
@@ -298,7 +298,7 @@ export function CalendarView({
         setSelectedTaskId((prev) => (prev === g.taskId ? null : g.taskId));
       } else {
         const newTime = pixelsToTime(g.currentTopPx);
-        const date = task.scheduled_at!.split("T")[0];
+        const date = task.calendar_slot_time!.split("T")[0];
         const newTs = createLocalTimestamp(date, newTime);
 
         const ok = canScheduleTask(
@@ -319,7 +319,7 @@ export function CalendarView({
         const ok = canScheduleTask(
           tasksRef.current,
           task.id,
-          task.scheduled_at!,
+          task.calendar_slot_time!,
           g.currentDurationMin,
         ).allowed;
         if (ok)
@@ -365,7 +365,7 @@ export function CalendarView({
     (e: React.PointerEvent, task: Task) => {
       if (isExternalDndDragging) return;
       if (task.completed_at) return;
-      if (!task.scheduled_at) return;
+      if (!task.calendar_slot_time) return;
       if ((e.target as HTMLElement).closest("[data-resize-handle]")) return;
       if ((e.target as HTMLElement).closest("button")) return;
 
@@ -376,7 +376,7 @@ export function CalendarView({
       e.stopPropagation();
 
       const contentY = getContentY(container, e.clientY);
-      const startTime = timestampToTime(task.scheduled_at);
+      const startTime = timestampToTime(task.calendar_slot_time);
       const startTopPx = timeToPixels(startTime);
 
       gestureRef.current = {
@@ -400,7 +400,7 @@ export function CalendarView({
     (e: React.PointerEvent, task: Task) => {
       if (isExternalDndDragging) return;
       if (task.completed_at) return;
-      if (!task.scheduled_at) return;
+      if (!task.calendar_slot_time) return;
 
       const container = containerRef.current;
       if (!container) return;
@@ -415,7 +415,7 @@ export function CalendarView({
       ) as HTMLElement | null;
       if (!taskEl) return;
 
-      const startTime = timestampToTime(task.scheduled_at);
+      const startTime = timestampToTime(task.calendar_slot_time);
       const startTopPx = timeToPixels(startTime);
 
       gestureRef.current = {
@@ -481,8 +481,8 @@ export function CalendarView({
       .padStart(2, "0")}`;
 
     const tasksInSlot = scheduledTasks.filter((task) => {
-      if (!task.scheduled_at) return false;
-      return timestampToTime(task.scheduled_at) === slotTime;
+      if (!task.calendar_slot_time) return false;
+      return timestampToTime(task.calendar_slot_time) === slotTime;
     });
 
     if (tasksInSlot.length >= 2) return;
@@ -592,7 +592,7 @@ export function CalendarView({
           {/* Scheduled tasks */}
           <div className="absolute left-16 right-0 top-0 h-full pointer-events-none">
             {scheduledTasks.map((task) => {
-              const startTime = timestampToTime(task.scheduled_at!);
+              const startTime = timestampToTime(task.calendar_slot_time!);
               const top = timeToPixels(startTime);
               const height = (task.duration_minutes / 60) * SLOT_HEIGHT;
 

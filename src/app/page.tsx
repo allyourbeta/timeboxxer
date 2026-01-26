@@ -58,7 +58,7 @@ export default function Home() {
     handleStartFocus,
     handleExitFocus,
     handleFocusComplete,
-    handleParkThought,
+    handleQuickSave,
     handleRollOverTasks,
     discardConfirm,
     handleTaskDiscardClick,
@@ -148,7 +148,7 @@ export default function Home() {
 
   // Computed values
   const loading = tasksLoading || listsLoading;
-  const scheduledTasks = tasks.filter((t) => t.scheduled_at && !t.completed_at);
+  const scheduledTasks = tasks.filter((t) => t.calendar_slot_time && !t.completed_at);
   const visibleLists = lists.filter((l) => l.id !== pendingDelete?.listId);
 
   const completedToday = tasks.filter((t) => {
@@ -178,7 +178,7 @@ export default function Home() {
           panelMode={panelMode}
           onViewChange={setCurrentView}
           onPanelModeChange={setPanelMode}
-          onParkThought={handleParkThought}
+          onQuickSave={handleQuickSave}
           onCollapseAll={collapseAllLists}
           onJustStart={() => {
             if (scheduledTasks.length > 0) {
@@ -207,7 +207,7 @@ export default function Home() {
         panelMode={panelMode}
         onViewChange={setCurrentView}
         onPanelModeChange={setPanelMode}
-        onParkThought={handleParkThought}
+        onQuickSave={handleQuickSave}
         onCollapseAll={collapseAllLists}
         onJustStart={() => {
           if (scheduledTasks.length > 0) {
@@ -229,7 +229,7 @@ export default function Home() {
           {(panelMode === "both" || panelMode === "lists-only") && (
             <div
               className={`${panelMode === "both" ? "flex-1 min-w-0" : "w-full"} bg-theme-secondary rounded-xl border border-theme`}
-              style={{ boxShadow: 'var(--shadow-panel)' }}
+              style={{ boxShadow: "var(--shadow-panel)" }}
             >
               <div className="p-6 h-full overflow-auto overflow-x-hidden">
                 <ListPanel
@@ -267,7 +267,7 @@ export default function Home() {
           {(panelMode === "both" || panelMode === "calendar-only") && (
             <div
               className={`${panelMode === "both" ? "flex-1 min-w-0" : "w-full"} bg-theme-secondary rounded-xl border border-theme flex flex-col`}
-              style={{ boxShadow: 'var(--shadow-panel)' }}
+              style={{ boxShadow: "var(--shadow-panel)" }}
             >
               <CalendarView
                 tasks={tasks}

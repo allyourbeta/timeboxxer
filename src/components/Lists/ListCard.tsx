@@ -73,7 +73,7 @@ export function ListCard({
   const [editName, setEditName] = useState(name);
 
   const canDeleteList = (): boolean => {
-    // System lists (Limbo, Parked Items) - never deletable
+    // System lists (Inbox) - never deletable
     if (isSystemList && !isDateList) return false;
 
     // Date lists - only deletable if date is before today
@@ -91,7 +91,7 @@ export function ListCard({
   };
 
   const isProtectedList = (): boolean => {
-    // Parked Items - always protected
+    // Inbox - always protected
     if (isSystemList && !isDateList) return true;
 
     // Date lists - protected if today or future
@@ -124,10 +124,10 @@ export function ListCard({
             : "shadow-theme-sm hover:shadow-theme-md hover:border-theme-emphasis"
         }
       `}
-      style={{ 
-        breakInside: "avoid", 
+      style={{
+        breakInside: "avoid",
         marginBottom: "0.875rem",
-        boxShadow: 'var(--shadow-card)'
+        boxShadow: "var(--shadow-card)",
       }}
     >
       {/* Header - always visible */}
@@ -250,7 +250,11 @@ export function ListCard({
                               isInPurgatory={isInbox}
                               isHighlight={task.is_highlight || false}
                               canHighlight={isDateList}
-                              energyLevel={task.energy_level || "medium"}
+                              energyLevel={
+                                (task.energy_level === "low"
+                                  ? "medium"
+                                  : task.energy_level) || "medium"
+                              }
                               paletteId={paletteId}
                               onDurationClick={(reverse) =>
                                 onTaskDurationClick(

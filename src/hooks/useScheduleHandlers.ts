@@ -15,23 +15,23 @@ export function useScheduleHandlers() {
     if (!task) return
 
     const today = new Date().toISOString().split('T')[0]
-    const scheduledAt = createLocalTimestamp(today, time)
+    const calendarSlotTime = createLocalTimestamp(today, time)
     
     // Check if scheduling is allowed (max 2 overlapping tasks)
-    const validation = canScheduleTask(tasks, taskId, scheduledAt, task.duration_minutes)
+    const validation = canScheduleTask(tasks, taskId, calendarSlotTime, task.duration_minutes)
     if (!validation.allowed) {
       alert(validation.message)
       return
     }
     
     // Schedule the task for this time slot
-    await scheduleTask(taskId, scheduledAt)
+    await scheduleTask(taskId, calendarSlotTime)
   }
 
   const handleEventMove = async (taskId: string, newTime: string) => {
     const task = tasks.find(t => t.id === taskId)
-    if (task?.scheduled_at) {
-      const date = task.scheduled_at.split('T')[0]
+    if (task?.calendar_slot_time) {
+      const date = task.calendar_slot_time.split('T')[0]
       const newScheduledAt = createLocalTimestamp(date, newTime)
       
       // Check if move is allowed (max 2 overlapping tasks)
@@ -69,17 +69,17 @@ export function useScheduleHandlers() {
       const newTask = updatedTasks[updatedTasks.length - 1]
       
       // Schedule it for the specified time
-      const scheduledAt = createLocalTimestamp(today, time)
+      const calendarSlotTime = createLocalTimestamp(today, time)
       
       // Check if scheduling is allowed (max 2 overlapping tasks)
-      const validation = canScheduleTask(updatedTasks, newTask.id, scheduledAt, newTask.duration_minutes)
+      const validation = canScheduleTask(updatedTasks, newTask.id, calendarSlotTime, newTask.duration_minutes)
       if (!validation.allowed) {
         alert(validation.message)
         // If we can't schedule it, leave it in the date list unscheduled
         return
       }
       
-      await scheduleTask(newTask.id, scheduledAt)
+      await scheduleTask(newTask.id, calendarSlotTime)
     } catch (error) {
       console.error('Failed to create calendar task:', error)
       alert('Failed to create task')

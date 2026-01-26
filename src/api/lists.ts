@@ -1,7 +1,7 @@
-import { createClient } from '@/utils/supabase/client'
-import { getCurrentUserId } from '@/utils/supabase/auth'
-import { formatDateForDisplay } from '@/lib/dateUtils'
-import type { List } from '@/types/app'
+import { createClient } from "@/utils/supabase/client";
+import { getCurrentUserId } from "@/utils/supabase/auth";
+import { formatDateForDisplay } from "@/lib/dateUtils";
+import type { List } from "@/types/app";
 
 // =============================================================================
 // READ OPERATIONS
@@ -11,138 +11,144 @@ import type { List } from '@/types/app'
  * Fetch all lists for the current user
  */
 export async function getLists(): Promise<List[]> {
-  const supabase = createClient()
+  const supabase = createClient();
   const { data, error } = await supabase
-    .from('lists')
-    .select('*')
-    .order('created_at')
-  
-  if (error) throw error
-  return data || []
+    .from("lists")
+    .select("*")
+    .order("created_at");
+
+  if (error) throw error;
+  return data || [];
 }
 
 /**
- * Get or create the Parked list
+ * Get or create the Inbox list (formerly "Parked")
  */
-export async function getParkedList(): Promise<List> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+export async function getInboxList(): Promise<List> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
-  // Step 1: Try to find existing Parked list
+  // Step 1: Try to find existing Inbox list
   const { data: existing, error: findError } = await supabase
-    .from('lists')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('list_type', 'parked')
-    .single()
+    .from("lists")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("list_type", "inbox")
+    .single();
 
   // If found, return it
   if (!findError && existing) {
-    return existing as List
+    return existing as List;
   }
 
   // Step 2: Only proceed to create if error is "no rows found" (PGRST116)
-  if (findError && (findError as any).code !== 'PGRST116') {
-    throw findError
+  if (findError && (findError as any).code !== "PGRST116") {
+    throw findError;
   }
 
-  // Step 3: Create the Parked list
+  // Step 3: Create the Inbox list
   const { data: created, error: createError } = await supabase
-    .from('lists')
+    .from("lists")
     .insert({
       user_id: user.id,
-      name: 'Parked Items',
-      list_type: 'parked'
+      name: "Inbox",
+      list_type: "inbox",
     })
     .select()
-    .single()
+    .single();
 
   // Step 4: Handle race condition (another tab created it)
   if (createError) {
-    if ((createError as any).code === '23505') {
+    if ((createError as any).code === "23505") {
       const { data: existing2, error: refetchError } = await supabase
-        .from('lists')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('list_type', 'parked')
-        .single()
+        .from("lists")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("list_type", "inbox")
+        .single();
 
-      if (refetchError) throw refetchError
-      if (!existing2) throw new Error('Parked list not found after race condition')
-      return existing2 as List
+      if (refetchError) throw refetchError;
+      if (!existing2)
+        throw new Error("Inbox list not found after race condition");
+      return existing2 as List;
     }
-    throw createError
+    throw createError;
   }
 
   // Step 5: Guard against null
   if (!created) {
-    throw new Error('Failed to create Parked list (no data returned)')
+    throw new Error("Failed to create Inbox list (no data returned)");
   }
 
-  return created as List
+  return created as List;
 }
 
 /**
  * Get or create the Completed list
  */
 export async function getCompletedList(): Promise<List> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
   // Step 1: Try to find existing Completed list
   const { data: existing, error: findError } = await supabase
-    .from('lists')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('list_type', 'completed')
-    .single()
+    .from("lists")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("list_type", "completed")
+    .single();
 
   // If found, return it
   if (!findError && existing) {
-    return existing as List
+    return existing as List;
   }
 
   // Step 2: Only proceed to create if error is "no rows found" (PGRST116)
-  if (findError && (findError as any).code !== 'PGRST116') {
-    throw findError
+  if (findError && (findError as any).code !== "PGRST116") {
+    throw findError;
   }
 
   // Step 3: Create the Completed list
   const { data: created, error: createError } = await supabase
-    .from('lists')
+    .from("lists")
     .insert({
       user_id: user.id,
-      name: 'Completed',
-      list_type: 'completed'
+      name: "Completed",
+      list_type: "completed",
     })
     .select()
-    .single()
+    .single();
 
   // Step 4: Handle race condition (another tab created it)
   if (createError) {
-    if ((createError as any).code === '23505') {
+    if ((createError as any).code === "23505") {
       const { data: existing2, error: refetchError } = await supabase
-        .from('lists')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('list_type', 'completed')
-        .single()
+        .from("lists")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("list_type", "completed")
+        .single();
 
-      if (refetchError) throw refetchError
-      if (!existing2) throw new Error('Completed list not found after race condition')
-      return existing2 as List
+      if (refetchError) throw refetchError;
+      if (!existing2)
+        throw new Error("Completed list not found after race condition");
+      return existing2 as List;
     }
-    throw createError
+    throw createError;
   }
 
   // Step 5: Guard against null
   if (!created) {
-    throw new Error('Failed to create Completed list (no data returned)')
+    throw new Error("Failed to create Completed list (no data returned)");
   }
 
-  return created as List
+  return created as List;
 }
 
 // =============================================================================
@@ -153,74 +159,74 @@ export async function getCompletedList(): Promise<List> {
  * Create a new user list
  */
 export async function createList(name: string): Promise<List> {
-  const supabase = createClient()
-  const userId = await getCurrentUserId()
-  
+  const supabase = createClient();
+  const userId = await getCurrentUserId();
+
   const { data, error } = await supabase
-    .from('lists')
+    .from("lists")
     .insert({
       user_id: userId,
       name,
-      list_type: 'user',
+      list_type: "user",
     })
     .select()
-    .single()
-  
-  if (error) throw error
-  return data
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 /**
  * Ensure a date list exists for the given date
  */
 export async function ensureDateList(dateISO: string): Promise<List> {
-  const supabase = createClient()
-  const userId = await getCurrentUserId()
-  const displayName = formatDateForDisplay(dateISO)
-  
+  const supabase = createClient();
+  const userId = await getCurrentUserId();
+  const displayName = formatDateForDisplay(dateISO);
+
   // Try to find existing date list
   const { data: existing, error: findError } = await supabase
-    .from('lists')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('list_type', 'date')
-    .eq('list_date', dateISO)
-    .single()
-  
+    .from("lists")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("list_type", "date")
+    .eq("list_date", dateISO)
+    .single();
+
   if (!findError && existing) {
-    return existing
+    return existing;
   }
-  
+
   // Create date list if it doesn't exist
   const { data: list, error: createError } = await supabase
-    .from('lists')
+    .from("lists")
     .insert({
       user_id: userId,
       name: displayName,
-      list_type: 'date',
+      list_type: "date",
       list_date: dateISO,
     })
     .select()
-    .single()
-  
-  if (createError) throw createError
-  return list
+    .single();
+
+  if (createError) throw createError;
+  return list;
 }
 
 /**
  * Ensure today's date list exists
  */
 export async function ensureTodayList(): Promise<List> {
-  const { getLocalTodayISO } = await import('@/lib/dateUtils')
-  return ensureDateList(getLocalTodayISO())
+  const { getLocalTodayISO } = await import("@/lib/dateUtils");
+  return ensureDateList(getLocalTodayISO());
 }
 
 /**
  * Ensure tomorrow's date list exists
  */
 export async function ensureTomorrowList(): Promise<List> {
-  const { getLocalTomorrowISO } = await import('@/lib/dateUtils')
-  return ensureDateList(getLocalTomorrowISO())
+  const { getLocalTomorrowISO } = await import("@/lib/dateUtils");
+  return ensureDateList(getLocalTomorrowISO());
 }
 
 // =============================================================================
@@ -231,13 +237,13 @@ export async function ensureTomorrowList(): Promise<List> {
  * Update list name
  */
 export async function updateList(listId: string, name: string): Promise<void> {
-  const supabase = createClient()
+  const supabase = createClient();
   const { error } = await supabase
-    .from('lists')
+    .from("lists")
     .update({ name, updated_at: new Date().toISOString() })
-    .eq('id', listId)
-  
-  if (error) throw error
+    .eq("id", listId);
+
+  if (error) throw error;
 }
 
 // =============================================================================
@@ -248,11 +254,8 @@ export async function updateList(listId: string, name: string): Promise<void> {
  * Delete a list (will fail if not empty or if system list)
  */
 export async function deleteList(listId: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from('lists')
-    .delete()
-    .eq('id', listId)
-  
-  if (error) throw error
+  const supabase = createClient();
+  const { error } = await supabase.from("lists").delete().eq("id", listId);
+
+  if (error) throw error;
 }

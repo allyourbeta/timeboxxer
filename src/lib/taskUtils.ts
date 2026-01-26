@@ -11,7 +11,7 @@ export function getIncompleteTasksForList(tasks: Task[], listId: string): Task[]
  * Get all scheduled (incomplete) tasks
  */
 export function getScheduledTasks(tasks: Task[]): Task[] {
-  return tasks.filter(t => t.scheduled_at && !t.completed_at)
+  return tasks.filter(t => t.calendar_slot_time && !t.completed_at)
 }
 
 /**

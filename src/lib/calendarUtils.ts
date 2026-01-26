@@ -51,7 +51,7 @@ export function getHourLabels(): string[] {
 }
 
 /**
- * Convert scheduled_at timestamp to time string
+ * Convert calendar_slot_time timestamp to time string
  */
 export function timestampToTime(timestamp: string): string {
   const date = new Date(timestamp)
@@ -202,12 +202,12 @@ export function generateAllSlotIds(): string[] {
 }
 
 /**
- * Convert scheduled_at timestamp to slot index for overlap detection
- * @param scheduledAt - Timestamp like "2026-01-22T09:30:00"
+ * Convert calendar_slot_time timestamp to slot index for overlap detection
+ * @param calendarSlotTime - Timestamp like "2026-01-22T09:30:00"
  * @returns Slot index (0-95)
  */
-export function timeToSlotIndex(scheduledAt: string): number {
-  const time = scheduledAt.split('T')[1]  // "09:30:00"
+export function timeToSlotIndex(calendarSlotTime: string): number {
+  const time = calendarSlotTime.split('T')[1]  // "09:30:00"
   const [hours, minutes] = time.split(':').map(Number)
   return hours * 4 + Math.floor(minutes / 15)  // 9:30 -> 38
 }
@@ -219,7 +219,7 @@ interface TaskLayout {
 
 interface ScheduledTask {
   id: string
-  scheduled_at: string
+  calendar_slot_time: string
   duration_minutes: number
 }
 
@@ -236,7 +236,7 @@ export function calculateTaskWidths(tasks: ScheduledTask[]): Map<string, TaskLay
   const slotOccupancy: Map<number, string[]> = new Map()  // slot index -> task IDs
   
   for (const task of tasks) {
-    const startSlot = timeToSlotIndex(task.scheduled_at)  // e.g., 9:00 -> 36
+    const startSlot = timeToSlotIndex(task.calendar_slot_time)  // e.g., 9:00 -> 36
     const endSlot = startSlot + Math.ceil(task.duration_minutes / 15)
     
     for (let slot = startSlot; slot < endSlot; slot++) {
@@ -255,7 +255,7 @@ export function calculateTaskWidths(tasks: ScheduledTask[]): Map<string, TaskLay
       const [task1, task2] = taskIds
         .map(id => tasks.find(t => t.id === id)!)
         .sort((a, b) => {
-          const timeCompare = a.scheduled_at!.localeCompare(b.scheduled_at!)
+          const timeCompare = a.calendar_slot_time!.localeCompare(b.calendar_slot_time!)
           return timeCompare !== 0 ? timeCompare : a.id.localeCompare(b.id)
         })
       
@@ -285,27 +285,27 @@ export function calculateTaskWidths(tasks: ScheduledTask[]): Map<string, TaskLay
  * Maximum of 2 tasks can occupy any 15-minute slot
  * @param tasks - Current scheduled tasks
  * @param newTaskId - ID of task being scheduled (to exclude it from checks)
- * @param scheduledAt - Proposed schedule time
+ * @param calendarSlotTime - Proposed schedule time
  * @param durationMinutes - Duration of the task
  * @returns Object with allowed flag and optional message
  */
 export function canScheduleTask(
-  tasks: { id: string; scheduled_at: string | null; duration_minutes: number }[],
+  tasks: { id: string; calendar_slot_time: string | null; duration_minutes: number }[],
   newTaskId: string,
-  scheduledAt: string,
+  calendarSlotTime: string,
   durationMinutes: number
 ): { allowed: boolean; message?: string } {
   
-  const startSlot = timeToSlotIndex(scheduledAt)
+  const startSlot = timeToSlotIndex(calendarSlotTime)
   const endSlot = startSlot + Math.ceil(durationMinutes / 15)
   
   // Count tasks in each slot (excluding the task being moved)
   for (let slot = startSlot; slot < endSlot; slot++) {
     const tasksInSlot = tasks.filter(t => {
       if (t.id === newTaskId) return false  // Don't count itself
-      if (!t.scheduled_at) return false
+      if (!t.calendar_slot_time) return false
       
-      const tStart = timeToSlotIndex(t.scheduled_at)
+      const tStart = timeToSlotIndex(t.calendar_slot_time)
       const tEnd = tStart + Math.ceil(t.duration_minutes / 15)
       
       return slot >= tStart && slot < tEnd

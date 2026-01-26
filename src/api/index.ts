@@ -11,9 +11,12 @@ export {
   moveTask,
   scheduleTask,
   unscheduleTask,
-  createParkedThought,
+  createInboxTask,
   toggleHighlight,
-} from './tasks'
+  scheduleTaskForDate,
+  unscheduleTaskFromDate,
+  createTaskOnDate,
+} from "./tasks";
 
 // List operations
 export {
@@ -22,6 +25,6 @@ export {
   updateList,
   deleteList,
   ensureDateList,
-  getParkedList,
+  getInboxList,
   getCompletedList,
-} from './lists'
+} from "./lists";

@@ -1,109 +1,176 @@
 /**
  * Drag and drop business logic service
  * Pure functions for handling drag operations
+ *
+ * Soft-Link Scheduling Model:
+ * - Tasks "live" in project/bucket lists (their permanent home via list_id)
+ * - Tasks "visit" date lists (scheduled for a specific day via planned_list_date)
+ * - Drag from project → date list = schedule (set planned_list_date)
+ * - Drag from date list → project = unschedule (clear planned_list_date, change list_id)
+ * - Drag from date list → different date = reschedule-date (change planned_list_date)
  */
 
-import { parseSlotId, slotIdToTimestamp } from '@/lib/calendarUtils'
-import { getLocalTodayISO } from '@/lib/dateUtils'
-import type { Task, List } from '@/types/app'
-import type { DropResult } from '@hello-pangea/dnd'
+import { parseSlotId, slotIdToTimestamp } from "@/lib/calendarUtils";
+import { getLocalTodayISO } from "@/lib/dateUtils";
+import type { Task, List } from "@/types/app";
+import type { DropResult } from "@hello-pangea/dnd";
 
 export interface DragOperationResult {
-  type: 'none' | 'reorder' | 'schedule' | 'move' | 'reschedule'
+  type:
+    | "none"
+    | "reorder"
+    | "schedule"
+    | "move"
+    | "reschedule"
+    | "schedule-to-date"
+    | "unschedule"
+    | "reschedule-date";
   data?: {
-    taskIds?: string[]
-    taskId?: string
-    scheduledAt?: string
-    listId?: string
-  }
+    taskIds?: string[];
+    taskId?: string;
+    calendarSlotTime?: string;
+    plannedListDate?: string;
+    listId?: string;
+  };
 }
 
 export async function processDragEnd(
   result: DropResult,
   tasks: Task[],
-  lists: List[]
+  lists: List[],
 ): Promise<DragOperationResult> {
   // Dropped outside any droppable area
   if (!result.destination) {
-    return { type: 'none' }
+    return { type: "none" };
   }
 
-  const sourceId = result.source.droppableId
-  const destinationId = result.destination.droppableId
-  const taskId = result.draggableId
+  const sourceId = result.source.droppableId;
+  const destinationId = result.destination.droppableId;
+  const taskId = result.draggableId;
+
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return { type: "none" };
 
   // Same list, same position - no change
-  if (sourceId === destinationId && result.source.index === result.destination.index) {
-    return { type: 'none' }
+  if (
+    sourceId === destinationId &&
+    result.source.index === result.destination.index
+  ) {
+    return { type: "none" };
   }
+
+  // Determine source and destination list types
+  const sourceList = lists.find((l) => l.id === sourceId);
+  const destList = lists.find((l) => l.id === destinationId);
+  const isSourceDateList = sourceList?.list_type === "date";
+  const isDestDateList = destList?.list_type === "date";
+  const isDestCalendar = destinationId.startsWith("calendar-slot-");
 
   // Same list - reorder within list
   if (sourceId === destinationId) {
-    const sourceList = lists.find(l => l.id === sourceId)
-    if (!sourceList) return { type: 'none' }
+    if (!sourceList) return { type: "none" };
 
-    // Get tasks for this list - simple in new schema
-    const listTasks = tasks
-      .filter(t => t.list_id === sourceId && !t.completed_at)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    // Get tasks for this list based on list type
+    let listTasks: Task[];
+    if (isSourceDateList && sourceList.list_date) {
+      // Date lists show tasks by planned_list_date
+      listTasks = tasks
+        .filter(
+          (t) => t.planned_list_date === sourceList.list_date && !t.completed_at,
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        );
+    } else {
+      // Project lists show tasks by list_id
+      listTasks = tasks
+        .filter((t) => t.list_id === sourceId && !t.completed_at)
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        );
+    }
 
     // Reorder the array
-    const reordered = Array.from(listTasks)
-    const [removed] = reordered.splice(result.source.index, 1)
-    reordered.splice(result.destination.index, 0, removed)
+    const reordered = Array.from(listTasks);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
 
     // Get new order of IDs
-    const newTaskIds = reordered.map(t => t.id)
+    const newTaskIds = reordered.map((t) => t.id);
 
     return {
-      type: 'reorder',
-      data: { taskIds: newTaskIds }
-    }
+      type: "reorder",
+      data: { taskIds: newTaskIds },
+    };
   }
 
-  // Check if dropped on a calendar slot
-  if (destinationId.startsWith('calendar-slot-')) {
+  // === CALENDAR DROPS ===
+  if (isDestCalendar) {
     // Parse the slot ID to get the time
-    const slotInfo = parseSlotId(destinationId)
+    const slotInfo = parseSlotId(destinationId);
     if (!slotInfo) {
-      return { type: 'none' }
+      return { type: "none" };
     }
 
-    const { hours, minutes } = slotInfo
+    const today = getLocalTodayISO();
+    const calendarSlotTime = slotIdToTimestamp(destinationId, today);
+    if (!calendarSlotTime) {
+      return { type: "none" };
+    }
 
-    // Check if this is a calendar-to-calendar move (reordering within calendar)
-    if (sourceId.startsWith('calendar-slot-') || sourceId === 'calendar') {
-      // Get the timestamp for this slot
-      const today = getLocalTodayISO()
-      const scheduledAt = slotIdToTimestamp(destinationId, today)
-      if (!scheduledAt) {
-        return { type: 'none' }
-      }
+    // Check if this is a calendar-to-calendar move
+    if (sourceId.startsWith("calendar-slot-") || sourceId === "calendar") {
       return {
-        type: 'reschedule',
-        data: { taskId, scheduledAt }
-      }
+        type: "reschedule",
+        data: { taskId, calendarSlotTime },
+      };
     }
 
-    // For external drops (from lists), schedule at the dropped slot time
-    const today = getLocalTodayISO()
-    const scheduledAt = slotIdToTimestamp(destinationId, today)
-    if (!scheduledAt) {
-      return { type: 'none' }
-    }
+    // External drop to calendar - schedule with both date and time
     return {
-      type: 'schedule',
-      data: { taskId, scheduledAt }
-    }
+      type: "schedule",
+      data: { taskId, calendarSlotTime, plannedListDate: today },
+    };
   }
 
-  // Different lists - check if destination is a date list
-  const destinationList = lists.find(l => l.id === destinationId)
-  if (!destinationList) {
-    return { type: 'none' }
+  // === PROJECT LIST → DATE LIST (Schedule for that date) ===
+  if (!isSourceDateList && isDestDateList && destList?.list_date) {
+    return {
+      type: "schedule-to-date",
+      data: { taskId, plannedListDate: destList.list_date },
+    };
   }
-  return {
-    type: 'move',
-    data: { taskId, listId: destinationId }
+
+  // === DATE LIST → PROJECT LIST (Unschedule) ===
+  if (isSourceDateList && !isDestDateList && destList) {
+    return {
+      type: "unschedule",
+      data: { taskId, listId: destinationId },
+    };
   }
+
+  // === DATE LIST → DIFFERENT DATE LIST (Reschedule date) ===
+  if (isSourceDateList && isDestDateList && destList?.list_date) {
+    // Only if it's actually a different date
+    if (sourceList?.list_date !== destList.list_date) {
+      return {
+        type: "reschedule-date",
+        data: { taskId, plannedListDate: destList.list_date },
+      };
+    }
+    // Same date list - treat as reorder (already handled above)
+    return { type: "none" };
+  }
+
+  // === PROJECT LIST → PROJECT LIST (Move) ===
+  if (!isSourceDateList && !isDestDateList && destList) {
+    return {
+      type: "move",
+      data: { taskId, listId: destinationId },
+    };
+  }
+
+  return { type: "none" };
 }
