@@ -233,7 +233,7 @@ export default function Home() {
             >
               {/* Panel Header */}
               <div className="flex-shrink-0 p-4 border-b border-theme bg-theme-tertiary rounded-t-xl">
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg font-bold text-foreground">
                   Task Lists
                 </h2>
               </div>
