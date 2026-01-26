@@ -218,11 +218,14 @@ export function ListCard({
                 <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
                   {tasks
                     .filter((t) => !t.completed_at)
-                    .sort(
-                      (a, b) =>
-                        new Date(a.created_at).getTime() -
-                        new Date(b.created_at).getTime(),
-                    )
+                    .sort((a, b) => {
+                      // Sort by position first (nulls go to end)
+                      const posA = a.position ?? Infinity;
+                      const posB = b.position ?? Infinity;
+                      if (posA !== posB) return posA - posB;
+                      // Fall back to created_at
+                      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                    })
                     .map((task, index) => (
                       <Draggable
                         key={task.id}

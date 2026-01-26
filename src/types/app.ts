@@ -39,6 +39,7 @@ export interface Task {
   color_index: number;
   energy_level: "high" | "medium" | "low";
   is_highlight: boolean;
+  position: number | null; // Order within list (null = end)
 
   // Scheduling
   planned_list_date: string | null; // ISO date: '2026-01-25' - which DATE LIST to appear on

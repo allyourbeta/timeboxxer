@@ -31,6 +31,8 @@ export interface DragOperationResult {
     calendarSlotTime?: string;
     plannedListDate?: string;
     listId?: string;
+    beforePosition?: number | null;
+    afterPosition?: number | null;
   };
 }
 
@@ -78,31 +80,47 @@ export async function processDragEnd(
         .filter(
           (t) => t.planned_list_date === sourceList.list_date && !t.completed_at,
         )
-        .sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-        );
+        .sort((a, b) => {
+          const posA = a.position ?? Infinity;
+          const posB = b.position ?? Infinity;
+          if (posA !== posB) return posA - posB;
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
     } else {
       // Project lists show tasks by list_id
       listTasks = tasks
         .filter((t) => t.list_id === sourceId && !t.completed_at)
-        .sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-        );
+        .sort((a, b) => {
+          const posA = a.position ?? Infinity;
+          const posB = b.position ?? Infinity;
+          if (posA !== posB) return posA - posB;
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
     }
 
-    // Reorder the array
+    const destIndex = result.destination.index;
+    const movedTask = listTasks[result.source.index];
+    
+    // Calculate neighbor positions
+    // After reorder, the task will be at destIndex
+    // We need positions of items that will be above and below it
     const reordered = Array.from(listTasks);
     const [removed] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, removed);
-
-    // Get new order of IDs
-    const newTaskIds = reordered.map((t) => t.id);
+    reordered.splice(destIndex, 0, removed);
+    
+    const beforeTask = destIndex > 0 ? reordered[destIndex - 1] : null;
+    const afterTask = destIndex < reordered.length - 1 ? reordered[destIndex + 1] : null;
+    
+    const beforePosition = beforeTask?.position ?? null;
+    const afterPosition = afterTask?.position ?? null;
 
     return {
       type: "reorder",
-      data: { taskIds: newTaskIds },
+      data: { 
+        taskId: movedTask.id,
+        beforePosition,
+        afterPosition,
+      },
     };
   }
 

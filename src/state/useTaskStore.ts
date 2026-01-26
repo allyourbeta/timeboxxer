@@ -16,6 +16,7 @@ import {
   scheduleTaskForDate as apiScheduleTaskForDate,
   unscheduleTaskFromDate as apiUnscheduleTaskFromDate,
   createTaskOnDate as apiCreateTaskOnDate,
+  reorderTask as apiReorderTask,
 } from "@/api";
 import type { Task } from "@/types/app";
 
@@ -42,6 +43,7 @@ interface TaskStore {
   scheduleForDate: (taskId: string, date: string) => Promise<void>;
   unscheduleFromDate: (taskId: string) => Promise<void>;
   createTaskOnDate: (title: string, date: string) => Promise<void>;
+  reorderTask: (taskId: string, beforePosition: number | null, afterPosition: number | null) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -270,6 +272,36 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     try {
       await apiToggleHighlight(taskId);
+    } catch (error) {
+      await get().loadTasks();
+      throw error;
+    }
+  },
+
+  reorderTask: async (taskId, beforePosition, afterPosition) => {
+    const POSITION_GAP = 1000;
+    
+    // Calculate new position for optimistic update
+    let newPosition: number;
+    if (beforePosition === null && afterPosition === null) {
+      newPosition = POSITION_GAP;
+    } else if (beforePosition === null) {
+      newPosition = Math.floor(afterPosition! / 2);
+    } else if (afterPosition === null) {
+      newPosition = beforePosition + POSITION_GAP;
+    } else {
+      newPosition = beforePosition + Math.floor((afterPosition - beforePosition) / 2);
+    }
+
+    // Optimistic update
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === taskId ? { ...t, position: newPosition } : t
+      ),
+    }));
+
+    try {
+      await apiReorderTask(taskId, beforePosition, afterPosition);
     } catch (error) {
       await get().loadTasks();
       throw error;

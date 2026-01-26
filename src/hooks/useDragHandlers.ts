@@ -12,6 +12,7 @@ export function useDragHandlers() {
     scheduleForDate,
     unscheduleFromDate,
     updateTask,
+    reorderTask,
   } = useTaskStore();
   const { lists } = useListStore();
 
@@ -20,7 +21,13 @@ export function useDragHandlers() {
 
     switch (operation.type) {
       case "reorder":
-        // TODO: Implement task reordering if needed
+        if (operation.data?.taskId) {
+          await reorderTask(
+            operation.data.taskId,
+            operation.data.beforePosition ?? null,
+            operation.data.afterPosition ?? null
+          );
+        }
         break;
 
       case "schedule":

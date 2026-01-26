@@ -16,6 +16,7 @@ export {
   scheduleTaskForDate,
   unscheduleTaskFromDate,
   createTaskOnDate,
+  reorderTask,
 } from "./tasks";
 
 // List operations
