@@ -276,32 +276,14 @@ export async function reorderList(
   const supabase = createClient();
   const POSITION_GAP = 1000;
 
-  // Update the moved list's column
-  const { error: moveError } = await supabase
-    .from("lists")
-    .update({ 
-      panel_column: targetColumn, 
-      updated_at: new Date().toISOString() 
-    })
-    .eq("id", listId);
+  const positions = orderedListIds.map((_, index) => (index + 1) * POSITION_GAP);
 
-  if (moveError) throw moveError;
+  const { error } = await supabase.rpc('batch_update_list_positions', {
+    p_moved_list_id: listId,
+    p_target_column: targetColumn,
+    p_list_ids: orderedListIds,
+    p_positions: positions
+  });
 
-  // Update positions for all lists in the target column
-  const updates = orderedListIds.map((id, index) =>
-    supabase
-      .from("lists")
-      .update({ 
-        position: (index + 1) * POSITION_GAP, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq("id", id)
-  );
-
-  const results = await Promise.all(updates);
-  const errors = results.filter((r) => r.error);
-  if (errors.length > 0) {
-    console.error("reorderList errors:", errors);
-    throw errors[0].error;
-  }
+  if (error) throw error;
 }

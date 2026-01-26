@@ -171,33 +171,16 @@ export async function moveTaskWithPosition(
   const supabase = createClient();
   const POSITION_GAP = 1000;
 
-  // First, move the task to the new list
-  const { error: moveError } = await supabase
-    .from("tasks")
-    .update({
-      list_id: newListId,
-      planned_list_date: null, // Clear soft-link when moving
-      calendar_slot_time: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", taskId);
+  const positions = orderedTaskIds.map((_, index) => (index + 1) * POSITION_GAP);
 
-  if (moveError) throw moveError;
+  const { error } = await supabase.rpc('move_task_with_positions', {
+    p_task_id: taskId,
+    p_new_list_id: newListId,
+    p_task_ids: orderedTaskIds,
+    p_positions: positions
+  });
 
-  // Then update positions for all tasks in the destination list
-  const updates = orderedTaskIds.map((id, index) =>
-    supabase
-      .from("tasks")
-      .update({ position: (index + 1) * POSITION_GAP, updated_at: new Date().toISOString() })
-      .eq("id", id)
-  );
-
-  const results = await Promise.all(updates);
-  const errors = results.filter((r) => r.error);
-  if (errors.length > 0) {
-    console.error("moveTaskWithPosition position update errors:", errors);
-    throw errors[0].error;
-  }
+  if (error) throw error;
 }
 
 /**
@@ -479,20 +462,12 @@ export async function reorderTask(
   const supabase = createClient();
   const POSITION_GAP = 1000;
 
-  // Update each task's position based on its index
-  const updates = orderedTaskIds.map((id, index) =>
-    supabase
-      .from("tasks")
-      .update({ position: (index + 1) * POSITION_GAP, updated_at: new Date().toISOString() })
-      .eq("id", id)
-  );
+  const positions = orderedTaskIds.map((_, index) => (index + 1) * POSITION_GAP);
 
-  const results = await Promise.all(updates);
+  const { error } = await supabase.rpc('batch_update_task_positions', {
+    p_task_ids: orderedTaskIds,
+    p_positions: positions
+  });
 
-  // Check for errors
-  const errors = results.filter((r) => r.error);
-  if (errors.length > 0) {
-    console.error("reorderTask errors:", errors);
-    throw errors[0].error;
-  }
+  if (error) throw error;
 }
