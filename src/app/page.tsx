@@ -17,7 +17,7 @@ export default function Home() {
 
   // Stores (data only)
   const { tasks, loading: tasksLoading, loadTasks } = useTaskStore();
-  const { lists, loading: listsLoading, loadLists } = useListStore();
+  const { lists, loading: listsLoading, loadLists, ensureDateList } = useListStore();
   const {
     currentView,
     setCurrentView,
@@ -106,6 +106,9 @@ export default function Home() {
 
     const init = async () => {
       try {
+        // Ensure today's date list exists
+        await ensureDateList(getLocalTodayISO());
+        
         await Promise.all([loadLists(), loadTasks()]);
       } catch (err) {
         console.error("Data loading failed:", err);
@@ -113,7 +116,7 @@ export default function Home() {
     };
 
     init();
-  }, [user, loadLists, loadTasks]);
+  }, [user, loadLists, loadTasks, ensureDateList]);
 
   // Spawn daily tasks after data loads
   useEffect(() => {

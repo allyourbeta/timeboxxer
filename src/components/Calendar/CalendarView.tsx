@@ -26,7 +26,7 @@ import {
   calculateTaskWidths,
   canScheduleTask,
 } from "@/lib/calendarUtils";
-import { createLocalTimestamp } from "@/lib/dateUtils";
+import { createLocalTimestamp, getLocalTodayISO } from "@/lib/dateUtils";
 
 /* --------------------------- Inline SlotInput --------------------------- */
 
@@ -175,9 +175,17 @@ export function CalendarView({
   const slotIds = useMemo(() => generateAllSlotIds(), []);
   const slotHeightPx = SLOT_HEIGHT / SLOTS_PER_HOUR; // 45px
 
+  // Get today's date for filtering
+  const today = useMemo(() => getLocalTodayISO(), []);
+
   const scheduledTasks = useMemo(
-    () => tasks.filter((t) => t.calendar_slot_time),
-    [tasks],
+    () => tasks.filter((t) => {
+      if (!t.calendar_slot_time) return false;
+      // Only show tasks scheduled for today
+      const taskDate = t.calendar_slot_time.split("T")[0];
+      return taskDate === today;
+    }),
+    [tasks, today],
   );
 
   // Avoid stale closures for document listeners (fixes “intermittent”)
