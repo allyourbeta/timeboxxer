@@ -104,6 +104,34 @@ export function Header({
       <div className="flex-1 flex items-center justify-center gap-3">
         {currentView === "main" && (
           <>
+            {/* Column count: 1 / 2 - only when lists visible */}
+            {(panelMode === "both" || panelMode === "lists-only") && (
+              <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
+                <button
+                  onClick={() => onListColumnCountChange(1)}
+                  className={`h-6 px-2 rounded text-xs transition-all ${
+                    listColumnCount === 1
+                      ? "bg-theme-secondary text-theme-primary shadow-sm"
+                      : "text-theme-secondary hover:text-theme-primary"
+                  }`}
+                  title="Single column"
+                >
+                  <Rows3 className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => onListColumnCountChange(2)}
+                  className={`h-6 px-2 rounded text-xs transition-all ${
+                    listColumnCount === 2
+                      ? "bg-theme-secondary text-theme-primary shadow-sm"
+                      : "text-theme-secondary hover:text-theme-primary"
+                  }`}
+                  title="Two columns"
+                >
+                  <Columns2 className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+
             {/* Panel mode: Lists / Both / Calendar */}
             <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
               <button
@@ -143,34 +171,6 @@ export function Header({
                 Calendar
               </button>
             </div>
-
-            {/* Column count: 1 / 2 - only when lists visible */}
-            {(panelMode === "both" || panelMode === "lists-only") && (
-              <div className="flex h-8 items-center bg-theme-tertiary rounded-lg p-1">
-                <button
-                  onClick={() => onListColumnCountChange(1)}
-                  className={`h-6 px-2 rounded text-xs transition-all ${
-                    listColumnCount === 1
-                      ? "bg-theme-secondary text-theme-primary shadow-sm"
-                      : "text-theme-secondary hover:text-theme-primary"
-                  }`}
-                  title="Single column"
-                >
-                  <Rows3 className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={() => onListColumnCountChange(2)}
-                  className={`h-6 px-2 rounded text-xs transition-all ${
-                    listColumnCount === 2
-                      ? "bg-theme-secondary text-theme-primary shadow-sm"
-                      : "text-theme-secondary hover:text-theme-primary"
-                  }`}
-                  title="Two columns"
-                >
-                  <Columns2 className="h-3 w-3" />
-                </button>
-              </div>
-            )}
           </>
         )}
       </div>
