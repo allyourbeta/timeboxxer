@@ -302,10 +302,27 @@ export async function deleteTask(taskId: string): Promise<void> {
  * @param listId - The list to clear
  * @returns Number of tasks deleted
  */
-export async function clearTasksInList(listId: string): Promise<number> {
+export async function clearTasksInList(listId: string, listDate?: string): Promise<number> {
   const supabase = createClient();
 
-  // First count how many will be deleted (for return value)
+  if (listDate) {
+    // Date list: clear tasks by planned_list_date
+    const { count } = await supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("planned_list_date", listDate);
+
+    // Delete all tasks scheduled for this date
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("planned_list_date", listDate);
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  // Regular list: clear tasks by list_id
   const { count } = await supabase
     .from("tasks")
     .select("*", { count: "exact", head: true })

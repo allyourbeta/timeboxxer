@@ -33,7 +33,7 @@ interface TaskStore {
   createTask: (listId: string, title: string) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  clearTasksInList: (listId: string) => Promise<number>;
+  clearTasksInList: (listId: string, listDate?: string) => Promise<number>;
   completeTask: (taskId: string) => Promise<void>;
   uncompleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, newListId: string) => Promise<void>;
@@ -115,12 +115,19 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  clearTasksInList: async (listId) => {
-    const count = await apiClearTasksInList(listId);
+  clearTasksInList: async (listId, listDate) => {
+    const count = await apiClearTasksInList(listId, listDate);
 
     // Remove these tasks from local state
     set({
-      tasks: get().tasks.filter((t) => t.list_id !== listId),
+      tasks: get().tasks.filter((t) => {
+        if (listDate) {
+          // Date list: filter by planned_list_date
+          return t.planned_list_date !== listDate;
+        }
+        // Regular list: filter by list_id
+        return t.list_id !== listId;
+      }),
     });
 
     return count;

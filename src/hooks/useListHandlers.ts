@@ -14,6 +14,7 @@ interface ClearListConfirm {
   listId: string;
   listName: string;
   taskCount: number;
+  listDate?: string; // For date lists
 }
 
 export function useListHandlers() {
@@ -49,16 +50,31 @@ export function useListHandlers() {
     const list = lists.find((l) => l.id === listId);
     if (!list) return;
 
-    const taskCount = tasks.filter((t) => t.list_id === listId).length;
+    let taskCount: number;
+    let listDate: string | undefined;
+
+    if (list.list_type === "date" && list.list_date) {
+      // Date list: count by planned_list_date
+      taskCount = tasks.filter(
+        (t) => t.planned_list_date === list.list_date && !t.completed_at
+      ).length;
+      listDate = list.list_date;
+    } else {
+      // Regular list: count by list_id
+      taskCount = tasks.filter(
+        (t) => t.list_id === listId && !t.completed_at
+      ).length;
+    }
+
     if (taskCount === 0) return;
 
-    setClearListConfirm({ listId, listName: list.name, taskCount });
+    setClearListConfirm({ listId, listName: list.name, taskCount, listDate });
   };
 
   const handleClearListConfirm = async () => {
     if (!clearListConfirm) return;
     try {
-      await clearTasksInList(clearListConfirm.listId);
+      await clearTasksInList(clearListConfirm.listId, clearListConfirm.listDate);
       setClearListConfirm(null);
     } catch (error) {
       console.error("Failed to clear list:", error);
