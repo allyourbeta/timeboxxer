@@ -114,6 +114,9 @@ export function ListCard({
     return getColor(paletteId, firstTask.color_index);
   };
 
+  const incompleteTasks = tasks.filter((t) => !t.completed_at);
+  const isEmpty = incompleteTasks.length === 0;
+
   return (
     <div
       className={`
@@ -123,6 +126,7 @@ export function ListCard({
             ? "shadow-theme-md border-theme-emphasis"
             : "shadow-theme-sm hover:shadow-theme-md hover:border-theme-emphasis"
         }
+        ${isEmpty && !isExpanded ? "opacity-50" : ""}
       `}
       style={{
         breakInside: "avoid",
@@ -147,7 +151,7 @@ export function ListCard({
           />
         </div>
       ) : (
-        <div className="p-4 flex items-center justify-between border-b border-theme-subtle">
+        <div className={`p-4 flex items-center justify-between ${isExpanded ? "border-b border-theme-subtle" : ""}`}>
           {/* Left side - clickable to toggle expand */}
           <button
             onClick={onToggleExpand}
@@ -201,7 +205,7 @@ export function ListCard({
         </div>
       )}
 
-      {/* Drop zone - ALWAYS rendered for drag-drop */}
+      {/* Drop zone - ALWAYS rendered for drag-drop, but minimal when collapsed */}
       <Droppable droppableId={id}>
         {(provided, snapshot) => (
           <div
@@ -209,8 +213,8 @@ export function ListCard({
             {...provided.droppableProps}
             className={`
               transition-colors duration-150
-              ${snapshot.isDraggingOver ? "bg-[var(--drag-highlight)] ring-2 ring-[var(--drag-ring)] ring-inset" : ""}
-              ${isExpanded ? "px-4 pb-4" : "min-h-[24px] mx-4 mb-2 rounded-md border border-dashed border-theme-default/30 hover:border-[var(--drag-ring)]"}
+              ${snapshot.isDraggingOver ? "bg-[var(--drag-highlight)] ring-2 ring-[var(--drag-ring)] ring-inset min-h-[24px] mx-4 mb-2 rounded-md" : ""}
+              ${isExpanded ? "px-4 pb-4" : "h-0 overflow-hidden"}
             `}
           >
             {isExpanded && (
