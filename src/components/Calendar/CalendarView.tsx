@@ -503,7 +503,7 @@ export function CalendarView({
 
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[var(--calendar-grid-bg)]"
+        className="flex-1 overflow-y-auto overflow-x-hidden relative bg-[var(--calendar-grid-bg)] rounded-b-xl"
         data-testid="calendar-container"
       >
         <div className="relative" style={{ height: `${24 * SLOT_HEIGHT}px` }}>
