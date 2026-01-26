@@ -495,7 +495,7 @@ export function CalendarView({
       style={{ boxShadow: 'var(--shadow-panel)' }}
       onClick={() => setSelectedTaskId(null)}
     >
-      <div className="flex-shrink-0 p-4 border-b border-theme">
+      <div className="flex-shrink-0 p-4 border-b border-theme bg-theme-tertiary rounded-t-xl">
         <h2 className="text-lg font-semibold text-foreground">
           Today's Schedule
         </h2>

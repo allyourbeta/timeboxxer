@@ -228,10 +228,16 @@ export default function Home() {
           {/* List Panel Container */}
           {(panelMode === "both" || panelMode === "lists-only") && (
             <div
-              className={`${panelMode === "both" ? "flex-1 min-w-0" : "w-full"} bg-theme-secondary rounded-xl border border-theme`}
+              className={`${panelMode === "both" ? "flex-1 min-w-0" : "w-full"} bg-theme-secondary rounded-xl border border-theme flex flex-col`}
               style={{ boxShadow: "var(--shadow-panel)" }}
             >
-              <div className="p-6 h-full overflow-auto overflow-x-hidden">
+              {/* Panel Header */}
+              <div className="flex-shrink-0 p-4 border-b border-theme bg-theme-tertiary rounded-t-xl">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Task Lists
+                </h2>
+              </div>
+              <div className="p-6 flex-1 overflow-auto overflow-x-hidden">
                 <ListPanel
                   lists={visibleLists}
                   tasks={tasks}
