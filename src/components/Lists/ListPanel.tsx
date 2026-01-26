@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { ListCard } from "./ListCard";
 import { formatDateForDisplay, getLocalTodayISO } from "@/lib/dateList";
 import { List, Task } from "@/types/app";
 import { DURATION_OPTIONS } from "@/lib/constants";
-import { useListStore } from "@/state";
 
 interface ListPanelProps {
   lists: List[];
@@ -66,7 +65,6 @@ export function ListPanel({
   const [newListName, setNewListName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const hasInitializedExpansion = useRef(false);
-  const { reorderList } = useListStore();
 
   // Filter out completed lists
   const visibleLists = lists.filter((l) => l.list_type !== "completed");
@@ -122,39 +120,6 @@ export function ListPanel({
       return durations[(idx - 1 + durations.length) % durations.length];
     }
     return durations[(idx + 1) % durations.length];
-  };
-
-  const handleListDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-
-    const { source, destination, draggableId } = result;
-    
-    // Determine source and destination columns
-    const sourceColumn = source.droppableId === "column-0" ? 0 : 1;
-    const destColumn = destination.droppableId === "column-0" ? 0 : 1;
-    
-    // Get the lists for the destination column
-    const destColumnLists = destColumn === 0 ? [...leftColumnLists] : [...rightColumnLists];
-    
-    // If same column, remove from current position first
-    if (sourceColumn === destColumn) {
-      const sourceIndex = destColumnLists.findIndex(l => l.id === draggableId);
-      if (sourceIndex !== -1) {
-        destColumnLists.splice(sourceIndex, 1);
-      }
-    }
-    
-    // Insert at new position
-    const movedList = visibleLists.find(l => l.id === draggableId);
-    if (movedList) {
-      destColumnLists.splice(destination.index, 0, movedList);
-    }
-    
-    // Get ordered IDs for the destination column
-    const orderedListIds = destColumnLists.map(l => l.id);
-    
-    // Call reorder
-    await reorderList(draggableId, destColumn as 0 | 1, orderedListIds);
   };
 
   const renderListCard = (list: List, index: number) => {
@@ -238,18 +203,16 @@ export function ListPanel({
     return (
       <div ref={containerRef} className="border-r border-theme overflow-y-auto">
         <div className="p-4">
-          <DragDropContext onDragEnd={handleListDragEnd}>
-            <Droppable droppableId="column-0">
-              {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}>
-                  {visibleLists
-                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-                    .map((list, index) => renderListCard(list, index))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <Droppable droppableId="list-column-0">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps}>
+                {visibleLists
+                  .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                  .map((list, index) => renderListCard(list, index))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
 
           {/* Add new list */}
           {showNewListInput ? (
@@ -296,41 +259,39 @@ export function ListPanel({
   return (
     <div ref={containerRef} className="border-r border-theme overflow-y-auto">
       <div className="p-4">
-        <DragDropContext onDragEnd={handleListDragEnd}>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Left Column */}
-            <Droppable droppableId="column-0">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`min-h-[100px] rounded-lg transition-colors ${
-                    snapshot.isDraggingOver ? "bg-theme-tertiary/50" : ""
-                  }`}
-                >
-                  {leftColumnLists.map((list, index) => renderListCard(list, index))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left Column */}
+          <Droppable droppableId="list-column-0">
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`min-h-[100px] rounded-lg transition-colors ${
+                  snapshot.isDraggingOver ? "bg-theme-tertiary/50" : ""
+                }`}
+              >
+                {leftColumnLists.map((list, index) => renderListCard(list, index))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
 
-            {/* Right Column */}
-            <Droppable droppableId="column-1">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`min-h-[100px] rounded-lg transition-colors ${
-                    snapshot.isDraggingOver ? "bg-theme-tertiary/50" : ""
-                  }`}
-                >
-                  {rightColumnLists.map((list, index) => renderListCard(list, index))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </div>
-        </DragDropContext>
+          {/* Right Column */}
+          <Droppable droppableId="list-column-1">
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`min-h-[100px] rounded-lg transition-colors ${
+                  snapshot.isDraggingOver ? "bg-theme-tertiary/50" : ""
+                }`}
+              >
+                {rightColumnLists.map((list, index) => renderListCard(list, index))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </div>
 
         {/* Add new list */}
         {showNewListInput ? (

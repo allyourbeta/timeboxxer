@@ -15,9 +15,50 @@ export function useDragHandlers() {
     updateTask,
     reorderTask,
   } = useTaskStore();
-  const { lists } = useListStore();
+  const { lists, reorderList } = useListStore();
 
   const handleDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+    
+    if (!destination) return;
+
+    // Check if this is a list drag (droppableId starts with "list-column-")
+    if (source.droppableId.startsWith("list-column-")) {
+      const sourceColumn = source.droppableId === "list-column-0" ? 0 : 1;
+      const destColumn = destination.droppableId === "list-column-0" ? 0 : 1;
+      
+      // Filter out completed lists
+      const visibleLists = lists.filter((l) => l.list_type !== "completed");
+      
+      // Get lists for the destination column
+      const destColumnLists = visibleLists
+        .filter((l) => (l.panel_column ?? 0) === destColumn)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      
+      // If same column, remove from current position first
+      const updatedDestLists = [...destColumnLists];
+      if (sourceColumn === destColumn) {
+        const sourceIndex = updatedDestLists.findIndex(l => l.id === draggableId);
+        if (sourceIndex !== -1) {
+          updatedDestLists.splice(sourceIndex, 1);
+        }
+      }
+      
+      // Insert at new position
+      const movedList = visibleLists.find(l => l.id === draggableId);
+      if (movedList) {
+        updatedDestLists.splice(destination.index, 0, movedList);
+      }
+      
+      // Get ordered IDs for the destination column
+      const orderedListIds = updatedDestLists.map(l => l.id);
+      
+      // Call reorder
+      await reorderList(draggableId, destColumn as 0 | 1, orderedListIds);
+      return;
+    }
+
+    // Otherwise, it's a task drag - use existing logic
     const operation = await processDragEnd(result, tasks, lists);
 
     switch (operation.type) {
