@@ -269,7 +269,6 @@ export function ListCard({
                               colorIndex={task.color_index}
                               isCompleted={!!task.completed_at}
                               isScheduled={scheduledTaskIds.includes(task.id)}
-                              isDaily={false}
                               isInPurgatory={isInbox}
                               isHighlight={task.is_highlight || false}
                               canHighlight={isDateList}
@@ -285,7 +284,6 @@ export function ListCard({
                               onEnergyChange={(level) =>
                                 onTaskEnergyChange(task.id, level)
                               }
-                              onDailyToggle={() => {}}
                               onHighlightToggle={() =>
                                 onHighlightToggle(task.id)
                               }

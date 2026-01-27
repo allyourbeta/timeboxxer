@@ -10,7 +10,6 @@ interface TaskCardProps {
   colorIndex: number;
   isCompleted: boolean;
   isScheduled: boolean;
-  isDaily: boolean;
   isInPurgatory: boolean;
   isHighlight: boolean;
   canHighlight: boolean;
@@ -18,7 +17,6 @@ interface TaskCardProps {
   paletteId: string;
   onDurationClick: (reverse: boolean) => void;
   onEnergyChange: (level: "high" | "medium") => void;
-  onDailyToggle: () => void;
   onHighlightToggle: () => void;
   onComplete: () => void;
   onDelete: () => void;
@@ -42,7 +40,6 @@ export function TaskCard({
   colorIndex,
   isCompleted,
   isScheduled,
-  isDaily,
   isInPurgatory,
   isHighlight,
   canHighlight,
@@ -50,7 +47,6 @@ export function TaskCard({
   paletteId,
   onDurationClick,
   onEnergyChange,
-  onDailyToggle,
   onHighlightToggle,
   onComplete,
   onDelete,
@@ -122,20 +118,6 @@ export function TaskCard({
         >
           {ENERGY_ICONS[energyLevel]}
         </button>
-
-        {/* Daily checkbox */}
-        <label
-          className="flex items-center cursor-pointer"
-          title="Repeat daily"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <input
-            type="checkbox"
-            checked={isDaily}
-            onChange={onDailyToggle}
-            className="w-3 h-3 rounded border-theme accent-accent-primary"
-          />
-        </label>
 
         {/* Highlight star - only for date lists */}
         {canHighlight && (
