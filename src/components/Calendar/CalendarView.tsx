@@ -547,7 +547,7 @@ export function CalendarView({
                 .padStart(2, "0")}`;
 
               return (
-                <Droppable key={slotId} droppableId={slotId}>
+                <Droppable key={slotId} droppableId={slotId} type="TASK">
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
