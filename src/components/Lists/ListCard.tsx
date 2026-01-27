@@ -296,6 +296,9 @@ export function ListCard({
                     ))}
                 </div>
 
+                {/* Add task input */}
+                <AddTaskInput onAdd={onTaskAdd} />
+
                 {/* Roll Over pills - only for date lists with incomplete tasks */}
                 {isDateList &&
                   !isInbox &&
@@ -325,9 +328,6 @@ export function ListCard({
                       </button>
                     </div>
                   )}
-
-                {/* Add task input */}
-                <AddTaskInput onAdd={onTaskAdd} />
               </>
             )}
             {provided.placeholder}
