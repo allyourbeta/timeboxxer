@@ -88,7 +88,7 @@ export async function processDragEnd(
     } else {
       // Project lists show tasks by list_id
       listTasks = tasks
-        .filter((t) => t.list_id === sourceId && !t.completed_at)
+        .filter((t) => t.list_id === sourceId && !t.completed_at && !t.planned_list_date)
         .sort((a, b) => {
           const posA = a.position ?? Infinity;
           const posB = b.position ?? Infinity;
