@@ -29,6 +29,7 @@ export function useRolloverHandlers() {
       for (const task of tasksToMove) {
         await scheduleForDate(task.id, targetDate);
       }
+    
     } catch (error) {
       console.error("Roll over failed:", error);
     }

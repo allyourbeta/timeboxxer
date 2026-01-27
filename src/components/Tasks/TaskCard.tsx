@@ -113,14 +113,16 @@ export function TaskCard({
           {durationLabel}
         </button>
 
-        {/* Energy - tap to cycle */}
-        <button
-          onClick={handleEnergyClick}
-          className="text-xs hover:scale-105 transition-transform"
-          title={`Energy: ${energyLevel} (click to change)`}
-        >
-          {ENERGY_ICONS[energyLevel]}
-        </button>
+        {/* Energy - tap to cycle (HIDDEN but functionality preserved) */}
+        {false && (
+          <button
+            onClick={handleEnergyClick}
+            className="text-xs hover:scale-105 transition-transform"
+            title={`Energy: ${energyLevel} (click to change)`}
+          >
+            {ENERGY_ICONS[energyLevel]}
+          </button>
+        )}
 
         {/* Highlight star - only for date lists */}
         {canHighlight && (
