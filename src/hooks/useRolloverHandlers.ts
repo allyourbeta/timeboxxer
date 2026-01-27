@@ -4,7 +4,7 @@ import { useTaskStore, useListStore } from "@/state";
 import { getLocalTodayISO, getLocalTomorrowISO } from "@/lib/dateUtils";
 
 export function useRolloverHandlers() {
-  const { tasks, moveTask, createInboxTask } = useTaskStore();
+  const { tasks, scheduleForDate, createInboxTask } = useTaskStore();
   const { lists, ensureDateList } = useListStore();
 
   const handleRollOverTasks = async (
@@ -18,13 +18,16 @@ export function useRolloverHandlers() {
       destination === "today" ? getLocalTodayISO() : getLocalTomorrowISO();
 
     try {
-      const targetList = await ensureDateList(targetDate);
+      // Ensure target date list exists (but we don't need its ID)
+      await ensureDateList(targetDate);
+      
+      // Find tasks by planned_list_date (not list_id) since they're "visiting" this date
       const tasksToMove = tasks.filter(
-        (t) => t.list_id === fromListId && !t.completed_at,
+        (t) => t.planned_list_date === fromList.list_date && !t.completed_at,
       );
 
       for (const task of tasksToMove) {
-        await moveTask(task.id, targetList.id);
+        await scheduleForDate(task.id, targetDate);
       }
     } catch (error) {
       console.error("Roll over failed:", error);
