@@ -20,6 +20,8 @@ export function useDragHandlers() {
   const handleDragEnd = async (result: DropResult) => {
     const { source, destination, draggableId } = result;
     
+    console.log('Drag ended:', { source, destination, draggableId });
+    
     if (!destination) return;
 
     // Check if this is a list drag (droppableId starts with "list-column-")
