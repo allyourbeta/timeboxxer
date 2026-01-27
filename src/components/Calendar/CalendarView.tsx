@@ -655,7 +655,14 @@ export function CalendarView({
                   }}
                 >
 
-                  <div className="p-2 flex items-center justify-between gap-2">
+                  <div 
+                    className="p-2 flex items-center justify-between gap-2"
+                    style={{
+                      height: `${slotHeightPx}px`, // Height of one 15-min slot
+                      maxHeight: `${slotHeightPx}px`,
+                      overflow: 'hidden'
+                    }}
+                  >
                     <div className="min-w-0">
                       <div className="text-base font-medium text-foreground truncate">
                         {task.title}
