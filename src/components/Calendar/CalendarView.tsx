@@ -12,6 +12,7 @@ import { CheckCircle, Trash2 } from "lucide-react";
 
 import { Task } from "@/types/app";
 import { getColor } from "@/lib/palettes";
+import { EditableTitle } from "@/components/ui/EditableTitle";
 import {
   SLOT_HEIGHT,
   SLOTS_PER_HOUR,
@@ -127,6 +128,7 @@ export interface CalendarViewProps {
     taskId: string,
     newDuration: number,
   ) => void | Promise<void>;
+  onTitleChange: (taskId: string, newTitle: string) => void | Promise<void>;
   onDragStart?: (cancelCallback: () => void) => void;
 }
 
@@ -144,6 +146,7 @@ export function CalendarView({
   onDelete,
   onCreateTask,
   onDurationChange,
+  onTitleChange,
   onDragStart,
 }: CalendarViewProps) {
   const isExternalDndDragging =
@@ -664,9 +667,11 @@ export function CalendarView({
                     }}
                   >
                     <div className="min-w-0">
-                      <div className="text-base font-medium text-foreground truncate">
-                        {task.title}
-                      </div>
+                      <EditableTitle
+                        value={task.title}
+                        onSave={(newTitle) => onTitleChange(task.id, newTitle)}
+                        className="text-base font-medium text-foreground truncate"
+                      />
                       <div className="text-sm text-muted-foreground font-mono">
                         {startTime} · {previewDuration}m
                       </div>

@@ -98,6 +98,11 @@ export default function Home() {
     [handleDragEnd],
   );
 
+  const handleTaskTitleChange = useCallback(async (taskId: string, newTitle: string) => {
+    const { updateTask } = useTaskStore.getState();
+    await updateTask(taskId, { title: newTitle });
+  }, []);
+
   // Load data on mount (only when authenticated)
   useEffect(() => {
     if (!user) {
@@ -266,6 +271,7 @@ export default function Home() {
                   onTaskComplete={handleTaskComplete}
                   onRollOverTasks={handleRollOverTasks}
                   onHighlightToggle={handleHighlightToggle}
+                  onTaskTitleChange={handleTaskTitleChange}
                   columnCount={listColumnCount}
                 />
               </div>
@@ -292,6 +298,7 @@ export default function Home() {
                   await updateTask(taskId, { duration_minutes: newDuration });
                 }}
                 onCreateTask={handleCreateCalendarTask}
+                onTitleChange={handleTaskTitleChange}
                 onDragStart={(cancelCallback) => {
                   cancelEditingRef.current = cancelCallback;
                 }}

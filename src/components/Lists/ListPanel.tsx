@@ -36,6 +36,7 @@ interface ListPanelProps {
     destination: "today" | "tomorrow",
   ) => void;
   onHighlightToggle: (taskId: string, plannedListDate: string | null) => void;
+  onTaskTitleChange: (taskId: string, newTitle: string) => void;
   columnCount: 1 | 2;
 }
 
@@ -61,6 +62,7 @@ export function ListPanel({
   onTaskComplete,
   onRollOverTasks,
   onHighlightToggle,
+  onTaskTitleChange,
   columnCount,
 }: ListPanelProps) {
   const [newListName, setNewListName] = useState("");
@@ -177,6 +179,7 @@ export function ListPanel({
                   list.list_type === "date" ? list.list_date || null : null,
                 )
               }
+              onTaskTitleChange={onTaskTitleChange}
             />
           </div>
         )}

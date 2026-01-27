@@ -42,6 +42,7 @@ interface ListCardProps {
   onRollOver?: (destination: "today" | "tomorrow") => void;
   isToday?: boolean;
   onHighlightToggle: (taskId: string) => void;
+  onTaskTitleChange: (taskId: string, newTitle: string) => void;
 }
 
 export function ListCard({
@@ -69,6 +70,7 @@ export function ListCard({
   onRollOver,
   isToday,
   onHighlightToggle,
+  onTaskTitleChange,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name);
 
@@ -292,6 +294,9 @@ export function ListCard({
                               }
                               onComplete={() => onTaskComplete(task.id)}
                               onDelete={() => onTaskDelete(task.id)}
+                              onTitleChange={(newTitle) =>
+                                onTaskTitleChange(task.id, newTitle)
+                              }
                             />
                           </div>
                         )}

@@ -2,6 +2,7 @@
 
 import { Trash2, CheckCircle } from "lucide-react";
 import { getColor } from "@/lib/palettes";
+import { EditableTitle } from "@/components/ui/EditableTitle";
 
 interface TaskCardProps {
   id: string;
@@ -20,6 +21,7 @@ interface TaskCardProps {
   onHighlightToggle: () => void;
   onComplete: () => void;
   onDelete: () => void;
+  onTitleChange: (newTitle: string) => void;
 }
 
 // Energy cycle: medium <-> high (toggle)
@@ -50,6 +52,7 @@ export function TaskCard({
   onHighlightToggle,
   onComplete,
   onDelete,
+  onTitleChange,
 }: TaskCardProps) {
   const bgColor = getColor(paletteId, colorIndex);
 
@@ -90,13 +93,13 @@ export function TaskCard({
       {/* Single horizontal line layout */}
       <div className="flex items-center gap-2.5">
         {/* Title - takes remaining space */}
-        <span
+        <EditableTitle
+          value={title}
+          onSave={onTitleChange}
           className={`flex-1 text-theme-primary font-medium text-sm truncate ${
             isCompleted ? "line-through" : ""
           }`}
-        >
-          {title}
-        </span>
+        />
 
         {/* Duration - tap to cycle */}
         <button
