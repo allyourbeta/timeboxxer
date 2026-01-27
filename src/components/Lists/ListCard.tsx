@@ -146,7 +146,7 @@ export function ListCard({
   return (
     <div
       className={`
-        rounded-lg overflow-hidden border border-theme-subtle bg-theme-secondary transition-all duration-200
+        rounded-lg overflow-hidden border border-theme-subtle transition-all duration-200
         ${
           isExpanded
             ? "shadow-theme-md border-theme-emphasis"
@@ -155,6 +155,9 @@ export function ListCard({
         ${isEmpty && !isExpanded ? "opacity-50" : ""}
       `}
       style={{
+        backgroundColor: isToday 
+          ? "rgba(239, 68, 68, 0.06)" // Light red tint for today
+          : "var(--bg-secondary)",
         breakInside: "avoid",
         marginBottom: "0.875rem",
         boxShadow: "var(--shadow-card)",
