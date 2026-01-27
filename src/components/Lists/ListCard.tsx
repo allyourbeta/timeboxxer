@@ -303,7 +303,7 @@ export function ListCard({
                   onRollOver && (
                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-theme">
                       <span className="text-xs text-theme-secondary">
-                        Roll Over:
+                        Roll Over All:
                       </span>
 
                       {/* Today pill - hide if viewing today's list */}
