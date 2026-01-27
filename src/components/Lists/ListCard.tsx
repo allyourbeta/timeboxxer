@@ -86,6 +86,18 @@ export function ListCard({
       });
   }, [tasks]);
 
+  // Memoize date labels for Roll Over buttons to avoid Date object creation on every render
+  const { todayLabel, tomorrowLabel } = useMemo(() => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return {
+      todayLabel: today.toLocaleDateString("en-US", { weekday: "short" }),
+      tomorrowLabel: tomorrow.toLocaleDateString("en-US", { weekday: "short" }),
+    };
+  }, []); // Empty deps - only compute once per mount (day won't change mid-session)
+
   const canDeleteList = (): boolean => {
     // System lists (Inbox) - never deletable
     if (isSystemList && !isDateList) return false;
@@ -302,9 +314,7 @@ export function ListCard({
                           onClick={() => onRollOver("today")}
                           className="px-2 py-1 text-xs rounded-full bg-theme-tertiary hover:bg-accent-primary hover:text-[var(--text-inverse)] transition-colors"
                         >
-                          {new Date().toLocaleDateString("en-US", {
-                            weekday: "short",
-                          })}
+                          {todayLabel}
                         </button>
                       )}
 
@@ -313,13 +323,7 @@ export function ListCard({
                         onClick={() => onRollOver("tomorrow")}
                         className="px-2 py-1 text-xs rounded-full bg-theme-tertiary hover:bg-accent-primary hover:text-[var(--text-inverse)] transition-colors"
                       >
-                        {(() => {
-                          const tomorrow = new Date();
-                          tomorrow.setDate(tomorrow.getDate() + 1);
-                          return tomorrow.toLocaleDateString("en-US", {
-                            weekday: "short",
-                          });
-                        })()}
+                        {tomorrowLabel}
                       </button>
                     </div>
                   )}
