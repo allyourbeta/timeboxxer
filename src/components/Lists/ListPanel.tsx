@@ -189,7 +189,7 @@ export function ListPanel({
     return (
       <div ref={containerRef} className="border-r border-theme overflow-y-auto">
         <div className="p-4">
-          <Droppable droppableId="list-column-0">
+          <Droppable droppableId="list-column-0" type="LIST">
             {(provided) => (
               <div ref={provided.innerRef} {...provided.droppableProps}>
                 {visibleLists
@@ -247,7 +247,7 @@ export function ListPanel({
       <div className="p-4">
         <div className="grid grid-cols-2 gap-4">
           {/* Left Column */}
-          <Droppable droppableId="list-column-0">
+          <Droppable droppableId="list-column-0" type="LIST">
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}
@@ -263,7 +263,7 @@ export function ListPanel({
           </Droppable>
 
           {/* Right Column */}
-          <Droppable droppableId="list-column-1">
+          <Droppable droppableId="list-column-1" type="LIST">
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}

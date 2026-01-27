@@ -232,7 +232,7 @@ export function ListCard({
       )}
 
       {/* Drop zone - ALWAYS rendered for drag-drop, but minimal when collapsed */}
-      <Droppable droppableId={id}>
+      <Droppable droppableId={id} type="TASK">
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
