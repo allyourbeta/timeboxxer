@@ -20,7 +20,7 @@ interface ListCardProps {
   paletteId: string;
   isEditing: boolean;
   isExpanded: boolean;
-  scheduledTaskIds: Set<string>;
+  scheduledTaskIds: string[];
   onToggleExpand: () => void;
   onStartEdit: () => void;
   onFinishEdit: (newName: string) => void;
@@ -268,7 +268,7 @@ export function ListCard({
                               durationMinutes={task.duration_minutes}
                               colorIndex={task.color_index}
                               isCompleted={!!task.completed_at}
-                              isScheduled={scheduledTaskIds.has(task.id)}
+                              isScheduled={scheduledTaskIds.includes(task.id)}
                               isDaily={false}
                               isInPurgatory={isInbox}
                               isHighlight={task.is_highlight || false}
