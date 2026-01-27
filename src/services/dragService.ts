@@ -49,8 +49,6 @@ export async function processDragEnd(
   const destinationId = result.destination.droppableId;
   const taskId = result.draggableId;
 
-  console.log('Processing drag:', { sourceId, destinationId, taskId });
-
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return { type: "none" };
 
