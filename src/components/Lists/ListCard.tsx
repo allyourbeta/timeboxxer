@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TaskCard, AddTaskInput } from "@/components/Tasks";
 import { ListCardMenu } from "./ListCardMenu";
@@ -71,6 +71,20 @@ export function ListCard({
   onHighlightToggle,
 }: ListCardProps) {
   const [editName, setEditName] = useState(name);
+
+  // Memoize task filtering and sorting to avoid recalculation on every render
+  const sortedTasks = useMemo(() => {
+    return tasks
+      .filter((t) => !t.completed_at)
+      .sort((a, b) => {
+        // Sort by position first (nulls go to end)
+        const posA = a.position ?? Infinity;
+        const posB = b.position ?? Infinity;
+        if (posA !== posB) return posA - posB;
+        // Fall back to created_at
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+  }, [tasks]);
 
   const canDeleteList = (): boolean => {
     // System lists (Inbox) - never deletable
@@ -220,17 +234,7 @@ export function ListCard({
             {isExpanded && (
               <>
                 <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
-                  {tasks
-                    .filter((t) => !t.completed_at)
-                    .sort((a, b) => {
-                      // Sort by position first (nulls go to end)
-                      const posA = a.position ?? Infinity;
-                      const posB = b.position ?? Infinity;
-                      if (posA !== posB) return posA - posB;
-                      // Fall back to created_at
-                      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-                    })
-                    .map((task, index) => (
+                  {sortedTasks.map((task, index) => (
                       <Draggable
                         key={task.id}
                         draggableId={task.id}
