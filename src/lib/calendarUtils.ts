@@ -321,3 +321,60 @@ export function canScheduleTask(
   
   return { allowed: true }
 }
+
+/**
+ * Build a map of slot index -> count of tasks occupying that slot
+ * Excludes the task being moved (by ID)
+ * 
+ * @param tasks - All tasks currently scheduled on calendar
+ * @param excludeTaskId - ID of task being moved/scheduled (excluded from count)
+ * @returns Map of slot index to occupancy count
+ */
+export function buildSlotOccupancy(
+  tasks: { id: string; calendar_slot_time: string | null; duration_minutes: number }[],
+  excludeTaskId: string
+): Map<number, number> {
+  const occupancy = new Map<number, number>();
+  
+  for (const task of tasks) {
+    if (task.id === excludeTaskId || !task.calendar_slot_time) continue;
+    
+    const startSlot = timeToSlotIndex(task.calendar_slot_time);
+    const endSlot = startSlot + Math.ceil(task.duration_minutes / 15);
+    
+    for (let slot = startSlot; slot < endSlot; slot++) {
+      occupancy.set(slot, (occupancy.get(slot) || 0) + 1);
+    }
+  }
+  
+  return occupancy;
+}
+
+/**
+ * Check if a task can be scheduled using pre-computed occupancy map
+ * Much faster than canScheduleTask for drag operations with frequent position checks
+ * 
+ * @param slotOccupancy - Pre-computed slot occupancy map from buildSlotOccupancy
+ * @param calendarSlotTime - Target time slot (ISO timestamp)
+ * @param durationMinutes - Duration of the task
+ * @returns Object with allowed flag and optional message
+ */
+export function canScheduleTaskFast(
+  slotOccupancy: Map<number, number>,
+  calendarSlotTime: string,
+  durationMinutes: number
+): { allowed: boolean; message?: string } {
+  const startSlot = timeToSlotIndex(calendarSlotTime);
+  const endSlot = startSlot + Math.ceil(durationMinutes / 15);
+  
+  for (let slot = startSlot; slot < endSlot; slot++) {
+    if ((slotOccupancy.get(slot) || 0) >= 2) {
+      return {
+        allowed: false,
+        message: 'Maximum 2 tasks can overlap. Move or complete a task first.'
+      };
+    }
+  }
+  
+  return { allowed: true };
+}
