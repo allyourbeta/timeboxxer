@@ -526,7 +526,7 @@ export function CalendarView({
                   height: `${SLOT_HEIGHT}px`,
                 }}
               >
-                <div className="absolute left-2 top-1 text-xs text-muted-foreground font-mono">
+                <div className="absolute left-2 top-1 text-sm text-muted-foreground font-mono">
                   {hour}
                 </div>
               </div>
@@ -554,7 +554,7 @@ export function CalendarView({
                       {...provided.droppableProps}
                       className={`
                         absolute w-full border-b cursor-pointer
-                        ${isHourBoundary ? "border-theme" : "border-theme-subtle"}
+                        ${isHourBoundary ? "border-theme" : "border-theme/40"}
                         ${
                           snapshot.isDraggingOver
                             ? "bg-[var(--drag-highlight)] ring-2 ring-[var(--drag-ring)] ring-inset"
