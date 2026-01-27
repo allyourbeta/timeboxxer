@@ -15,7 +15,7 @@ interface ListPanelProps {
   editingListId: string | null;
   showNewListInput: boolean;
   expandedListIds: Set<string>;
-  scheduledTaskIds: string[];
+  scheduledTaskIds: Set<string>;
   onShowNewListInput: (show: boolean) => void;
   onCreateList: (name: string) => void;
   onEditList: (listId: string, name: string) => void;

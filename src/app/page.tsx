@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { useTaskStore, useListStore, useUIStore } from "@/state";
 import { useAppHandlers, useAuth, useScheduleHandlers } from "@/hooks";
@@ -154,6 +154,12 @@ export default function Home() {
   const scheduledTasks = tasks.filter((t) => t.calendar_slot_time && !t.completed_at);
   const visibleLists = lists.filter((l) => l.id !== pendingDelete?.listId);
 
+  // Memoized Set for O(1) scheduled task lookups
+  const scheduledTaskIdSet = useMemo(
+    () => new Set(scheduledTasks.map((t) => t.id)),
+    [scheduledTasks]
+  );
+
   const completedToday = tasks.filter((t) => {
     if (!t.completed_at) return false;
     const completedDate = new Date(t.completed_at).toDateString();
@@ -248,7 +254,7 @@ export default function Home() {
                   editingListId={editingListId}
                   showNewListInput={showNewListInput}
                   expandedListIds={expandedListIds}
-                  scheduledTaskIds={scheduledTasks.map((t) => t.id)}
+                  scheduledTaskIds={scheduledTaskIdSet}
                   onShowNewListInput={() => setShowNewListInput(true)}
                   onCreateList={handleListCreate}
                   onEditList={handleListEdit}
